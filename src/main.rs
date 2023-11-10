@@ -8,8 +8,11 @@ use colored::*;
 use indicatif::{HumanDuration, ParallelProgressIterator, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use log::log;
+use ptree::item::StringItem;
+use ptree::{print_tree, TreeBuilder, TreeItem};
 use reqwest::redirect::Policy;
-use std::io::Write;
+use std::borrow::Cow;
+use std::io::{self, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::{
@@ -42,7 +45,12 @@ async fn main() -> Result<()> {
         std::process::exit(1);
     })
     .expect("Error setting Ctrl-C handler");
-    let parsed_host = Url::parse(&ARGS.host).with_context(|| "Failed to parse host")?;
+    let fixed_host = if ARGS.host.starts_with("http://") || ARGS.host.starts_with("https://") {
+        ARGS.host.clone()
+    } else {
+        format!("http://{}", ARGS.host.clone())
+    };
+    let parsed_host = Url::parse(&fixed_host).with_context(|| "Failed to parse host")?;
 
     // Check if host is reachable
     let spinner = indicatif::ProgressBar::new_spinner();
@@ -50,6 +58,7 @@ async fn main() -> Result<()> {
         spinner.set_message("🔎 Checking host");
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(ARGS.timeout))
+            .redirect(Policy::none())
             .build()
             .unwrap();
         let res = client.get(parsed_host.clone()).send().await;
@@ -134,8 +143,22 @@ async fn main() -> Result<()> {
         children: Vec<PathTree>,
     }
 
+    impl TreeItem for PathTree {
+        type Child = Self;
+        fn write_self<W: io::Write>(&self, f: &mut W, _style: &ptree::Style) -> io::Result<()> {
+            write!(f, "/{}", self.name.split("/").last().unwrap())
+        }
+        fn children(&self) -> Cow<[Self::Child]> {
+            Cow::from(&self.children[..])
+        }
+    }
+
     let mut tree = PathTree {
-        name: String::from("/"),
+        name: parsed_host
+            .path()
+            .to_string()
+            .trim_end_matches("/")
+            .to_string(),
         children: manager
             .run()
             .await?
@@ -265,7 +288,7 @@ async fn main() -> Result<()> {
             );
         }
         None => {
-            log_warning("No output file specified", false);
+            print_tree(&tree)?;
         }
     }
 
