@@ -35,69 +35,42 @@ impl Crawler {
     }
     #[async_recursion]
     pub async fn crawl(&self, url: &Url, redirected: Vec<Url>, retries: u8) -> Result<CrawlResult> {
-        let res = match ARGS.method.as_str() {
-            "GET" => self
-                .client
-                .get(url.clone())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+        let res = (match ARGS.method.as_str() {
+            "GET" => self.client.get(url.clone()),
             "POST" => self
                 .client
                 .post(url.clone())
-                .body(ARGS.data.clone().unwrap_or_default())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+                .body(ARGS.data.clone().unwrap_or_default()),
             "PUT" => self
                 .client
                 .put(url.clone())
-                .body(ARGS.data.clone().unwrap_or_default())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+                .body(ARGS.data.clone().unwrap_or_default()),
             "DELETE" => self
                 .client
                 .delete(url.clone())
-                .body(ARGS.data.clone().unwrap_or_default())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+                .body(ARGS.data.clone().unwrap_or_default()),
             "HEAD" => self
                 .client
                 .head(url.clone())
-                .body(ARGS.data.clone().unwrap_or_default())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+                .body(ARGS.data.clone().unwrap_or_default()),
             "OPTIONS" => self
                 .client
                 .request(reqwest::Method::OPTIONS, url.clone())
-                .body(ARGS.data.clone().unwrap_or_default())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+                .body(ARGS.data.clone().unwrap_or_default()),
             "CONNECT" => self
                 .client
                 .request(reqwest::Method::CONNECT, url.clone())
-                .body(ARGS.data.clone().unwrap_or_default())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+                .body(ARGS.data.clone().unwrap_or_default()),
             "TRACE" => self
                 .client
                 .request(reqwest::Method::TRACE, url.clone())
-                .body(ARGS.data.clone().unwrap_or_default())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+                .body(ARGS.data.clone().unwrap_or_default()),
+
             "PATCH" => self
                 .client
                 .request(reqwest::Method::PATCH, url.clone())
-                .body(ARGS.data.clone().unwrap_or_default())
-                .send()
-                .await
-                .with_context(|| format!("Failed to crawl {}", url.as_str())),
+                .body(ARGS.data.clone().unwrap_or_default()),
+
             _ => {
                 log_warning(
                     &format!(
@@ -107,13 +80,12 @@ impl Crawler {
                     ),
                     true,
                 );
-                self.client
-                    .get(url.clone())
-                    .send()
-                    .await
-                    .with_context(|| format!("Failed to crawl {}", url.as_str()))
+                self.client.get(url.clone())
             }
-        };
+        })
+        .send()
+        .await
+        .with_context(|| format!("Failed to crawl {} using {}", url.as_str(), ARGS.method));
 
         if let std::result::Result::Err(err) = res {
             if ARGS.retries > retries {
