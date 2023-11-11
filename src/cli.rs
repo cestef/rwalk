@@ -53,4 +53,31 @@ pub struct Args {
     /// Whether or not to crawl case insensitive
     #[clap(short = 'I', long)]
     pub case_insensitive: bool,
+    /// Success status codes range
+    /// Example: 200-299
+    #[clap(
+        short,
+        long,
+        default_value = "200-299",
+        value_parser(parse_status_codes)
+    )]
+    pub success_codes: String,
+}
+
+fn parse_status_codes(s: &str) -> Result<String, String> {
+    let mut codes = s.split('-');
+    let start = codes
+        .next()
+        .unwrap()
+        .parse::<u16>()
+        .map_err(|_| "Invalid status code")?;
+    let end = codes
+        .next()
+        .unwrap()
+        .parse::<u16>()
+        .map_err(|_| "Invalid status code")?;
+    if start > end {
+        return Err("Invalid status code range".to_string());
+    }
+    Ok(format!("{}-{}", start, end))
 }

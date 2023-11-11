@@ -115,9 +115,16 @@ impl Crawler {
         // If location is relative, make it absolute
         let mut redirected = redirected.clone();
         redirected.push(url.clone());
+
+        let success_codes: Vec<u16> = ARGS
+            .success_codes
+            .split('-')
+            .map(|x| x.parse::<u16>().unwrap())
+            .collect();
+        let success_codes = success_codes[0]..=success_codes[1];
         match res.status().as_u16() {
             // Success
-            200..=299 => Ok(CrawlResult {
+            success_codes @ 200..=299 => Ok(CrawlResult {
                 urls: redirected,
                 status_code: res.status(),
             }),
