@@ -24,9 +24,8 @@ impl Crawler {
                 .timeout(Duration::from_secs(ARGS.timeout))
                 .user_agent(ARGS.user_agent.clone().unwrap_or_else(|| {
                     format!(
-                        "Mozilla/5.0 (compatible; rwalk/{}; +{})",
+                        "Mozilla/5.0 (compatible; rwalk/{})",
                         env!("CARGO_PKG_VERSION"),
-                        "https://github.com/cestef/rwalk"
                     )
                 }))
                 .redirect(Policy::none())
