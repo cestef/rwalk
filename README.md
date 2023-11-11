@@ -1,4 +1,6 @@
-# 🔍 rwalk
+<p align="center">
+    <img src="assets/header.png" alt="rwalk" />
+</p>
 
 A blazing fast web directory scanner written in Rust. It's like [dirsearch](
     https://github.com/maurosoria/dirsearch) but faster and with less features.
