@@ -155,7 +155,6 @@ async fn main() -> Result<()> {
                 .await?
                 .iter()
                 .map(|urls| PathTree {
-                    // name: Url::parse(s).unwrap().path().to_string(),
                     name: Url::parse(&urls[0]).unwrap().path().to_string(),
                     children: Vec::new(),
                 })
