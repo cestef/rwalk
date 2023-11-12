@@ -124,7 +124,7 @@ impl Crawler {
         let success_codes = success_codes[0]..=success_codes[1];
         match res.status().as_u16() {
             // Success
-            success_codes @ 200..=299 => Ok(CrawlResult {
+            x if success_codes.contains(&x) => Ok(CrawlResult {
                 urls: redirected,
                 status_code: res.status(),
             }),
