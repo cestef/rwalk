@@ -24,11 +24,13 @@ use stopwatch::Stopwatch;
 use url::Url;
 
 use crate::log::{log_error, log_success, log_verbose, log_warning};
+use crate::tree::{tree_to_vec, PathTree, TreeTraverser};
 
 mod cli;
 mod crawler;
 mod log;
 mod manager;
+mod tree;
 mod wordlists;
 
 lazy_static! {
@@ -137,115 +139,41 @@ async fn main() -> Result<()> {
         progress.clone(),
     );
 
-    #[derive(Debug, Clone)]
-    struct PathTree {
-        name: String,
-        children: Vec<PathTree>,
-    }
-
-    impl TreeItem for PathTree {
-        type Child = Self;
-        fn write_self<W: io::Write>(&self, f: &mut W, _style: &ptree::Style) -> io::Result<()> {
-            write!(f, "/{}", self.name.split("/").last().unwrap())
-        }
-        fn children(&self) -> Cow<[Self::Child]> {
-            Cow::from(&self.children[..])
-        }
-    }
-
-    let mut tree = PathTree {
-        name: parsed_host
-            .path()
-            .to_string()
-            .trim_end_matches("/")
-            .to_string(),
-        children: manager
-            .run()
-            .await?
-            .iter()
-            .map(|urls| PathTree {
-                // name: Url::parse(s).unwrap().path().to_string(),
-                name: Url::parse(&urls[0]).unwrap().path().to_string(),
-                children: Vec::new(),
-            })
-            .collect::<Vec<PathTree>>(),
-    };
-
-    #[async_recursion]
-    async fn traverse(
-        host: Url,
-        words: Vec<String>,
-        threads: usize,
-        progress: ProgressBar,
-        tree: &mut PathTree,
-        depth: u8,
-    ) {
-        if depth == 0 {
-            return;
-        }
-
-        for child in &mut tree.children {
-            let mut new_url = host.clone();
-            new_url.set_path(&child.name);
-            progress.set_position(0);
-            progress.set_message(format!("🔎 Crawling {}", new_url));
-            let manager =
-                manager::CrawlerManager::new(new_url, words.clone(), threads, progress.clone());
-            child.children = manager
-                .run()
-                .await
-                .unwrap()
-                .iter()
-                .map(|urls| PathTree {
-                    // name: Url::parse(s).unwrap().path().to_string(),
-                    name: Url::parse(&urls[0])
-                        .unwrap()
-                        .path()
-                        .trim_end_matches("/")
-                        .to_string(),
-                    children: Vec::new(),
-                })
-                .collect::<Vec<PathTree>>();
-
-            traverse(
-                host.clone(),
-                words.clone(),
-                threads,
-                progress.clone(),
-                child,
-                depth - 1,
-            )
-            .await;
-        }
-    }
-
-    traverse(
+    let mut traverser = TreeTraverser::new(
         parsed_host.clone(),
         words.clone(),
         threads,
         progress.clone(),
-        &mut tree,
+        PathTree {
+            name: parsed_host
+                .path()
+                .to_string()
+                .trim_end_matches("/")
+                .to_string(),
+            children: manager
+                .run()
+                .await?
+                .iter()
+                .map(|urls| PathTree {
+                    // name: Url::parse(s).unwrap().path().to_string(),
+                    name: Url::parse(&urls[0]).unwrap().path().to_string(),
+                    children: Vec::new(),
+                })
+                .collect::<Vec<PathTree>>(),
+        },
         ARGS.depth,
-    )
-    .await;
+    );
+
+    traverser.traverse().await;
 
     progress.finish_and_clear();
 
-    // println!("{:#?}", tree);
-
     let mut found = Vec::new();
 
-    fn traverse_tree(tree: &PathTree, found: &mut Vec<String>) {
-        for child in &tree.children {
-            found.push(child.name.clone());
-            traverse_tree(child, found);
-        }
-    }
-
-    traverse_tree(&tree, &mut found);
+    tree_to_vec(&traverser.tree, &mut found);
 
     println!(
-        "🔎 Crawled {} path{} in {} {}",
+        "🔎 Discovered {} path{} in {} {}",
         found.len().to_string().green().bold(),
         if found.len() == 1 { "" } else { "s" },
         HumanDuration(watch.elapsed()).to_string().bold(),
@@ -288,7 +216,7 @@ async fn main() -> Result<()> {
             );
         }
         None => {
-            print_tree(&tree)?;
+            print_tree(&traverser.tree)?;
         }
     }
 
