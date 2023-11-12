@@ -5,7 +5,7 @@ use async_recursion::async_recursion;
 use clap::Parser;
 use cli::Args;
 use colored::*;
-use indicatif::{HumanDuration, ParallelProgressIterator, ProgressBar, ProgressStyle};
+use indicatif::{HumanDuration, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use log::log;
 use ptree::item::StringItem;
