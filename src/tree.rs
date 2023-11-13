@@ -1,4 +1,8 @@
-use std::{borrow::Cow, io};
+use std::{
+    borrow::Cow,
+    io,
+    sync::{atomic::AtomicU8, Arc},
+};
 
 use async_recursion::async_recursion;
 use indicatif::ProgressBar;
@@ -28,9 +32,8 @@ pub struct TreeTraverser {
     words: Vec<String>,
     threads: usize,
     progress: ProgressBar,
-    pub tree: PathTree,
-    depth: u8,
     init: bool,
+    pub tree: PathTree,
 }
 
 impl TreeTraverser {
@@ -40,7 +43,6 @@ impl TreeTraverser {
         threads: usize,
         progress: ProgressBar,
         tree: PathTree,
-        depth: u8,
     ) -> Self {
         Self {
             host,
@@ -48,14 +50,14 @@ impl TreeTraverser {
             threads,
             progress,
             tree,
-            depth,
             init: false,
         }
     }
 
     #[async_recursion]
-    pub async fn traverse(&mut self) {
-        if self.depth == 0 {
+    pub async fn traverse(&mut self, depth: Arc<AtomicU8>) {
+        let loaded = depth.load(std::sync::atomic::Ordering::Relaxed);
+        if loaded == 0 {
             return;
         }
 
@@ -64,7 +66,7 @@ impl TreeTraverser {
             new_url.set_path(&self.tree.name);
             self.progress.set_position(0);
             self.progress
-                .set_message(format!("🔎 Crawling {}", new_url));
+                .set_message(format!("🔎 Crawling d=init {}", new_url));
             let manager = manager::CrawlerManager::new(
                 new_url,
                 self.words.clone(),
@@ -94,7 +96,7 @@ impl TreeTraverser {
             new_url.set_path(&child.name);
             self.progress.set_position(0);
             self.progress
-                .set_message(format!("🔎 Crawling {}", new_url));
+                .set_message(format!("🔎 Crawling d={} {}", loaded, new_url));
             let manager = manager::CrawlerManager::new(
                 new_url,
                 self.words.clone(),
@@ -122,9 +124,10 @@ impl TreeTraverser {
                 self.threads,
                 self.progress.clone(),
                 child.clone(),
-                self.depth - 1,
             );
-            traverser.traverse().await;
+            let depth_clone = depth.clone();
+            depth_clone.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+            traverser.traverse(depth_clone).await;
         }
     }
 }

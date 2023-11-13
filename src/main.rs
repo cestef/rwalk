@@ -10,6 +10,8 @@ use log::log;
 use ptree::print_tree;
 use reqwest::redirect::Policy;
 use std::io::Write;
+use std::sync::atomic::AtomicU8;
+use std::sync::Arc;
 use std::{fs::File, time::Duration};
 use stopwatch::Stopwatch;
 use url::Url;
@@ -29,14 +31,6 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    ctrlc::set_handler(move || {
-        log(
-            &format!("{} {}", "✖".red().bold(), "Aborted by user".red().bold()),
-            true,
-        );
-        std::process::exit(1);
-    })
-    .expect("Error setting Ctrl-C handler");
     let fixed_host = if ARGS.host.starts_with("http://") || ARGS.host.starts_with("https://") {
         ARGS.host.clone()
     } else {
@@ -137,10 +131,25 @@ async fn main() -> Result<()> {
                 .to_string(),
             children: Vec::new(),
         },
-        ARGS.depth,
     );
+    let current_depth = Arc::new(AtomicU8::new(ARGS.depth));
 
-    traverser.traverse().await;
+    let current_depth_clone = current_depth.clone();
+    ctrlc::set_handler(move || {
+        log(
+            &format!(
+                "✖ Aborted by user at d={}",
+                current_depth_clone.load(std::sync::atomic::Ordering::Relaxed)
+            )
+            .red()
+            .bold(),
+            true,
+        );
+        std::process::exit(1);
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    traverser.traverse(current_depth).await;
 
     progress.finish_and_clear();
 
