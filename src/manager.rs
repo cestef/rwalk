@@ -8,7 +8,7 @@ use url::Url;
 
 use crate::{
     crawler,
-    log::{log_error, log_success, log_verbose},
+    log::{log_success, log_verbose},
     ARGS,
 };
 

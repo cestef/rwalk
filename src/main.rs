@@ -1,29 +1,19 @@
-#![allow(dead_code, unused_imports)]
+#![allow(dead_code)]
 
 use anyhow::{Context, Ok, Result};
-use async_recursion::async_recursion;
 use clap::Parser;
 use cli::Args;
 use colored::*;
-use indicatif::{HumanDuration, ProgressBar, ProgressStyle};
+use indicatif::{HumanDuration, ProgressStyle};
 use lazy_static::lazy_static;
 use log::log;
-use ptree::item::StringItem;
-use ptree::{print_tree, TreeBuilder, TreeItem};
+use ptree::print_tree;
 use reqwest::redirect::Policy;
-use std::borrow::Cow;
-use std::io::{self, Write};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::{
-    fs::File,
-    io::{BufReader, Read},
-    time::Duration,
-};
+use std::io::Write;
+use std::{fs::File, time::Duration};
 use stopwatch::Stopwatch;
 use url::Url;
 
-use crate::log::{log_error, log_success, log_verbose, log_warning};
 use crate::tree::{tree_to_vec, PathTree, TreeTraverser};
 
 mod cli;
@@ -120,7 +110,7 @@ async fn main() -> Result<()> {
     println!(
         "🧵 Using {} threads {}",
         threads.to_string().bold(),
-        format!("({}/CPU)", threads / cpus).dimmed()
+        format!("(~{}/CPU)", threads / cpus).dimmed()
     );
 
     let progress = indicatif::ProgressBar::new(words.len() as u64).with_style(
@@ -177,7 +167,7 @@ async fn main() -> Result<()> {
         if found.len() == 1 { "" } else { "s" },
         HumanDuration(watch.elapsed()).to_string().bold(),
         format!(
-            "(μ~{:.2} paths/s)",
+            "(~{:.2} paths/s)",
             words_len as f64 / watch.elapsed_ms() as f64 * 1000.0
         )
         .dimmed()
