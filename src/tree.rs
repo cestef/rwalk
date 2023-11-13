@@ -30,6 +30,7 @@ pub struct TreeTraverser {
     progress: ProgressBar,
     pub tree: PathTree,
     depth: u8,
+    init: bool,
 }
 
 impl TreeTraverser {
@@ -48,6 +49,7 @@ impl TreeTraverser {
             progress,
             tree,
             depth,
+            init: false,
         }
     }
 
@@ -55,6 +57,36 @@ impl TreeTraverser {
     pub async fn traverse(&mut self) {
         if self.depth == 0 {
             return;
+        }
+
+        if self.tree.children.len() == 0 && !self.init {
+            let mut new_url = self.host.clone();
+            new_url.set_path(&self.tree.name);
+            self.progress.set_position(0);
+            self.progress
+                .set_message(format!("🔎 Crawling {}", new_url));
+            let manager = manager::CrawlerManager::new(
+                new_url,
+                self.words.clone(),
+                self.threads,
+                self.progress.clone(),
+            );
+            self.tree.children = manager
+                .run()
+                .await
+                .unwrap()
+                .iter()
+                .map(|urls| PathTree {
+                    name: Url::parse(&urls[0])
+                        .unwrap()
+                        .path()
+                        .trim_end_matches("/")
+                        .to_string(),
+                    children: Vec::new(),
+                })
+                .collect::<Vec<PathTree>>();
+
+            self.init = true;
         }
 
         for child in &mut self.tree.children {

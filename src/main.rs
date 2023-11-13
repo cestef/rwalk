@@ -107,6 +107,7 @@ async fn main() -> Result<()> {
         0 => cpus * 10,
         _ => ARGS.threads,
     };
+
     println!(
         "🧵 Using {} threads {}",
         threads.to_string().bold(),
@@ -122,12 +123,6 @@ async fn main() -> Result<()> {
 
     progress.set_message("🔎 Crawling");
     let words_len = words.len();
-    let manager = manager::CrawlerManager::new(
-        parsed_host.clone(),
-        words.clone(),
-        threads,
-        progress.clone(),
-    );
 
     let mut traverser = TreeTraverser::new(
         parsed_host.clone(),
@@ -140,15 +135,7 @@ async fn main() -> Result<()> {
                 .to_string()
                 .trim_end_matches("/")
                 .to_string(),
-            children: manager
-                .run()
-                .await?
-                .iter()
-                .map(|urls| PathTree {
-                    name: Url::parse(&urls[0]).unwrap().path().to_string(),
-                    children: Vec::new(),
-                })
-                .collect::<Vec<PathTree>>(),
+            children: Vec::new(),
         },
         ARGS.depth,
     );
