@@ -316,6 +316,8 @@ async fn main() -> Result<()> {
                 std::process::exit(1);
             }
         }
+
+        println!("{} Saved to {}", SUCCESS.to_string().green(), output.bold());
     }
     utils::show_cursor();
     std::process::exit(0);
