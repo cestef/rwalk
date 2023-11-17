@@ -10,7 +10,7 @@ A blazing fast web directory scanner written in Rust. It's like [dirsearch](
 - [x] Multi-threaded
 - [x] Recursive directory scanning
 - [x] Custom wordlists (merge multiple wordlists, filter out words, etc.) 
-- [x] Write results to file
+- [x] Write results to file (JSON, CSV, etc.)
 - [x] Configurable request parameters (headers, cookies, etc.)
 - [x] Save progress to resume later
 - [ ] Proxy support

@@ -289,8 +289,33 @@ async fn main() -> Result<()> {
         std::fs::remove_file(".rwalk")?;
     }
     if OPTS.output.is_some() {
+        let output = OPTS.output.clone().unwrap();
+        let file_type = output.split(".").last().unwrap_or("json");
         let mut file = std::fs::File::create(OPTS.output.clone().unwrap())?;
-        file.write_all(serde_json::to_string(&*root.lock())?.as_bytes())?;
+
+        match file_type {
+            "json" => {
+                file.write_all(serde_json::to_string(&*root.lock())?.as_bytes())?;
+            }
+            "csv" => {
+                let mut writer = csv::Writer::from_writer(file);
+                let mut nodes = Vec::new();
+                for depth in 0..*depth.lock() {
+                    nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
+                }
+                for node in nodes {
+                    writer.serialize(node.lock().data.clone())?;
+                }
+                writer.flush()?;
+            }
+            _ => {
+                println!(
+                    "{} Invalid output file type",
+                    ERROR.to_string().red().bold()
+                );
+                std::process::exit(1);
+            }
+        }
     }
     utils::show_cursor();
     std::process::exit(0);

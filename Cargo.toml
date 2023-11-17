@@ -10,6 +10,7 @@ anyhow = "1.0.75"
 async-recursion = "1.0.5"
 clap = { version = "4.4.8", features = ["derive"] }
 colored = "2.0.4"
+csv = "1.3.0"
 ctrlc = "3.4.1"
 human-duration = "0.1.0"
 indicatif = "0.17.7"
