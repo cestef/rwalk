@@ -1,6 +1,12 @@
 [package]
 name = "rwalk"
 version = "0.2.0"
+authors = ["cstef"]
+description = "A blazing fast web directory scanner"
+license = "MIT"
+repository = "https://github.com/cestef/rwalk"
+readme = "README.md"
+keywords = ["rust", "web", "directory", "scanner", "fuzzing", "bruteforce"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
