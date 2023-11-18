@@ -1,6 +1,8 @@
 use colored::Colorize;
 use std::io::{Read, Write};
 
+use crate::constants::BANNER_STR;
+
 pub fn parse_wordlists(wordlists: &Vec<String>) -> Vec<String> {
     let mut wordlist = Vec::new();
     for wordlist_path in wordlists {
@@ -19,15 +21,6 @@ pub fn parse_wordlists(wordlists: &Vec<String>) -> Vec<String> {
     }
     wordlist
 }
-
-const BANNER_STR: &str = r#"
-                    _ _    
-                   | | |   
- _ ____      ____ _| | | __
-| '__\ \ /\ / / _` | | |/ /
-| |   \ V  V / (_| | |   < 
-|_|    \_/\_/ \__,_|_|_|\_\   
-"#;
 
 pub fn banner() {
     println!("{}", BANNER_STR.to_string().bold().bright_red());

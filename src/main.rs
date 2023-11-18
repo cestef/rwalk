@@ -2,6 +2,7 @@
 
 use crate::{
     cli::OPTS,
+    constants::{ERROR, INFO, SAVE_FILE, SUCCESS, WARNING},
     tree::{Tree, TreeData},
     utils::parse_wordlists,
 };
@@ -15,12 +16,8 @@ use serde::{Deserialize, Serialize};
 use std::{io::Write, sync::Arc, time::Duration};
 use url::Url;
 
-const SUCCESS: char = '✓';
-const ERROR: char = '✖';
-const WARNING: char = '⚠';
-const INFO: char = 'ℹ';
-
 mod cli;
+mod constants;
 mod tree;
 mod utils;
 
@@ -37,7 +34,7 @@ async fn main() -> Result<()> {
         utils::banner();
     }
     let depth = Arc::new(Mutex::new(0));
-    let saved = std::fs::read_to_string(".rwalk");
+    let saved = std::fs::read_to_string(SAVE_FILE);
     let saved = match saved {
         Ok(saved) => {
             let saved: Save = serde_json::from_str(&saved)?;
@@ -129,7 +126,7 @@ async fn main() -> Result<()> {
         });
         match content {
             Ok(content) => {
-                let mut file = std::fs::File::create(".rwalk").unwrap();
+                let mut file = std::fs::File::create(SAVE_FILE).unwrap();
                 file.write_all(content.as_bytes()).unwrap();
             }
             Err(_) => {}
