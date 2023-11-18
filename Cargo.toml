@@ -6,7 +6,7 @@ description = "A blazing fast web directory scanner"
 license = "MIT"
 repository = "https://github.com/cestef/rwalk"
 readme = "README.md"
-keywords = ["rust", "web", "directory", "scanner", "fuzzing", "bruteforce"]
+keywords = ["web", "directory", "scanner", "fuzzing", "bruteforce"]
 edition = "2021"
 exclude = ["assets/*"]
 
