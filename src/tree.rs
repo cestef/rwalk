@@ -92,7 +92,7 @@ impl TreeItem for TreeNode<String> {
             f,
             "/{}",
             style.paint(
-                &url::Url::parse(&self.data)
+                &url::Url::parse(&self.data.trim_start_matches("/"))
                     .unwrap()
                     .path_segments()
                     .unwrap()
@@ -119,7 +119,11 @@ impl TreeItem for TreeNode<TreeData> {
         f: &mut W,
         style: &ptree::Style,
     ) -> std::io::Result<()> {
-        write!(f, "/{}", style.paint(&self.data.path))?;
+        write!(
+            f,
+            "/{}",
+            style.paint(&self.data.path.trim_start_matches("/"))
+        )?;
         Ok(())
     }
 }

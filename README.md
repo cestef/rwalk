@@ -2,8 +2,7 @@
     <img src="assets/header.png" alt="rwalk" />
 </p>
 
-A blazing fast web directory scanner written in Rust. It's like [dirsearch](
-    https://github.com/maurosoria/dirsearch) but faster and with less features.
+A blazing fast web directory scanner written in Rust. It's like [dirsearch](https://github.com/maurosoria/dirsearch) but faster and with less features.
 
 ## Features
 
@@ -14,17 +13,31 @@ A blazing fast web directory scanner written in Rust. It's like [dirsearch](
 - [x] Configurable request parameters (headers, cookies, etc.)
 - [x] Save progress to resume later
 - [ ] Proxy support
+- [ ] Request throttling
 
-## Installation
+## From [crates.io](https://crates.io/crates/rwalk)
 
-### From source
+### Installation
+
+```bash
+cargo install rwalk
+```
+
+### Running
+
+```bash
+rwalk https://example.com path/to/wordlist.txt
+```
+## From source
+
+### Installation
 
 ```bash
 git clone https://github.com/cestef/rwalk.git
 cd rwalk
 ```
 
-## Running
+### Running
 
 **With [just](https://github.com/casey/just)**
 
@@ -32,12 +45,13 @@ cd rwalk
 just run https://example.com path/to/wordlist.txt
 ```
 
-**With [cargo](
-    https://doc.rust-lang.org/cargo/getting-started/installation.html)**
+**With [cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)**
 
 ```bash
 cargo run --release -- https://example.com path/to/wordlist.txt
 ```
+
+
 
 ## Usage
 
@@ -64,6 +78,20 @@ Options:
   -h, --help                                 Print help
   -V, --version                              Print version
 ```
+
+## Benchmarks
+
+The following benchmarks were run on a 2023 MacBook Pro with an M3 Pro chip on a 10 Gbps connection via WiFi. The target was [http://ffuf.me/cd/basic](http://ffuf.me/cd/basic) and the wordlist was [common.txt](https://github.com/danielmiessler/SecLists/blob/master/Discovery/Web-Content/common.txt). The threads used were the default from each tool.
+
+Each tool was run `10` times with `100` threads. The results are below:
+
+| Command                                                            |       Mean [s] | Min [s] | Max [s] |    Relative |
+| :----------------------------------------------------------------- | -------------: | ------: | ------: | ----------: |
+| `rwalk https://google.com ~/Downloads/common.txt -t 100`           |  6.068 ± 0.146 |   5.869 |   6.318 | 1.15 ± 0.03 |
+| `dirsearch -u https://google.com -w ~/Downloads/common.txt -t 100` | 14.263 ± 0.250 |  13.861 |  14.719 | 2.70 ± 0.07 |
+| `ffuf -w ~/Downloads/common.txt -u https://google.com/FUZZ -t 100` |  5.285 ± 0.090 |   5.154 |   5.358 |        1.00 |
+
+[ffuf](https://github.com/ffuf/ffuf) is the fastest tool... but not by much. rwalk is only `1.15x` slower than ffuf and `2.7x` faster than dirsearch. Not bad for a first release!
 
 ## License
 

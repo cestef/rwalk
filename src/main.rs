@@ -8,7 +8,7 @@ use crate::{
 };
 use anyhow::Result;
 use colored::Colorize;
-use indicatif::HumanDuration;
+use indicatif::{HumanDuration, MultiProgress};
 use parking_lot::Mutex;
 use ptree::print_tree;
 use reqwest::{header::HeaderMap, redirect::Policy};
@@ -29,7 +29,6 @@ struct Save {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    utils::hide_cursor();
     if !OPTS.quiet {
         utils::banner();
     }
@@ -52,6 +51,7 @@ async fn main() -> Result<()> {
                         .with_default(true)
                         .prompt()?;
                     if !res {
+                        std::fs::remove_file(SAVE_FILE)?;
                         None
                     } else {
                         *depth.lock() = *saved.depth.lock();
@@ -118,7 +118,8 @@ async fn main() -> Result<()> {
     let watch = stopwatch::Stopwatch::start_new();
     let ctrlc_tree = tree.clone();
     let ctrlc_depth = depth.clone();
-
+    let current_root: Arc<Mutex<Option<MultiProgress>>> = Arc::new(Mutex::new(None));
+    let ctrlc_root = current_root.clone();
     ctrlc::set_handler(move || {
         let content = serde_json::to_string(&Save {
             tree: ctrlc_tree.clone(),
@@ -128,16 +129,24 @@ async fn main() -> Result<()> {
             Ok(content) => {
                 let mut file = std::fs::File::create(SAVE_FILE).unwrap();
                 file.write_all(content.as_bytes()).unwrap();
+                if let Some(root) = &*ctrlc_root.lock() {
+                    root.println(format!(
+                        "{} Saved state to {}",
+                        INFO.to_string().blue(),
+                        SAVE_FILE.bold()
+                    ))
+                    .unwrap();
+                }
             }
             Err(_) => {}
         }
 
-        utils::show_cursor();
         std::process::exit(0);
     })?;
     while *depth.lock() < OPTS.depth {
         let previous_nodes = tree.lock().get_nodes_at_depth(depth.lock().clone());
         let root_progress = indicatif::MultiProgress::new();
+        *current_root.lock() = Some(root_progress.clone());
         let mut progresses = Vec::new();
         for node in &previous_nodes {
             let pb = root_progress.add(indicatif::ProgressBar::new(words.len() as u64))
@@ -146,7 +155,7 @@ async fn main() -> Result<()> {
                     .template("{spinner:.blue} (ETA. {eta}) [{wide_bar}] {pos}/{len} ({per_sec:>11}) | {prefix:>3} {msg:>14.bold}")?
                     .progress_chars("█▉▊▋▌▍▎▏ "),
             )
-                .with_message(format!("/{}",node.lock().data.path))
+                .with_message(format!("/{}",node.lock().data.path.trim_start_matches("/")))
                 .with_prefix(format!("d={}", depth.lock()));
             pb.enable_steady_tick(Duration::from_millis(100));
             progresses.push(pb);
@@ -171,22 +180,23 @@ async fn main() -> Result<()> {
                 let value = header.next().unwrap().trim();
                 headers.insert(key, value.parse().unwrap());
             }
-            let client = reqwest::Client::builder()
-                .user_agent(
-                    OPTS.user_agent
-                        .clone()
-                        .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
-                )
-                .default_headers(headers)
-                .redirect(if OPTS.follow_redirects > 0 {
-                    Policy::limited(OPTS.follow_redirects)
-                } else {
-                    Policy::none()
-                })
-                .timeout(std::time::Duration::from_secs(OPTS.timeout))
-                .build()
-                .unwrap();
             for chunk in &*chunks {
+                let headers = headers.clone();
+                let client = reqwest::Client::builder()
+                    .user_agent(
+                        OPTS.user_agent
+                            .clone()
+                            .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
+                    )
+                    .default_headers(headers)
+                    .redirect(if OPTS.follow_redirects > 0 {
+                        Policy::limited(OPTS.follow_redirects)
+                    } else {
+                        Policy::none()
+                    })
+                    .timeout(std::time::Duration::from_secs(OPTS.timeout))
+                    .build()
+                    .unwrap();
                 let mut tree = tree.lock().clone();
                 let previous_node = previous_node.clone();
                 let chunk = chunk.clone();
@@ -239,6 +249,7 @@ async fn main() -> Result<()> {
                                             break;
                                         }
                                     }
+
                                     if !found {
                                         tree.insert(
                                             TreeData {
@@ -283,7 +294,7 @@ async fn main() -> Result<()> {
 
     print_tree(&*root.lock())?;
     if has_saved {
-        std::fs::remove_file(".rwalk")?;
+        std::fs::remove_file(SAVE_FILE)?;
     }
     if OPTS.output.is_some() {
         let output = OPTS.output.clone().unwrap();
@@ -316,6 +327,6 @@ async fn main() -> Result<()> {
 
         println!("{} Saved to {}", SUCCESS.to_string().green(), output.bold());
     }
-    utils::show_cursor();
+    // utils::show_cursor();
     std::process::exit(0);
 }

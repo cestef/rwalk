@@ -24,7 +24,7 @@ pub struct Opts {
     #[clap(short, long)]
     pub output: Option<String>,
     /// Request timeout in seconds
-    #[clap(short = 'T', long, default_value = "5")]
+    #[clap(short = 'T', long, default_value = "10")]
     pub timeout: u64,
     /// User agent
     #[clap(short, long)]
