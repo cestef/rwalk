@@ -226,7 +226,23 @@ async fn main() -> Result<()> {
                             "CONNECT" => client.request(reqwest::Method::CONNECT, &url),
                             _ => panic!("Invalid HTTP method"),
                         };
+                        let t1 = std::time::Instant::now();
                         let response = sender.send().await;
+                        let sleep = if OPTS.throttle > 0 {
+                            let t2 = std::time::Instant::now();
+                            let elapsed = t2 - t1;
+                            let sleep = Duration::from_secs_f64(1.0 / OPTS.throttle as f64);
+                            if elapsed < sleep {
+                                sleep - elapsed
+                            } else {
+                                Duration::from_secs_f64(0.0)
+                            }
+                        } else {
+                            Duration::from_secs_f64(0.0)
+                        };
+                        if sleep.as_secs_f64() > 0.0 {
+                            tokio::time::sleep(sleep).await;
+                        }
                         match response {
                             Ok(response) => {
                                 if STATUS_CODES
@@ -333,6 +349,7 @@ async fn main() -> Result<()> {
         match file_type {
             "json" => {
                 file.write_all(serde_json::to_string(&*root.lock())?.as_bytes())?;
+                file.flush()?;
             }
             "csv" => {
                 let mut writer = csv::Writer::from_writer(file);
@@ -344,6 +361,47 @@ async fn main() -> Result<()> {
                     writer.serialize(node.lock().data.clone())?;
                 }
                 writer.flush()?;
+            }
+            "md" => {
+                let mut nodes = Vec::new();
+                for depth in 0..*depth.lock() {
+                    nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
+                }
+                for node in nodes {
+                    let data = node.lock().data.clone();
+                    let emoji = utils::get_emoji_for_status_code(data.status_code);
+                    let url = data.url;
+                    let path = data.path;
+                    let depth = data.depth;
+                    let status_code = data.status_code;
+                    let line = format!(
+                        "{}- [{} /{} {}]({})",
+                        "  ".repeat(depth),
+                        emoji,
+                        path.trim_start_matches("/"),
+                        if status_code == 0 {
+                            "".to_string()
+                        } else {
+                            format!("({})", status_code)
+                        },
+                        url,
+                    );
+                    file.write_all(line.as_bytes())?;
+                    file.write_all(b"\n")?;
+                }
+                file.flush()?;
+            }
+            "txt" => {
+                let mut nodes = Vec::new();
+                for depth in 0..*depth.lock() {
+                    nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
+                }
+                for node in nodes {
+                    let data = node.lock().data.clone();
+                    file.write_all(data.url.as_bytes())?;
+                    file.write_all(b"\n")?;
+                }
+                file.flush()?;
             }
             _ => {
                 println!(

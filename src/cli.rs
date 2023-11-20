@@ -35,7 +35,7 @@ pub struct Opts {
     /// HTTP method
     #[clap(short, long, default_value = "GET", value_parser = method_exists)]
     pub method: String,
-    /// Data to send
+    /// Data to send with the request
     #[clap(short, long)]
     pub data: Option<String>,
     /// Headers to send
@@ -50,6 +50,9 @@ pub struct Opts {
     /// Follow redirects
     #[clap(short = 'F', long, default_value = "0")]
     pub follow_redirects: usize,
+    /// Request throttling (requests per second) per thread
+    #[clap(short = 'R', long, default_value = "0")]
+    pub throttle: usize,
 }
 
 fn parse_url(s: &str) -> Result<String, String> {

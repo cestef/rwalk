@@ -42,3 +42,22 @@ pub fn show_cursor() {
     print!("\x1B[?25h");
     std::io::stdout().flush().unwrap();
 }
+pub fn get_emoji_for_status_code_colored(status_code: u16) -> String {
+    match status_code {
+        200..=299 => "✓".green().to_string(),
+        300..=399 => "⇝".blue().to_string(),
+        400..=403 => "✖".red().to_string(),
+        500..=599 => "⚠".yellow().to_string(),
+        _ => "⚠".yellow().to_string(),
+    }
+}
+
+pub fn get_emoji_for_status_code(status_code: u16) -> String {
+    match status_code {
+        200..=299 => "✓".to_string(),
+        300..=399 => "⇝".to_string(),
+        400..=403 => "✖".to_string(),
+        500..=599 => "⚠".to_string(),
+        _ => "⚠".to_string(),
+    }
+}
