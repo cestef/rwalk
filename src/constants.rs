@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 pub const SUCCESS: char = '✓';
 pub const ERROR: char = '✖';
 pub const WARNING: char = '⚠';
@@ -11,3 +13,4 @@ pub const BANNER_STR: &str = r#"
 |_|    \_/\_/ \__,_|_|_|\_\   
 "#;
 pub const SAVE_FILE: &str = ".rwalk.bak";
+pub const STATUS_CODES: [RangeInclusive<u16>; 4] = [200..=299, 300..=399, 400..=403, 500..=599];

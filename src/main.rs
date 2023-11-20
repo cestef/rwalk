@@ -2,7 +2,7 @@
 
 use crate::{
     cli::OPTS,
-    constants::{ERROR, INFO, SAVE_FILE, SUCCESS, WARNING},
+    constants::{ERROR, INFO, SAVE_FILE, STATUS_CODES, SUCCESS, WARNING},
     tree::{Tree, TreeData},
     utils::parse_wordlists,
 };
@@ -78,6 +78,7 @@ async fn main() -> Result<()> {
                     .to_string()
                     .trim_end_matches('/')
                     .to_string(),
+                status_code: 0,
             },
             None,
         );
@@ -228,15 +229,18 @@ async fn main() -> Result<()> {
                         let response = sender.send().await;
                         match response {
                             Ok(response) => {
-                                if response.status().is_success()
-                                    || response.status().is_redirection()
+                                if STATUS_CODES
+                                    .iter()
+                                    .any(|x| x.contains(&response.status().as_u16()))
                                 {
                                     progress.println(format!(
                                         "{} {} {}",
                                         if response.status().is_success() {
                                             SUCCESS.to_string().green()
-                                        } else {
+                                        } else if response.status().is_redirection() {
                                             WARNING.to_string().yellow()
+                                        } else {
+                                            ERROR.to_string().red()
                                         },
                                         response.status().as_str().bold(),
                                         url
@@ -256,6 +260,7 @@ async fn main() -> Result<()> {
                                                 url: url.clone(),
                                                 depth: data.depth + 1,
                                                 path: word.clone(),
+                                                status_code: response.status().as_u16(),
                                             },
                                             Some(previous_node.clone()),
                                         );
@@ -269,7 +274,31 @@ async fn main() -> Result<()> {
                                     }
                                 }
                             }
-                            Err(_) => {}
+                            Err(err) => {
+                                if err.is_timeout() {
+                                    progress.println(format!(
+                                        "{} {} {}",
+                                        ERROR.to_string().red(),
+                                        "Timeout reached".bold(),
+                                        url
+                                    ));
+                                } else if err.is_redirect() {
+                                    progress.println(format!(
+                                        "{} {} {} {}",
+                                        WARNING.to_string().yellow(),
+                                        "Redirect limit reached".bold(),
+                                        url,
+                                        "Check --follow-redirects".dimmed()
+                                    ));
+                                } else {
+                                    progress.println(format!(
+                                        "{} {} {}",
+                                        ERROR.to_string().red(),
+                                        "Error".bold(),
+                                        url
+                                    ));
+                                }
+                            }
                         }
                         progress.inc(1);
                     }

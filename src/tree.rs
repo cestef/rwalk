@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use colored::Colorize;
 use parking_lot::Mutex;
 use ptree::TreeItem;
 use serde::{Deserialize, Serialize};
@@ -14,6 +15,7 @@ pub struct TreeData {
     pub url: String,
     pub depth: usize,
     pub path: String,
+    pub status_code: u16,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -119,11 +121,32 @@ impl TreeItem for TreeNode<TreeData> {
         f: &mut W,
         style: &ptree::Style,
     ) -> std::io::Result<()> {
+        let emoji = get_emoji_for_status_code(self.data.status_code);
         write!(
             f,
-            "/{}",
+            "{}{} /{}",
+            if self.data.status_code == 0 {
+                style.paint("🔍".to_string())
+            } else {
+                style.paint(emoji)
+            },
+            if self.data.status_code == 0 {
+                style.paint("".to_string())
+            } else {
+                style.paint(format!(" {}", self.data.status_code.to_string().dimmed()))
+            },
             style.paint(&self.data.path.trim_start_matches("/"))
         )?;
         Ok(())
+    }
+}
+
+fn get_emoji_for_status_code(status_code: u16) -> String {
+    match status_code {
+        200..=299 => "✓".green().to_string(),
+        300..=399 => "⇝".blue().to_string(),
+        400..=403 => "✖".red().to_string(),
+        500..=599 => "⚠".yellow().to_string(),
+        _ => "⚠".yellow().to_string(),
     }
 }
