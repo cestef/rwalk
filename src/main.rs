@@ -181,23 +181,22 @@ async fn main() -> Result<()> {
                 let value = header.next().unwrap().trim();
                 headers.insert(key, value.parse().unwrap());
             }
+            let client = reqwest::Client::builder()
+                .user_agent(
+                    OPTS.user_agent
+                        .clone()
+                        .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
+                )
+                .default_headers(headers)
+                .redirect(if OPTS.follow_redirects > 0 {
+                    Policy::limited(OPTS.follow_redirects)
+                } else {
+                    Policy::none()
+                })
+                .timeout(std::time::Duration::from_secs(OPTS.timeout))
+                .build()
+                .unwrap();
             for chunk in &*chunks {
-                let headers = headers.clone();
-                let client = reqwest::Client::builder()
-                    .user_agent(
-                        OPTS.user_agent
-                            .clone()
-                            .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
-                    )
-                    .default_headers(headers)
-                    .redirect(if OPTS.follow_redirects > 0 {
-                        Policy::limited(OPTS.follow_redirects)
-                    } else {
-                        Policy::none()
-                    })
-                    .timeout(std::time::Duration::from_secs(OPTS.timeout))
-                    .build()
-                    .unwrap();
                 let mut tree = tree.lock().clone();
                 let previous_node = previous_node.clone();
                 let chunk = chunk.clone();
