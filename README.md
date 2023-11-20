@@ -91,7 +91,7 @@ Each tool was run `10` times with `100` threads. The results are below:
 | `dirsearch -u https://google.com -w ~/Downloads/common.txt -t 100` | 14.263 ± 0.250 |  13.861 |  14.719 | 2.70 ± 0.07 |
 | `ffuf -w ~/Downloads/common.txt -u https://google.com/FUZZ -t 100` |  5.285 ± 0.090 |   5.154 |   5.358 |        1.00 |
 
-[ffuf](https://github.com/ffuf/ffuf) is the fastest tool... but not by much. rwalk is only `1.15x` slower than ffuf and `2.7x` faster than dirsearch. Not bad for a first release!
+[ffuf](https://github.com/ffuf/ffuf) is the fastest tool... but not by much. rwalk is only `1.15x` slower than ffuf and ~`2.5x` faster than dirsearch. Not bad for a first release!
 
 ## License
 
