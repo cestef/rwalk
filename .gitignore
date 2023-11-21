@@ -1,4 +1,4 @@
 /target
 Cargo.lock
 .DS_Store
-.rwalk.bak
+.rwalk.json

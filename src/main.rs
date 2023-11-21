@@ -43,6 +43,29 @@ async fn main() -> Result<()> {
     if !OPTS.quiet {
         utils::banner();
     }
+    let mut words = parse_wordlists(&OPTS.wordlists);
+    let before = words.len();
+    apply_filters(&mut words)?;
+    apply_transformations(&mut words);
+    words.sort_unstable();
+    words.dedup();
+    let after = words.len();
+    if before != after {
+        println!(
+            "{} {} words loaded, {} after deduplication and filters (-{}%)",
+            INFO.to_string().blue(),
+            before.to_string().bold(),
+            after.to_string().bold(),
+            ((before - after) as f64 / before as f64 * 100.0)
+                .round()
+                .to_string()
+                .bold()
+        );
+    }
+    if words.len() == 0 {
+        println!("{} No words found in wordlists", ERROR.to_string().red());
+        std::process::exit(1);
+    }
     let depth = Arc::new(Mutex::new(0));
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =
         Arc::new(Mutex::new(HashMap::new()));
@@ -65,7 +88,7 @@ async fn main() -> Result<()> {
                         *depth.lock() = *saved.depth.lock();
                         if saved.wordlist_checksum == {
                             let mut hasher = Sha256::new();
-                            hasher.update(parse_wordlists(&OPTS.wordlists).join("\n"));
+                            hasher.update(words.join("\n"));
                             format!("{:x}", hasher.finalize())
                         } {
                             *current_indexes.lock() = saved.indexes;
@@ -108,25 +131,15 @@ async fn main() -> Result<()> {
         t
     };
 
-    let mut words = parse_wordlists(&OPTS.wordlists);
-    apply_filters(&mut words)?;
-    apply_transformations(&mut words);
-    words.sort_unstable();
-    words.dedup();
-    if words.len() == 0 {
-        println!("{} No words found in wordlists", ERROR.to_string().red());
-        std::process::exit(1);
-    }
     let threads = OPTS
         .threads
         .unwrap_or(num_cpus::get() * 10)
         .max(1)
         .min(words.len());
     println!(
-        "{} Starting crawler with {} threads and {} words",
+        "{} Starting crawler with {} threads",
         INFO.to_string().blue(),
         threads.to_string().bold(),
-        words.len().to_string().bold()
     );
 
     let watch = stopwatch::Stopwatch::start_new();
@@ -182,7 +195,7 @@ async fn main() -> Result<()> {
                     print!("\x1B[2K\r");
                     println!(
                         "{} Saved state to {}",
-                        INFO.to_string().blue(),
+                        SUCCESS.to_string().green(),
                         OPTS.save_file.bold()
                     );
                 }
@@ -195,7 +208,7 @@ async fn main() -> Result<()> {
     if let Ok(_) = res {
         println!(
             "{} Done in {} with an average of {} req/s",
-            INFO.to_string().blue(),
+            SUCCESS.to_string().green(),
             HumanDuration(watch.elapsed()).to_string().bold(),
             ((words.len() * *depth.lock()) as f64 / watch.elapsed().as_secs_f64())
                 .round()
