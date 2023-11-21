@@ -58,7 +58,6 @@ cargo run --release -- https://example.com path/to/wordlist.txt
 You can run `rwalk --help` to see the usage information:
 
 ```text
-
 Usage: rwalk [OPTIONS] <URL> <WORDLISTS>...
 
 Arguments:
