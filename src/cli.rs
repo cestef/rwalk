@@ -53,6 +53,12 @@ pub struct Opts {
     /// Request throttling (requests per second) per thread
     #[clap(short = 'R', long, default_value = "0")]
     pub throttle: usize,
+    /// Resume from a saved file
+    #[clap(long)]
+    pub resume: bool,
+    /// Save file path
+    #[clap(short = 'f', long, default_value = ".rwalk.json")]
+    pub save_file: String,
 }
 
 fn parse_url(s: &str) -> Result<String, String> {
