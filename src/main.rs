@@ -4,7 +4,7 @@ use crate::{
     cli::OPTS,
     constants::{ERROR, INFO, SAVE_FILE, SUCCESS, WARNING},
     tree::{Tree, TreeData},
-    utils::parse_wordlists,
+    utils::{apply_filters, apply_transformations, parse_wordlists},
 };
 use anyhow::Result;
 use colored::Colorize;
@@ -108,16 +108,11 @@ async fn main() -> Result<()> {
         t
     };
 
-    let words = parse_wordlists(&OPTS.wordlists);
-    let words = if OPTS.case_insensitive {
-        // Delete duplicates and lowercase
-        let mut words = words.iter().map(|x| x.to_lowercase()).collect::<Vec<_>>();
-        words.sort_unstable();
-        words.dedup();
-        words
-    } else {
-        words
-    };
+    let mut words = parse_wordlists(&OPTS.wordlists);
+    apply_filters(&mut words)?;
+    apply_transformations(&mut words);
+    words.sort_unstable();
+    words.dedup();
     if words.len() == 0 {
         println!("{} No words found in wordlists", ERROR.to_string().red());
         std::process::exit(1);
@@ -166,31 +161,33 @@ async fn main() -> Result<()> {
         println!("{} Aborting...", INFO.to_string().blue().bold());
         ctrlc_aborted.store(true, Ordering::Relaxed);
         handle.abort();
-        let checksum = {
-            let mut hasher = Sha256::new();
-            hasher.update(ctrlc_words.join("\n"));
-            hasher.finalize()
-        };
-        let checksum = format!("{:x}", checksum);
-        let content = serde_json::to_string(&Save {
-            tree: ctrlc_tree.clone(),
-            depth: ctrlc_depth.clone(),
-            wordlist_checksum: checksum,
-            indexes: current_indexes.lock().clone(),
-        });
-        match content {
-            Ok(content) => {
-                let mut file = std::fs::File::create(SAVE_FILE).unwrap();
-                file.write_all(content.as_bytes()).unwrap();
-                file.flush().unwrap();
-                print!("\x1B[2K\r");
-                println!(
-                    "{} Saved state to {}",
-                    INFO.to_string().blue(),
-                    SAVE_FILE.bold()
-                );
+        if !OPTS.no_save {
+            let checksum = {
+                let mut hasher = Sha256::new();
+                hasher.update(ctrlc_words.join("\n"));
+                hasher.finalize()
+            };
+            let checksum = format!("{:x}", checksum);
+            let content = serde_json::to_string(&Save {
+                tree: ctrlc_tree.clone(),
+                depth: ctrlc_depth.clone(),
+                wordlist_checksum: checksum,
+                indexes: current_indexes.lock().clone(),
+            });
+            match content {
+                Ok(content) => {
+                    let mut file = std::fs::File::create(OPTS.save_file.clone()).unwrap();
+                    file.write_all(content.as_bytes()).unwrap();
+                    file.flush().unwrap();
+                    print!("\x1B[2K\r");
+                    println!(
+                        "{} Saved state to {}",
+                        INFO.to_string().blue(),
+                        OPTS.save_file.bold()
+                    );
+                }
+                Err(_) => {}
             }
-            Err(_) => {}
         }
         tx.blocking_send(()).unwrap();
     })?;
@@ -209,8 +206,10 @@ async fn main() -> Result<()> {
         let root = tree.lock().root.clone().unwrap().clone();
 
         print_tree(&*root.lock())?;
-        if has_saved {
-            std::fs::remove_file(SAVE_FILE)?;
+
+        // Remove save file if it's the default one
+        if has_saved && OPTS.save_file == SAVE_FILE {
+            std::fs::remove_file(OPTS.save_file.clone())?;
         }
         if OPTS.output.is_some() {
             let output = OPTS.output.clone().unwrap();
