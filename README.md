@@ -222,7 +222,7 @@ If you want to save the progress to a different file, you can use the `--save-fi
 ```bash
 rwalk https://example.com path/to/wordlist.txt --save-file myscan.json 
 # or
-rwalk https://example.com path/to/wordlist.txt -F myscan.json
+rwalk https://example.com path/to/wordlist.txt -f myscan.json
 ```
 
 The auto-saving behavior can be disabled with `--no-save`.
