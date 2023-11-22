@@ -51,8 +51,6 @@ just run https://example.com path/to/wordlist.txt
 cargo run --release -- https://example.com path/to/wordlist.txt
 ```
 
-
-
 ## Usage
 
 You can run `rwalk --help` to see the usage information:
@@ -194,7 +192,6 @@ rwalk https://example.com path/to/wordlist.txt -H "X-Forwarded-For: 203.0.113.19
 
 ### Follow redirects
 
-
 ```bash
 rwalk https://example.com path/to/wordlist.txt -F 2
 ```
@@ -206,6 +203,17 @@ rwalk https://example.com path/to/wordlist.txt -R 5 -t 10
 ```
 
 This will send `50` (`5`×`10` threads) requests per second. See [Throttling](#throttling) for more information.
+
+
+## FAQ
+
+### Where can I find wordlists?
+
+- [SecLists](https://github.com/danielmiessler/SecLists)
+- [DirBuster](https://gitlab.com/kalilinux/packages/dirbuster)
+- [OneListForAll](https://github.com/six2dez/OneListForAll)
+
+###
 
 ## Benchmarks
 
