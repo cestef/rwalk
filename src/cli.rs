@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::Parser;
 use lazy_static::lazy_static;
 use url::Url;
@@ -15,7 +17,7 @@ pub struct Opts {
     pub url: String,
     /// Wordlist(s)
     #[clap(required = true)]
-    pub wordlists: Vec<String>,
+    pub wordlists: Vec<PathBuf>,
     /// Number of threads to use
     #[clap(short, long)]
     pub threads: Option<usize>,
