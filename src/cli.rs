@@ -2,7 +2,7 @@ use clap::Parser;
 use lazy_static::lazy_static;
 use url::Url;
 
-use crate::constants::SAVE_FILE;
+use crate::{constants::SAVE_FILE, utils::parse_range_input};
 #[derive(Parser, Clone, Debug)]
 #[clap(
     version,
@@ -80,26 +80,51 @@ pub struct Opts {
     pub transform_capitalize: bool,
 
     /// Contains the specified string
-    #[clap(short='F', long, help_heading = Some("Filtering"), value_name = "STRING")]
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfc")]
+    pub wordlist_filter_contains: Option<String>,
+    /// Start with the specified string
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfs")]
+    pub wordlist_filter_starts_with: Option<String>,
+    /// End with the specified string
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfe")]
+    pub wordlist_filter_ends_with: Option<String>,
+    /// Match the specified regex
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "REGEX", visible_alias = "wfr")]
+    pub wordlist_filter_regex: Option<String>,
+    /// Length range
+    /// e.g.: 5, 5-10, 5,10,15, >5, <5
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "RANGE", visible_alias = "wfl", value_parser(parse_cli_range_input))]
+    pub wordlist_filter_length: Option<String>,
+
+    /// Reponse status code,
+    /// e.g.: 200, 200-300, 200,300,400, >200, <200
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fsc", value_parser(parse_cli_range_input))]
+    pub filter_status_code: Option<String>,
+    /// Contains the specified string
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fc")]
     pub filter_contains: Option<String>,
     /// Start with the specified string
-    #[clap(long, help_heading = Some("Filtering"), value_name = "STRING")]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fs")]
     pub filter_starts_with: Option<String>,
     /// End with the specified string
-    #[clap(long, help_heading = Some("Filtering"), value_name = "STRING")]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fe")]
     pub filter_ends_with: Option<String>,
-    /// Filter out words that match the specified regex
-    #[clap(long, help_heading = Some("Filtering"), value_name = "REGEX")]
+    /// Match the specified regex
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "REGEX", visible_alias = "fr")]
     pub filter_regex: Option<String>,
-    /// Maximum length
-    #[clap(long, help_heading = Some("Filtering"), value_name = "LENGTH")]
-    pub filter_max_length: Option<usize>,
-    /// Minimum length
-    #[clap(long, help_heading = Some("Filtering"), value_name = "LENGTH")]
-    pub filter_min_length: Option<usize>,
-    /// Exact length
-    #[clap(long, help_heading = Some("Filtering"), value_name = "LENGTH")]
-    pub filter_length: Option<usize>,
+    /// Response length
+    /// e.g.: 100, >100, <100, 100-200, 100,200,300
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fl", value_parser(parse_cli_range_input))]
+    pub filter_length: Option<String>,
+    /// Response time range in milliseconds
+    /// e.g.: >1000, <1000, 1000-2000
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "ft", value_parser(parse_cli_range_input))]
+    pub filter_time: Option<String>,
+}
+
+fn parse_cli_range_input(s: &str) -> Result<String, String> {
+    parse_range_input(s)?;
+    Ok(s.to_string())
 }
 
 fn parse_url(s: &str) -> Result<String, String> {

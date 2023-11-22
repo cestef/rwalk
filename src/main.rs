@@ -61,6 +61,12 @@ async fn main() -> Result<()> {
                 .to_string()
                 .bold()
         );
+    } else {
+        println!(
+            "{} {} words loaded",
+            INFO.to_string().blue(),
+            before.to_string().bold()
+        );
     }
     if words.len() == 0 {
         println!("{} No words found in wordlists", ERROR.to_string().red());

@@ -90,15 +90,67 @@ Transformations:
   -S, --transform-suffix <SUFFIX>  Append a suffix to each word
   -C, --transform-capitalize       Capitalize each word
 
-Filtering:
-  -F, --filter-contains <STRING>     Contains the specified string
-      --filter-starts-with <STRING>  Start with the specified string
-      --filter-ends-with <STRING>    End with the specified string
-      --filter-regex <REGEX>         Filter out words that match the specified regex
-      --filter-max-length <LENGTH>   Maximum length
-      --filter-min-length <LENGTH>   Minimum length
-      --filter-length <LENGTH>       Exact length
+Wordlist Filtering:
+      --wordlist-filter-contains <STRING>
+          Contains the specified string [aliases: wfc]
+      --wordlist-filter-starts-with <STRING>
+          Start with the specified string [aliases: wfs]
+      --wordlist-filter-ends-with <STRING>
+          End with the specified string [aliases: wfe]
+      --wordlist-filter-regex <REGEX>
+          Match the specified regex [aliases: wfr]
+      --wordlist-filter-length <LENGTH>
+          Length range e.g.: 5, 5-10, 5,10,15, >5, <5 [aliases: wfl]
+
+Response Filtering:
+      --filter-status-code <CODE>    Reponse status code, e.g.: 200, 200-300, 200,300,400, >200, <200 [aliases: fsc]
+      --filter-contains <STRING>     Contains the specified string [aliases: fc]
+      --filter-starts-with <STRING>  Start with the specified string [aliases: fs]
+      --filter-ends-with <STRING>    End with the specified string [aliases: fe]
+      --filter-regex <REGEX>         Match the specified regex [aliases: fr]
+      --filter-length <LENGTH>       Response length e.g.: 100, >100, <100, 100-200, 100,200,300 [aliases: fl]
+      --filter-time <TIME>           Response time range in milliseconds e.g.: >1000, <1000, 1000-2000 [aliases: ft]
 ```
+
+### Inputting ranges
+
+In some cases (`<RANGE>`), you may want to input a range of values. 
+You can use the following formats:
+
+| Format     | Description                               |
+| :--------- | :---------------------------------------- |
+| `5`        | Exactly `5`                               |
+| `5-10`     | Between `5` and `10` (inclusive)          |
+| `5,10`     | Exactly `5` or `10`                       |
+| `>5`       | Greater than `5`                          |
+| `<5`       | Less than `5`                             |
+| `5,10,15`  | Exactly `5`, `10`, or `15`                |
+| `>5,10,15` | Greater than `5`, or exactly `10` or `15` |
+
+I will let you figure out the rest of the combinations.
+
+### Response Filtering
+
+To cherry-pick the responses, you can use the `--filter-*` flags to filter specific responses. For example, to only show responses that contain `admin`:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt --filter-contains admin
+```
+
+or only requests that took more than `1` second:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt --filter-time ">1000"
+```
+
+Available filters:
+
+- `--filter-starts-with` _`<STRING>`_ or `--fs`
+- `--filter-ends-with` _`<STRING>`_ or `--fe`
+- `--filter-contains` _`<STRING>`_ or `--fc`
+- `--filter-regex` _`<REGEX>`_ or `--fr`
+- `--filter-length` _`<LENGTH>`_ or `--fl`
+- `--filter-status-code` _`<CODE>`_ or `--fsc`
 
 ### Wordlists
 
@@ -112,26 +164,30 @@ rwalk will merge the wordlists and remove duplicates. You can also apply filters
 
 > **Note:** A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, rwalk will only load the wordlists if the checksums match. See [Saving progress](#saving-and-resuming-scans) for more information.
 
-### Filters
 
-You can filter out words from the wordlist by using the `--filter-*` flags. For example, to filter out all words that start with `admin`:
+### Wordlist Filters
+
+> **Warning:** These options filter <u>**out**</u> the words from the wordlist. For example, if you use `--wordlist-filter-starts-with admin`, all words that start with `admin` will be <u>**removed**</u> from the wordlist.
+> Don't confuse this with [Response Filtering](#response-filtering) which filters <u>**in**</u> responses.
+
+You can filter <u>**out**</u> words from the wordlist by using the `--wordlist-filter-*` (`--wf*`) flags. For example, to filter out all words that start with `admin`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --filter-starts-with admin
+rwalk https://example.com path/to/wordlist.txt --wordlist-filter-starts-with admin
 ```
 
 Available filters:
 
-- `--filter-starts-with` _`<STRING>`_
-- `--filter-ends-with` _`<STRING>`_
-- `--filter-contains` _`<STRING>`_
-- `--filter-regex` _`<REGEX>`_
-- `--filter-length` _`<LENGTH>`_
-- `--filter-min-length` _`<LENGTH>`_
-- `--filter-max-length` _`<LENGTH>`_
+- `--wordlist-filter-starts-with` _`<STRING>`_ or `--wfs`
+- `--wordlist-filter-ends-with` _`<STRING>`_ or `--wfe` 
+- `--wordlist-filter-contains` _`<STRING>`_ or `--wfc`
+- `--wordlist-filter-regex` _`<REGEX>`_ or `--wfr` 
+- `--wordlist-filter-length` _`<LENGTH>`_ or `--wfl` 
+- `--wordlist-filter-min-length` _`<LENGTH>`_ or `--wfm`
+- `--wordlist-filter-max-length` _`<LENGTH>`_ or `--wfx`
 
 
-### Transformations
+### Wordlist Transformations
 
 To quickly modify the wordlist, you can use the `--transform-*` flags. For example, to add a prefix to all words in the wordlist:
 
@@ -141,11 +197,14 @@ rwalk https://example.com path/to/wordlist.txt --transform-prefix "."
 
 Available transformations:
 
-- `--transform-prefix` _`<PREFIX>`_
-- `--transform-suffix` _`<SUFFIX>`_
-- `--transform-upper`
-- `--transform-lower`
-- `--transform-capitalize`
+- `--transform-prefix` _`<PREFIX>`_ or `-P`
+- `--transform-suffix` _`<SUFFIX>`_ or `-S`
+- `--transform-upper` or `-U`
+- `--transform-lower` or `-L`
+- `--transform-capitalize` or `-C`
+
+
+
 
 ### Throttling
 
@@ -226,8 +285,6 @@ Each tool was run `10` times with `100` threads. The results are below:
 | `rwalk`     |  6.068 ± 0.146 |   5.869 |   6.318 | 1.15 ± 0.03 |
 | `dirsearch` | 14.263 ± 0.250 |  13.861 |  14.719 | 2.70 ± 0.07 |
 | `ffuf`      |  5.285 ± 0.090 |   5.154 |   5.358 |        1.00 |
-
-[ffuf](https://github.com/ffuf/ffuf) is the fastest tool... but not by much. rwalk is only `1.15x` slower than ffuf and ~`2.5x` faster than dirsearch. Not bad for a first release!
 
 ## License
 

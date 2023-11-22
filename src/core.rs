@@ -16,6 +16,7 @@ use crate::{
     cli::OPTS,
     constants::{ERROR, STATUS_CODES, SUCCESS, WARNING},
     tree::{Tree, TreeData},
+    utils::is_response_filtered,
 };
 
 pub async fn start(
@@ -143,13 +144,26 @@ pub async fn start(
                             tokio::time::sleep(sleep).await;
                         }
                         match response {
-                            Ok(response) => {
-                                if STATUS_CODES
-                                    .iter()
-                                    .any(|x| x.contains(&response.status().as_u16()))
+                            Ok(mut response) => {
+                                let mut text = String::new();
+                                while let Ok(chunk) = response.chunk().await {
+                                    if let Some(chunk) = chunk {
+                                        text.push_str(&String::from_utf8_lossy(&chunk));
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                let status_code = response.status().as_u16();
+                                let filtered = is_response_filtered(
+                                    &text,
+                                    status_code,
+                                    t1.elapsed().as_millis() as u16,
+                                );
+
+                                if filtered && STATUS_CODES.iter().any(|x| x.contains(&status_code))
                                 {
                                     progress.println(format!(
-                                        "{} {} {}",
+                                        "{} {} {} {}",
                                         if response.status().is_success() {
                                             SUCCESS.to_string().green()
                                         } else if response.status().is_redirection() {
@@ -158,7 +172,12 @@ pub async fn start(
                                             ERROR.to_string().red()
                                         },
                                         response.status().as_str().bold(),
-                                        url
+                                        url,
+                                        format!(
+                                            "{}ms",
+                                            t1.elapsed().as_millis().to_string().bold()
+                                        )
+                                        .dimmed()
                                     ));
                                     // Check if this path is already in the tree
                                     let mut found = false;
@@ -175,7 +194,7 @@ pub async fn start(
                                                 url: url.clone(),
                                                 depth: data.depth + 1,
                                                 path: word.clone(),
-                                                status_code: response.status().as_u16(),
+                                                status_code,
                                             },
                                             Some(previous_node.clone()),
                                         );
