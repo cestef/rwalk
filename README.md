@@ -162,7 +162,8 @@ rwalk https://example.com path/to/wordlist1.txt path/to/wordlist2.txt
 
 rwalk will merge the wordlists and remove duplicates. You can also apply filters and transformations to the wordlists (see below).
 
-> **Note:** A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, rwalk will only load the wordlists if the checksums match. See [Saving progress](#saving-and-resuming-scans) for more information.
+> [!NOTE]
+> A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, rwalk will only load the wordlists if the checksums match. See [Saving progress](#saving-and-resuming-scans) for more information.
 
 
 ### Wordlist Filters
