@@ -167,10 +167,7 @@ rwalk will merge the wordlists and remove duplicates. You can also apply filters
 
 ### Wordlist Filters
 
-> **Warning:** These options filter <u>**out**</u> the words from the wordlist. For example, if you use `--wordlist-filter-starts-with admin`, all words that start with `admin` will be <u>**removed**</u> from the wordlist.
-> Don't confuse this with [Response Filtering](#response-filtering) which filters <u>**in**</u> responses.
-
-You can filter <u>**out**</u> words from the wordlist by using the `--wordlist-filter-*` (`--wf*`) flags. For example, to filter out all words that start with `admin`:
+You can filter words from the wordlist by using the `--wordlist-filter-*` (`--wf*`) flags. For example, to only use words that start with `admin`:
 
 ```bash
 rwalk https://example.com path/to/wordlist.txt --wordlist-filter-starts-with admin
