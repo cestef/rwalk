@@ -46,6 +46,9 @@ async fn main() -> Result<()> {
     if !OPTS.quiet {
         utils::banner();
     }
+    if OPTS.interactive {
+        return cli::main_interactive().await;
+    }
     let mut words = parse_wordlists(&OPTS.wordlists);
     let before = words.len();
     apply_filters(&mut words)?;
@@ -84,7 +87,7 @@ async fn main() -> Result<()> {
             Ok(saved) => {
                 let saved: Save = serde_json::from_str(&saved)?;
                 if let Some(root) = &saved.tree.clone().lock().root {
-                    if root.lock().data.url != OPTS.url {
+                    if root.lock().data.url != OPTS.url.clone().unwrap() {
                         None
                     } else {
                         print_tree(&*root.lock())?;
@@ -126,9 +129,9 @@ async fn main() -> Result<()> {
         let t = Arc::new(Mutex::new(Tree::new()));
         t.lock().insert(
             TreeData {
-                url: OPTS.url.clone(),
+                url: OPTS.url.clone().unwrap(),
                 depth: 0,
-                path: Url::parse(&OPTS.url)?
+                path: Url::parse(&OPTS.url.clone().unwrap())?
                     .path()
                     .to_string()
                     .trim_end_matches('/')

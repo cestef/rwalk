@@ -26,7 +26,7 @@ pub async fn start(
     chunks: Arc<Vec<Vec<String>>>,
     words: Vec<String>,
 ) -> Result<()> {
-    while *depth.lock() < OPTS.depth {
+    while *depth.lock() < OPTS.depth.unwrap() {
         let previous_nodes = tree.lock().get_nodes_at_depth(depth.lock().clone());
         let root_progress = indicatif::MultiProgress::new();
         let mut progresses = HashMap::new();
@@ -79,12 +79,12 @@ pub async fn start(
                         .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
                 )
                 .default_headers(headers)
-                .redirect(if OPTS.follow_redirects > 0 {
-                    Policy::limited(OPTS.follow_redirects)
+                .redirect(if OPTS.follow_redirects.unwrap() > 0 {
+                    Policy::limited(OPTS.follow_redirects.unwrap())
                 } else {
                     Policy::none()
                 })
-                .timeout(std::time::Duration::from_secs(OPTS.timeout))
+                .timeout(std::time::Duration::from_secs(OPTS.timeout.unwrap() as u64))
                 .build()
                 .unwrap();
             for (i, chunk) in chunks.iter().enumerate() {
@@ -112,7 +112,7 @@ pub async fn start(
                             url.push_str("/");
                         }
                         url.push_str(&word);
-                        let sender = match OPTS.method.as_str() {
+                        let sender = match OPTS.method.clone().unwrap().as_str() {
                             "GET" => client.get(&url),
                             "POST" => client
                                 .post(&url)
@@ -129,10 +129,10 @@ pub async fn start(
                         };
                         let t1 = std::time::Instant::now();
                         let response = sender.send().await;
-                        let sleep = if OPTS.throttle > 0 {
+                        let sleep = if OPTS.throttle.unwrap() > 0 {
                             let t2 = std::time::Instant::now();
                             let elapsed = t2 - t1;
-                            let sleep = Duration::from_secs_f64(1.0 / OPTS.throttle as f64);
+                            let sleep = Duration::from_secs_f64(1.0 / OPTS.throttle.unwrap() as f64);
                             if elapsed < sleep {
                                 sleep - elapsed
                             } else {
@@ -165,7 +165,9 @@ pub async fn start(
                                     true
                                 };
 
-                                if filtered && STATUS_CODES.iter().any(|x| x.contains(&status_code))
+                                let is_success_code = STATUS_CODES.iter().any(|x| x.contains(&status_code));
+
+                                if filtered && is_success_code
                                 {
                                     progress.println(format!(
                                         "{} {} {} {}",

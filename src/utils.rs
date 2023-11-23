@@ -1,13 +1,10 @@
 use anyhow::Result;
 use colored::Colorize;
-use std::{
-    io::{Read, Write},
-    path::PathBuf,
-};
+use std::io::{Read, Write};
 
 use crate::{cli::OPTS, constants::BANNER_STR};
 
-pub fn parse_wordlists(wordlists: &Vec<PathBuf>) -> Vec<String> {
+pub fn parse_wordlists(wordlists: &Vec<String>) -> Vec<String> {
     let mut wordlist = Vec::new();
     for wordlist_path in wordlists {
         let mut file = std::fs::File::open(wordlist_path).unwrap();
