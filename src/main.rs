@@ -40,6 +40,9 @@ struct Save {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    if OPTS.no_color {
+        colored::control::set_override(false);
+    }
     if !OPTS.quiet {
         utils::banner();
     }

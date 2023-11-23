@@ -54,6 +54,10 @@ pub struct Opts {
     /// Request throttling (requests per second) per thread
     #[clap(long, default_value = "0")]
     pub throttle: usize,
+    /// Don't use colors
+    /// You can also set the NO_COLOR environment variable
+    #[clap(long, alias = "no-colors")]
+    pub no_color: bool,
 
     /// Resume from a saved file
     #[clap(long, help_heading = Some("Resume"))]

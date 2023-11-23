@@ -227,3 +227,14 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>, String> {
     }
     Ok(ranges)
 }
+
+/// Check if any response filter is set
+pub fn should_filter() -> bool {
+    return OPTS.filter_status_code.is_some()
+        || OPTS.filter_contains.is_some()
+        || OPTS.filter_starts_with.is_some()
+        || OPTS.filter_ends_with.is_some()
+        || OPTS.filter_regex.is_some()
+        || OPTS.filter_length.is_some()
+        || OPTS.filter_time.is_some();
+}

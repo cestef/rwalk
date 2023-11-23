@@ -16,7 +16,7 @@ use crate::{
     cli::OPTS,
     constants::{ERROR, STATUS_CODES, SUCCESS, WARNING},
     tree::{Tree, TreeData},
-    utils::is_response_filtered,
+    utils::{is_response_filtered, should_filter},
 };
 
 pub async fn start(
@@ -33,10 +33,12 @@ pub async fn start(
         let mut handles = Vec::new();
         for previous_node in &previous_nodes {
             let mut indexes = current_indexes.lock();
+            // Indexes of each chunk for this node (initially 0 if not present)
             let index = match indexes.entry(previous_node.lock().data.url.clone()) {
                 Occupied(entry) => entry.into_mut(),
                 Vacant(entry) => entry.insert(vec![0; chunks.len()]),
             };
+            
             let pb = root_progress.add(indicatif::ProgressBar::new((words.len()) as u64))
                 .with_style(
                     indicatif::ProgressStyle::default_bar()
@@ -46,10 +48,9 @@ pub async fn start(
                 .with_message(format!("/{}", previous_node.lock().data.path.trim_start_matches("/")))
                 .with_prefix(format!("d={}", *depth.lock() + 1))
                 .with_position(
-                    // Sum of the indexes of the chunks
+                    
                     index.iter().sum::<usize>() as u64,
                 );
-            // pb.enable_steady_tick(Duration::from_millis(100));
             progresses.insert(previous_node.lock().data.url.clone(), pb);
 
             let progress = progresses.get(&previous_node.lock().data.url).unwrap();
@@ -145,20 +146,24 @@ pub async fn start(
                         }
                         match response {
                             Ok(mut response) => {
-                                let mut text = String::new();
-                                while let Ok(chunk) = response.chunk().await {
-                                    if let Some(chunk) = chunk {
-                                        text.push_str(&String::from_utf8_lossy(&chunk));
-                                    } else {
-                                        break;
-                                    }
-                                }
                                 let status_code = response.status().as_u16();
-                                let filtered = is_response_filtered(
-                                    &text,
-                                    status_code,
-                                    t1.elapsed().as_millis() as u16,
-                                );
+                                let filtered = if should_filter() {
+                                    let mut text = String::new();
+                                    while let Ok(chunk) = response.chunk().await {
+                                        if let Some(chunk) = chunk {
+                                            text.push_str(&String::from_utf8_lossy(&chunk));
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    is_response_filtered(
+                                        &text,
+                                        status_code,
+                                        t1.elapsed().as_millis() as u16,
+                                    )
+                                } else {
+                                    true
+                                };
 
                                 if filtered && STATUS_CODES.iter().any(|x| x.contains(&status_code))
                                 {
@@ -180,13 +185,9 @@ pub async fn start(
                                         .dimmed()
                                     ));
                                     // Check if this path is already in the tree
-                                    let mut found = false;
-                                    for child in &previous_node.lock().children {
-                                        if child.lock().data.path == *word {
-                                            found = true;
-                                            break;
-                                        }
-                                    }
+                                    let found = previous_node.lock().children.iter().any(|child| {
+                                        child.lock().data.path == *word
+                                    });
 
                                     if !found {
                                         tree.insert(
@@ -234,7 +235,7 @@ pub async fn start(
                                 }
                             }
                         }
-                        // Increase the index of the chunk in the hashmap
+                        // Increase the index of the current chunk in the hashmap
                         indexes
                             .lock()
                             .get_mut(&previous_node.lock().data.url)
@@ -245,10 +246,13 @@ pub async fn start(
                 handles.push(handle);
             }
         }
+        
+        // Wait for all handles to finish
         for handle in handles {
             handle.await?;
         }
 
+        // Go to the next depth (/a/b/c -> /a/b/c/...)
         *depth.lock() += 1;
     }
     Ok(())
