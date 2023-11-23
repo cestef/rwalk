@@ -183,20 +183,6 @@ fn method_exists(s: &str) -> Result<String, String> {
     }
 }
 
-lazy_static! {
-    #[derive(Debug)]
-    pub static ref OPTS: Opts = Opts::parse();
-    static ref COMMANDS: Vec<Command> = vec![
-        Command::new("help", "Print this help message", help).with_aliases(vec!["h", "?"]),
-        Command::new("exit", "Exit the program", exit).with_aliases(vec!["quit", "q"]),
-        Command::new("clear", "Clear the screen", clear).with_aliases(vec!["cls"]),
-        Command::new("set", "Set a value", set).with_aliases(vec!["s"]),
-        Command::new("unset", "Unset a value", unset).with_aliases(vec!["u"]),
-        Command::new("get", "Get a value", get).with_aliases(vec!["g"]),
-        Command::new("list", "List all values", list).with_aliases(vec!["l", "ls"]),
-    ];
-}
-
 pub async fn main_interactive() -> Result<()> {
     let mut rl = rustyline::DefaultEditor::new()?;
     let mut state = Opts::parse();
@@ -208,14 +194,21 @@ pub async fn main_interactive() -> Result<()> {
                 let parts = line.split(" ").collect::<Vec<_>>();
                 let cmd = parts[0];
                 let args = parts[1..].to_vec();
-                let command = COMMANDS
-                    .iter()
-                    .find(|c| c.name == cmd || c.aliases.contains(&cmd.to_string()));
-
-                match command {
-                    Some(command) => (command.func)(&mut rl, args, &mut state)?,
-                    None => println!("Unknown command: {}", cmd),
-                }
+                // This is a bit ugly, but I can't manage to box async functions
+                match cmd {
+                    "help" | "h" | "?" => help(&mut rl, args, &mut state).await,
+                    "exit" | "quit" | "q" => exit(&mut rl, args, &mut state).await,
+                    "clear" | "cls" => clear(&mut rl, args, &mut state).await,
+                    "set" | "s" => set(&mut rl, args, &mut state).await,
+                    "unset" | "u" => unset(&mut rl, args, &mut state).await,
+                    "get" | "g" => get(&mut rl, args, &mut state).await,
+                    "list" | "ls" => list(&mut rl, args, &mut state).await,
+                    "run" | "r" => run(&mut rl, args, &mut state).await,
+                    _ => {
+                        println!("Unknown command: {}", cmd);
+                        Ok(())
+                    }
+                }?;
             }
             Err(_) => break,
         }
@@ -223,35 +216,36 @@ pub async fn main_interactive() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug)]
 struct Command {
     name: String,
-    description: String,
     aliases: Vec<String>,
-    func: fn(rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()>,
+    description: String,
 }
 
 impl Command {
-    fn new(
-        name: &str,
-        description: &str,
-        func: fn(rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()>,
-    ) -> Self {
+    fn new(name: &str, aliases: Vec<&str>, description: &str) -> Self {
         Self {
             name: name.to_string(),
+            aliases: aliases.iter().map(|s| s.to_string()).collect(),
             description: description.to_string(),
-            func,
-            aliases: vec![],
         }
-    }
-
-    fn with_aliases(mut self, aliases: Vec<&str>) -> Self {
-        self.aliases = aliases.iter().map(|s| s.to_string()).collect();
-        self
     }
 }
 
-fn help(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
+lazy_static! {
+    static ref COMMANDS: Vec<Command> = vec![
+        Command::new("help", vec!["h", "?"], "Show this help message"),
+        Command::new("exit", vec!["quit", "q"], "Exit the program"),
+        Command::new("clear", vec!["cls"], "Clear the screen"),
+        Command::new("set", vec!["s"], "Set a value"),
+        Command::new("unset", vec!["u"], "Unset a value"),
+        Command::new("get", vec!["g"], "Get a value"),
+        Command::new("list", vec!["ls"], "List all values"),
+        Command::new("run", vec!["r"], "Run the scanner"),
+    ];
+}
+
+async fn help(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
     println!("Available commands:");
     for cmd in COMMANDS.iter() {
         println!("  {:<10} {}", cmd.name.bold(), cmd.description.dimmed());
@@ -259,16 +253,16 @@ fn help(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<
     Ok(())
 }
 
-fn exit(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
+async fn exit(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
     std::process::exit(0);
 }
 
-fn clear(rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
+async fn clear(rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
     rl.clear_screen()?;
     Ok(())
 }
 
-fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
     if args.len() != 2 {
         println!("Usage: set <key> <value>");
         return Ok(());
@@ -333,7 +327,7 @@ fn get_value_type(s: &str) -> ValueType {
     ValueType::String
 }
 
-fn unset(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+async fn unset(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
     if args.len() != 1 {
         println!("Usage: unset <key>");
         return Ok(());
@@ -351,7 +345,7 @@ fn unset(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<(
     Ok(())
 }
 
-fn get(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+async fn get(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
     if args.len() != 1 {
         println!("Usage: get <key>");
         return Ok(());
@@ -378,7 +372,7 @@ fn get(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()>
     Ok(())
 }
 
-fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
+async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
     println!("Listing all values:");
     let struct_info = state.getstructinfo();
     let mut fields: Vec<(String, String, String)> =
@@ -425,4 +419,8 @@ fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<(
         );
     }
     Ok(())
+}
+
+async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
+    crate::_main(state.clone()).await
 }

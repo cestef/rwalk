@@ -2,7 +2,7 @@ use anyhow::Result;
 use colored::Colorize;
 use std::io::{Read, Write};
 
-use crate::{cli::OPTS, constants::BANNER_STR};
+use crate::{cli::Opts, constants::BANNER_STR};
 
 pub fn parse_wordlists(wordlists: &Vec<String>) -> Vec<String> {
     let mut wordlist = Vec::new();
@@ -63,26 +63,26 @@ pub fn get_emoji_for_status_code(status_code: u16) -> String {
     }
 }
 
-pub fn apply_filters(words: &mut Vec<String>) -> Result<()> {
-    if OPTS.wordlist_filter_contains.is_some() {
-        let filter_contains = OPTS.wordlist_filter_contains.clone().unwrap();
+pub fn apply_filters(opts: &Opts, words: &mut Vec<String>) -> Result<()> {
+    if opts.wordlist_filter_contains.is_some() {
+        let filter_contains = opts.wordlist_filter_contains.clone().unwrap();
         words.retain(|word| word.contains(&filter_contains));
     }
-    if OPTS.wordlist_filter_starts_with.is_some() {
-        let filter_starts_with = OPTS.wordlist_filter_starts_with.clone().unwrap();
+    if opts.wordlist_filter_starts_with.is_some() {
+        let filter_starts_with = opts.wordlist_filter_starts_with.clone().unwrap();
         words.retain(|word| word.starts_with(&filter_starts_with));
     }
-    if OPTS.wordlist_filter_ends_with.is_some() {
-        let filter_ends_with = OPTS.wordlist_filter_ends_with.clone().unwrap();
+    if opts.wordlist_filter_ends_with.is_some() {
+        let filter_ends_with = opts.wordlist_filter_ends_with.clone().unwrap();
         words.retain(|word| word.ends_with(&filter_ends_with));
     }
-    if OPTS.wordlist_filter_regex.is_some() {
-        let filter_regex = OPTS.wordlist_filter_regex.clone().unwrap();
+    if opts.wordlist_filter_regex.is_some() {
+        let filter_regex = opts.wordlist_filter_regex.clone().unwrap();
         let re = regex::Regex::new(&filter_regex)?;
         words.retain(|word| re.is_match(&word));
     }
-    if OPTS.wordlist_filter_length.is_some() {
-        let filter_length = OPTS.wordlist_filter_length.clone().unwrap();
+    if opts.wordlist_filter_length.is_some() {
+        let filter_length = opts.wordlist_filter_length.clone().unwrap();
         let parsed_filter_length = parse_range_input(&filter_length).unwrap();
         words.retain(|word| check_range(&parsed_filter_length, word.len()));
     }
@@ -90,30 +90,30 @@ pub fn apply_filters(words: &mut Vec<String>) -> Result<()> {
     Ok(())
 }
 
-pub fn apply_transformations(words: &mut Vec<String>) {
-    if OPTS.transform_lower {
+pub fn apply_transformations(opts: &Opts, words: &mut Vec<String>) {
+    if opts.transform_lower {
         words.iter_mut().for_each(|word| {
             *word = word.to_lowercase();
         });
     }
-    if OPTS.transform_upper {
+    if opts.transform_upper {
         words.iter_mut().for_each(|word| {
             *word = word.to_uppercase();
         });
     }
-    if OPTS.transform_prefix.is_some() {
-        let transform_prefix = OPTS.transform_prefix.clone().unwrap();
+    if opts.transform_prefix.is_some() {
+        let transform_prefix = opts.transform_prefix.clone().unwrap();
         words.iter_mut().for_each(|word| {
             *word = format!("{}{}", transform_prefix, word);
         });
     }
-    if OPTS.transform_suffix.is_some() {
-        let transform_suffix = OPTS.transform_suffix.clone().unwrap();
+    if opts.transform_suffix.is_some() {
+        let transform_suffix = opts.transform_suffix.clone().unwrap();
         words.iter_mut().for_each(|word| {
             *word = format!("{}{}", word, transform_suffix);
         });
     }
-    if OPTS.transform_capitalize {
+    if opts.transform_capitalize {
         words.iter_mut().for_each(|word| {
             *word = word.to_lowercase();
             let mut chars = word.chars();
@@ -124,48 +124,48 @@ pub fn apply_transformations(words: &mut Vec<String>) {
     }
 }
 
-pub fn is_response_filtered(res_text: &str, status_code: u16, time: u16) -> bool {
-    if OPTS.filter_time.is_some() {
-        let filter_time = OPTS.filter_time.clone().unwrap();
+pub fn is_response_filtered(opts: &Opts, res_text: &str, status_code: u16, time: u16) -> bool {
+    if opts.filter_time.is_some() {
+        let filter_time = opts.filter_time.clone().unwrap();
         let parsed_filter_time = parse_range_input(&filter_time).unwrap();
         if !check_range(&parsed_filter_time, time as usize) {
             return false;
         }
     }
-    if OPTS.filter_status_code.is_some() {
-        let filter_status_code = OPTS.filter_status_code.clone().unwrap();
+    if opts.filter_status_code.is_some() {
+        let filter_status_code = opts.filter_status_code.clone().unwrap();
         let parsed_filter_status_code = parse_range_input(&filter_status_code).unwrap();
         if !check_range(&parsed_filter_status_code, status_code as usize) {
             return false;
         }
     }
-    if OPTS.filter_contains.is_some() {
-        let filter_contains = OPTS.filter_contains.clone().unwrap();
+    if opts.filter_contains.is_some() {
+        let filter_contains = opts.filter_contains.clone().unwrap();
         if !res_text.contains(&filter_contains) {
             return false;
         }
     }
-    if OPTS.filter_starts_with.is_some() {
-        let filter_starts_with = OPTS.filter_starts_with.clone().unwrap();
+    if opts.filter_starts_with.is_some() {
+        let filter_starts_with = opts.filter_starts_with.clone().unwrap();
         if !res_text.starts_with(&filter_starts_with) {
             return false;
         }
     }
-    if OPTS.filter_ends_with.is_some() {
-        let filter_ends_with = OPTS.filter_ends_with.clone().unwrap();
+    if opts.filter_ends_with.is_some() {
+        let filter_ends_with = opts.filter_ends_with.clone().unwrap();
         if !res_text.ends_with(&filter_ends_with) {
             return false;
         }
     }
-    if OPTS.filter_regex.is_some() {
-        let filter_regex = OPTS.filter_regex.clone().unwrap();
+    if opts.filter_regex.is_some() {
+        let filter_regex = opts.filter_regex.clone().unwrap();
         let re = regex::Regex::new(&filter_regex).unwrap();
         if !re.is_match(&res_text) {
             return false;
         }
     }
-    if OPTS.filter_length.is_some() {
-        let filter_length = OPTS.filter_length.clone().unwrap();
+    if opts.filter_length.is_some() {
+        let filter_length = opts.filter_length.clone().unwrap();
         let parsed_filter_length = parse_range_input(&filter_length).unwrap();
         if !check_range(&parsed_filter_length, res_text.len()) {
             return false;
@@ -226,12 +226,12 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>, String> {
 }
 
 /// Check if any response filter is set
-pub fn should_filter() -> bool {
-    return OPTS.filter_status_code.is_some()
-        || OPTS.filter_contains.is_some()
-        || OPTS.filter_starts_with.is_some()
-        || OPTS.filter_ends_with.is_some()
-        || OPTS.filter_regex.is_some()
-        || OPTS.filter_length.is_some()
-        || OPTS.filter_time.is_some();
+pub fn should_filter(opts: &Opts) -> bool {
+    return opts.filter_status_code.is_some()
+        || opts.filter_contains.is_some()
+        || opts.filter_starts_with.is_some()
+        || opts.filter_ends_with.is_some()
+        || opts.filter_regex.is_some()
+        || opts.filter_length.is_some()
+        || opts.filter_time.is_some();
 }

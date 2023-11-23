@@ -13,20 +13,20 @@ use anyhow::Result;
 use parking_lot::Mutex;
 
 use crate::{
-    cli::OPTS,
     constants::{ERROR, STATUS_CODES, SUCCESS, WARNING},
     tree::{Tree, TreeData},
-    utils::{is_response_filtered, should_filter},
+    utils::{is_response_filtered, should_filter}, cli::Opts,
 };
 
 pub async fn start(
+    opts: Opts,
     depth: Arc<Mutex<usize>>,
     tree: Arc<Mutex<Tree<TreeData>>>,
     current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
     chunks: Arc<Vec<Vec<String>>>,
     words: Vec<String>,
 ) -> Result<()> {
-    while *depth.lock() < OPTS.depth.unwrap() {
+    while *depth.lock() < opts.depth.unwrap() {
         let previous_nodes = tree.lock().get_nodes_at_depth(depth.lock().clone());
         let root_progress = indicatif::MultiProgress::new();
         let mut progresses = HashMap::new();
@@ -56,7 +56,21 @@ pub async fn start(
             let progress = progresses.get(&previous_node.lock().data.url).unwrap();
 
             let mut headers = HeaderMap::new();
-            let cookies = OPTS.cookies.clone();
+
+            let headers_vec = opts.headers.clone();
+            for header in headers_vec {
+                let mut header = header.splitn(2, ":");
+                let key = header.next().unwrap().trim();
+                let value = header.next().unwrap().trim();
+                let parsed_key = key.parse::<reqwest::header::HeaderName>();
+                headers.insert(
+                    parsed_key.unwrap(),
+                    value.parse().unwrap(),
+                );
+            }
+            
+
+            let cookies = opts.cookies.clone();
             for cookie in &cookies {
                 let mut cookie = cookie.splitn(2, "=");
                 let key = cookie.next().unwrap().trim();
@@ -66,25 +80,20 @@ pub async fn start(
                     format!("{}={}", key, value).parse().unwrap(),
                 );
             }
-            for header in &OPTS.headers {
-                let mut header = header.splitn(2, ":");
-                let key = header.next().unwrap().trim();
-                let value = header.next().unwrap().trim();
-                headers.insert(key, value.parse().unwrap());
-            }
+            
             let client = reqwest::Client::builder()
                 .user_agent(
-                    OPTS.user_agent
+                    opts.user_agent
                         .clone()
                         .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
                 )
                 .default_headers(headers)
-                .redirect(if OPTS.follow_redirects.unwrap() > 0 {
-                    Policy::limited(OPTS.follow_redirects.unwrap())
+                .redirect(if opts.follow_redirects.unwrap() > 0 {
+                    Policy::limited(opts.follow_redirects.unwrap())
                 } else {
                     Policy::none()
                 })
-                .timeout(std::time::Duration::from_secs(OPTS.timeout.unwrap() as u64))
+                .timeout(std::time::Duration::from_secs(opts.timeout.unwrap() as u64))
                 .build()
                 .unwrap();
             for (i, chunk) in chunks.iter().enumerate() {
@@ -94,6 +103,7 @@ pub async fn start(
                 let client = client.clone();
                 let progress = progress.clone();
                 let indexes = current_indexes.clone();
+                let opts = opts.clone();
                 let handle = tokio::spawn(async move {
                     while indexes
                         .lock()
@@ -112,14 +122,14 @@ pub async fn start(
                             url.push_str("/");
                         }
                         url.push_str(&word);
-                        let sender = match OPTS.method.clone().unwrap().as_str() {
+                        let sender = match opts.method.clone().unwrap().as_str() {
                             "GET" => client.get(&url),
                             "POST" => client
                                 .post(&url)
-                                .body(OPTS.data.clone().unwrap_or("".to_string())),
+                                .body(opts.data.clone().unwrap_or("".to_string())),
                             "PUT" => client
                                 .put(&url)
-                                .body(OPTS.data.clone().unwrap_or("".to_string())),
+                                .body(opts.data.clone().unwrap_or("".to_string())),
                             "DELETE" => client.delete(&url),
                             "HEAD" => client.head(&url),
                             "OPTIONS" => client.request(reqwest::Method::OPTIONS, &url),
@@ -129,10 +139,10 @@ pub async fn start(
                         };
                         let t1 = std::time::Instant::now();
                         let response = sender.send().await;
-                        let sleep = if OPTS.throttle.unwrap() > 0 {
+                        let sleep = if opts.throttle.unwrap() > 0 {
                             let t2 = std::time::Instant::now();
                             let elapsed = t2 - t1;
-                            let sleep = Duration::from_secs_f64(1.0 / OPTS.throttle.unwrap() as f64);
+                            let sleep = Duration::from_secs_f64(1.0 / opts.throttle.unwrap() as f64);
                             if elapsed < sleep {
                                 sleep - elapsed
                             } else {
@@ -147,7 +157,7 @@ pub async fn start(
                         match response {
                             Ok(mut response) => {
                                 let status_code = response.status().as_u16();
-                                let filtered = if should_filter() {
+                                let filtered = if should_filter(&opts) {
                                     let mut text = String::new();
                                     while let Ok(chunk) = response.chunk().await {
                                         if let Some(chunk) = chunk {
@@ -157,6 +167,7 @@ pub async fn start(
                                         }
                                     }
                                     is_response_filtered(
+                                        &opts,
                                         &text,
                                         status_code,
                                         t1.elapsed().as_millis() as u16,

@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 
 use crate::{
-    cli::OPTS,
     constants::{ERROR, INFO, SAVE_FILE, SUCCESS, WARNING},
     tree::{Tree, TreeData},
     utils::{apply_filters, apply_transformations, parse_wordlists},
 };
 use anyhow::Result;
+use clap::Parser;
+use cli::Opts;
 use colored::Colorize;
 use futures::future::abortable;
 use indicatif::HumanDuration;
@@ -40,19 +41,25 @@ struct Save {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    if OPTS.no_color {
+    let opts = Opts::parse();
+    if opts.no_color {
         colored::control::set_override(false);
     }
-    if !OPTS.quiet {
+    if !opts.quiet {
         utils::banner();
     }
-    if OPTS.interactive {
-        return cli::main_interactive().await;
+    if opts.interactive {
+        cli::main_interactive().await
+    } else {
+        _main(opts.clone()).await
     }
-    let mut words = parse_wordlists(&OPTS.wordlists);
+}
+
+pub async fn _main(opts: Opts) -> Result<()> {
+    let mut words = parse_wordlists(&opts.wordlists);
     let before = words.len();
-    apply_filters(&mut words)?;
-    apply_transformations(&mut words);
+    apply_filters(&opts, &mut words)?;
+    apply_transformations(&opts, &mut words);
     words.sort_unstable();
     words.dedup();
     let after = words.len();
@@ -81,13 +88,13 @@ async fn main() -> Result<()> {
     let depth = Arc::new(Mutex::new(0));
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =
         Arc::new(Mutex::new(HashMap::new()));
-    let saved = std::fs::read_to_string(OPTS.save_file.clone());
-    let saved = if OPTS.resume {
+    let saved = std::fs::read_to_string(opts.save_file.clone());
+    let saved = if opts.resume {
         match saved {
             Ok(saved) => {
                 let saved: Save = serde_json::from_str(&saved)?;
                 if let Some(root) = &saved.tree.clone().lock().root {
-                    if root.lock().data.url != OPTS.url.clone().unwrap() {
+                    if root.lock().data.url != opts.url.clone().unwrap() {
                         None
                     } else {
                         print_tree(&*root.lock())?;
@@ -129,9 +136,9 @@ async fn main() -> Result<()> {
         let t = Arc::new(Mutex::new(Tree::new()));
         t.lock().insert(
             TreeData {
-                url: OPTS.url.clone().unwrap(),
+                url: opts.url.clone().unwrap(),
                 depth: 0,
-                path: Url::parse(&OPTS.url.clone().unwrap())?
+                path: Url::parse(&opts.url.clone().unwrap())?
                     .path()
                     .to_string()
                     .trim_end_matches('/')
@@ -143,7 +150,7 @@ async fn main() -> Result<()> {
         t
     };
 
-    let threads = OPTS
+    let threads = opts
         .threads
         .unwrap_or(num_cpus::get() * 10)
         .max(1)
@@ -167,6 +174,7 @@ async fn main() -> Result<()> {
         .collect::<Vec<_>>();
     let chunks = Arc::new(chunks);
     let (task, handle) = abortable(core::start(
+        opts.clone(),
         depth.clone(),
         tree.clone(),
         current_indexes.clone(),
@@ -182,11 +190,12 @@ async fn main() -> Result<()> {
     let ctrlc_depth = depth.clone();
     let ctrlc_words = words.clone();
     let ctrlc_aborted = aborted.clone();
+    let ctrlc_save_file = opts.save_file.clone();
     ctrlc::set_handler(move || {
         println!("{} Aborting...", INFO.to_string().blue().bold());
         ctrlc_aborted.store(true, Ordering::Relaxed);
         handle.abort();
-        if !OPTS.no_save {
+        if !opts.no_save {
             let checksum = {
                 let mut hasher = Sha256::new();
                 hasher.update(ctrlc_words.join("\n"));
@@ -201,14 +210,14 @@ async fn main() -> Result<()> {
             });
             match content {
                 Ok(content) => {
-                    let mut file = std::fs::File::create(OPTS.save_file.clone()).unwrap();
+                    let mut file = std::fs::File::create(&ctrlc_save_file).unwrap();
                     file.write_all(content.as_bytes()).unwrap();
                     file.flush().unwrap();
                     print!("\x1B[2K\r");
                     println!(
                         "{} Saved state to {}",
                         SUCCESS.to_string().green(),
-                        OPTS.save_file.bold()
+                        ctrlc_save_file.bold()
                     );
                 }
                 Err(_) => {}
@@ -233,13 +242,13 @@ async fn main() -> Result<()> {
         print_tree(&*root.lock())?;
 
         // Remove save file if it's the default one
-        if has_saved && OPTS.save_file == SAVE_FILE {
-            std::fs::remove_file(OPTS.save_file.clone())?;
+        if has_saved && opts.save_file == SAVE_FILE {
+            std::fs::remove_file(opts.save_file.clone())?;
         }
-        if OPTS.output.is_some() {
-            let output = OPTS.output.clone().unwrap();
+        if opts.output.is_some() {
+            let output = opts.output.clone().unwrap();
             let file_type = output.split(".").last().unwrap_or("json");
-            let mut file = std::fs::File::create(OPTS.output.clone().unwrap())?;
+            let mut file = std::fs::File::create(opts.output.clone().unwrap())?;
 
             match file_type {
                 "json" => {
