@@ -76,6 +76,7 @@ Options:
   -c, --cookies <key=value>       Cookies to send
   -R, --follow-redirects <COUNT>  Follow redirects [default: 0]
       --throttle <THROTTLE>       Request throttling (requests per second) per thread [default: 0]
+      --no-color                  Don't use colors You can also set the NO_COLOR environment variable
   -h, --help                      Print help
   -V, --version                   Print version
 
@@ -100,35 +101,34 @@ Wordlist Filtering:
           End with the specified string [aliases: wfe]
       --wordlist-filter-regex <REGEX>
           Match the specified regex [aliases: wfr]
-      --wordlist-filter-length <LENGTH>
+      --wordlist-filter-length <RANGE>
           Length range e.g.: 5, 5-10, 5,10,15, >5, <5 [aliases: wfl]
 
 Response Filtering:
-      --filter-status-code <CODE>    Reponse status code, e.g.: 200, 200-300, 200,300,400, >200, <200 [aliases: fsc]
+      --filter-status-code <RANGE>   Reponse status code, e.g.: 200, 200-300, 200,300,400, >200, <200 [aliases: fsc]
       --filter-contains <STRING>     Contains the specified string [aliases: fc]
       --filter-starts-with <STRING>  Start with the specified string [aliases: fs]
       --filter-ends-with <STRING>    End with the specified string [aliases: fe]
       --filter-regex <REGEX>         Match the specified regex [aliases: fr]
-      --filter-length <LENGTH>       Response length e.g.: 100, >100, <100, 100-200, 100,200,300 [aliases: fl]
-      --filter-time <TIME>           Response time range in milliseconds e.g.: >1000, <1000, 1000-2000 [aliases: ft]
+      --filter-length <RANGE>        Response length e.g.: 100, >100, <100, 100-200, 100,200,300 [aliases: fl]
+      --filter-time <RANGE>          Response time range in milliseconds e.g.: >1000, <1000, 1000-2000 [aliases: ft]
 ```
 
 ### Inputting ranges
 
-In some cases (`<RANGE>`), you may want to input a range of values. 
+In some cases , you may want to input a `<RANGE>` of values. 
 You can use the following formats:
 
-| Format     | Description                               |
-| :--------- | :---------------------------------------- |
-| `5`        | Exactly `5`                               |
-| `5-10`     | Between `5` and `10` (inclusive)          |
-| `5,10`     | Exactly `5` or `10`                       |
-| `>5`       | Greater than `5`                          |
-| `<5`       | Less than `5`                             |
-| `5,10,15`  | Exactly `5`, `10`, or `15`                |
-| `>5,10,15` | Greater than `5`, or exactly `10` or `15` |
-
-I will let you figure out the rest of the combinations.
+| Format       | Description                                               |
+| :----------- | :-------------------------------------------------------- |
+| `5`          | Exactly `5`                                               |
+| `5-10`       | Between `5` and `10` (inclusive)                          |
+| `5,10`       | Exactly `5` or `10`                                       |
+| `>5`         | Greater than `5`                                          |
+| `<5`         | Less than `5`                                             |
+| `5,10,15`    | Exactly `5`, `10`, or `15`                                |
+| `>5,10,15`   | Greater than `5`, or exactly `10` or `15`                 |
+| `5-10,15-20` | Between `5` and `10` or between `15` and `20` (inclusive) |
 
 ### Response Filtering
 
