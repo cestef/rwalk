@@ -186,6 +186,7 @@ fn method_exists(s: &str) -> Result<String, String> {
 pub async fn main_interactive() -> Result<()> {
     let mut rl = rustyline::DefaultEditor::new()?;
     let mut state = Opts::parse();
+    state.interactive = false;
     loop {
         let readline = rl.readline(">> ");
         match readline {
