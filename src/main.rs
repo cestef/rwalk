@@ -10,11 +10,14 @@ use clap::Parser;
 use cli::Opts;
 use colored::Colorize;
 use futures::future::abortable;
+use futures::stream::StreamExt;
 use indicatif::HumanDuration;
 use parking_lot::Mutex;
 use ptree::print_tree;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use signal_hook::consts::signal::*;
+use signal_hook_tokio::Signals;
 use std::{
     collections::HashMap,
     io::Write,
@@ -23,6 +26,7 @@ use std::{
         Arc,
     },
 };
+
 use url::Url;
 
 mod cli;
@@ -191,40 +195,50 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let ctrlc_words = words.clone();
     let ctrlc_aborted = aborted.clone();
     let ctrlc_save_file = opts.save_file.clone();
-    ctrlc::set_handler(move || {
-        println!("{} Aborting...", INFO.to_string().blue().bold());
-        ctrlc_aborted.store(true, Ordering::Relaxed);
-        handle.abort();
-        if !opts.no_save {
-            let checksum = {
-                let mut hasher = Sha256::new();
-                hasher.update(ctrlc_words.join("\n"));
-                hasher.finalize()
-            };
-            let checksum = format!("{:x}", checksum);
-            let content = serde_json::to_string(&Save {
-                tree: ctrlc_tree.clone(),
-                depth: ctrlc_depth.clone(),
-                wordlist_checksum: checksum,
-                indexes: current_indexes.lock().clone(),
-            });
-            match content {
-                Ok(content) => {
-                    let mut file = std::fs::File::create(&ctrlc_save_file).unwrap();
-                    file.write_all(content.as_bytes()).unwrap();
-                    file.flush().unwrap();
-                    print!("\x1B[2K\r");
-                    println!(
-                        "{} Saved state to {}",
-                        SUCCESS.to_string().green(),
-                        ctrlc_save_file.bold()
-                    );
+    let mut signals = Signals::new(&[SIGINT])?;
+    let ctrlc_handle = signals.handle();
+
+    let signals_task = tokio::spawn(async move {
+        while let Some(signal) = signals.next().await {
+            match signal {
+                SIGINT => {
+                    println!("{} Aborting...", INFO.to_string().blue().bold());
+                    ctrlc_aborted.store(true, Ordering::Relaxed);
+                    handle.abort();
+                    if !opts.no_save {
+                        let checksum = {
+                            let mut hasher = Sha256::new();
+                            hasher.update(ctrlc_words.join("\n"));
+                            hasher.finalize()
+                        };
+                        let checksum = format!("{:x}", checksum);
+                        let content = serde_json::to_string(&Save {
+                            tree: ctrlc_tree.clone(),
+                            depth: ctrlc_depth.clone(),
+                            wordlist_checksum: checksum,
+                            indexes: current_indexes.lock().clone(),
+                        });
+                        match content {
+                            Ok(content) => {
+                                let mut file = std::fs::File::create(&ctrlc_save_file).unwrap();
+                                file.write_all(content.as_bytes()).unwrap();
+                                file.flush().unwrap();
+                                print!("\x1B[2K\r");
+                                println!(
+                                    "{} Saved state to {}",
+                                    SUCCESS.to_string().green(),
+                                    ctrlc_save_file.bold()
+                                );
+                            }
+                            Err(_) => {}
+                        }
+                    }
+                    tx.send(()).await.unwrap();
                 }
-                Err(_) => {}
+                _ => unreachable!(),
             }
         }
-        tx.blocking_send(()).unwrap();
-    })?;
+    });
     let res = main_thread.await?;
     if let Ok(_) = res {
         println!(
@@ -322,5 +336,8 @@ pub async fn _main(opts: Opts) -> Result<()> {
     if aborted.load(Ordering::Relaxed) {
         rx.recv().await;
     }
+    // Terminate the signal stream.
+    ctrlc_handle.close();
+    signals_task.await?;
     Ok(())
 }
