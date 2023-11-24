@@ -60,6 +60,14 @@ async fn main() -> Result<()> {
 }
 
 pub async fn _main(opts: Opts) -> Result<()> {
+    if opts.url.is_none() {
+        println!("{} Missing URL", ERROR.to_string().red());
+        return Ok(());
+    }
+    if opts.wordlists.is_empty() {
+        println!("{} Missing wordlists", ERROR.to_string().red());
+        return Ok(());
+    }
     let mut words = parse_wordlists(&opts.wordlists);
     let before = words.len();
     apply_filters(&opts, &mut words)?;
@@ -87,7 +95,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     }
     if words.len() == 0 {
         println!("{} No words found in wordlists", ERROR.to_string().red());
-        std::process::exit(1);
+        return Ok(());
     }
     let depth = Arc::new(Mutex::new(0));
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =

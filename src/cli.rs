@@ -186,7 +186,7 @@ fn method_exists(s: &str) -> Result<String, String> {
 pub async fn main_interactive() -> Result<()> {
     let mut rl = rustyline::DefaultEditor::new()?;
     let mut state = Opts::parse();
-    state.interactive = false;
+
     loop {
         let readline = rl.readline(">> ");
         match readline {
@@ -194,6 +194,9 @@ pub async fn main_interactive() -> Result<()> {
                 rl.add_history_entry(line.as_str())?;
                 let parts = line.split(" ").collect::<Vec<_>>();
                 let cmd = parts[0];
+                if cmd.is_empty() {
+                    continue;
+                }
                 let args = parts[1..].to_vec();
                 // This is a bit ugly, but I can't manage to box async functions
                 match cmd {
