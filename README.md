@@ -202,8 +202,33 @@ Available transformations:
 - `--transform-lower` or `-L`
 - `--transform-capitalize` or `-C`
 
+### Interactive mode
 
+You can use the `--interactive` (`-i`) flag to enter interactive mode. In this mode, you can set parameters one by one and run the scan when you're ready.
 
+Available commands:
+
+- `set <PARAM> <VALUE>`: Set a parameter
+- `unset <PARAM>`: Unset a parameter
+- `list`: Show the current parameters
+- `run`: Run the scan
+- `exit`: Exit interactive mode
+- `help`: Show help
+- `clear`: Clear the screen
+
+### Output
+
+By default, rwalk will print the results to the terminal. You can also save the results to a file with the `--output` (`-o`) flag:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt -o results.json
+```
+
+Available output formats:
+- `*.json`
+- `*.csv`
+- `*.md`
+- `*.txt`
 
 ### Throttling
 
@@ -262,6 +287,11 @@ rwalk https://example.com path/to/wordlist.txt -R 5 -t 10
 
 This will send `50` (`5`×`10` threads) requests per second. See [Throttling](#throttling) for more information.
 
+### Custom request body
+
+```bash
+rwalk https://example.com path/to/wordlist.txt -m POST -d '{"username": "admin", "password": "admin"}'
+```
 
 ## FAQ
 
