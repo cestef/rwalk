@@ -1,8 +1,16 @@
 use anyhow::Result;
 use colored::Colorize;
-use std::io::{Read, Write};
+use parking_lot::Mutex;
+use std::{
+    io::{Read, Write},
+    sync::Arc,
+};
 
-use crate::{cli::Opts, constants::BANNER_STR};
+use crate::{
+    cli::Opts,
+    constants::BANNER_STR,
+    tree::{Tree, TreeData, TreeNode},
+};
 
 pub fn parse_wordlists(wordlists: &Vec<String>) -> Vec<String> {
     let mut wordlist = Vec::new();
@@ -234,4 +242,78 @@ pub fn should_filter(opts: &Opts) -> bool {
         || opts.filter_regex.is_some()
         || opts.filter_length.is_some()
         || opts.filter_time.is_some();
+}
+
+pub fn save_to_file(
+    opts: &Opts,
+    root: Arc<Mutex<TreeNode<TreeData>>>,
+    depth: Arc<Mutex<usize>>,
+    tree: Arc<Mutex<Tree<TreeData>>>,
+) -> Result<()> {
+    let output = opts.output.clone().unwrap();
+    let file_type = output.split(".").last().unwrap_or("json");
+    let mut file = std::fs::File::create(opts.output.clone().unwrap())?;
+
+    match file_type {
+        "json" => {
+            file.write_all(serde_json::to_string(&*root.lock())?.as_bytes())?;
+            file.flush()?;
+            Ok(())
+        }
+        "csv" => {
+            let mut writer = csv::Writer::from_writer(file);
+            let mut nodes = Vec::new();
+            for depth in 0..*depth.lock() {
+                nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
+            }
+            for node in nodes {
+                writer.serialize(node.lock().data.clone())?;
+            }
+            writer.flush()?;
+            Ok(())
+        }
+        "md" => {
+            let mut nodes = Vec::new();
+            for depth in 0..*depth.lock() {
+                nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
+            }
+            for node in nodes {
+                let data = node.lock().data.clone();
+                let emoji = get_emoji_for_status_code(data.status_code);
+                let url = data.url;
+                let path = data.path;
+                let depth = data.depth;
+                let status_code = data.status_code;
+                let line = format!(
+                    "{}- [{} /{} {}]({})",
+                    "  ".repeat(depth),
+                    emoji,
+                    path.trim_start_matches("/"),
+                    if status_code == 0 {
+                        "".to_string()
+                    } else {
+                        format!("({})", status_code)
+                    },
+                    url,
+                );
+                file.write_all(line.as_bytes())?;
+                file.write_all(b"\n")?;
+            }
+            file.flush()?;
+            Ok(())
+        }
+        _ => {
+            let mut nodes = Vec::new();
+            for depth in 0..*depth.lock() {
+                nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
+            }
+            for node in nodes {
+                let data = node.lock().data.clone();
+                file.write_all(data.url.as_bytes())?;
+                file.write_all(b"\n")?;
+            }
+            file.flush()?;
+            Ok(())
+        }
+    }
 }

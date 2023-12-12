@@ -17,10 +17,12 @@ anyhow = "1.0.75"
 clap = { version = "4.4.8", features = ["derive"] }
 colored = "2.0.4"
 csv = "1.3.0"
+env_logger = "0.10.1"
 field_accessor = "0.5.2"
 futures = "0.3.29"
 indicatif = "0.17.7"
 lazy_static = "1.4.0"
+log = "0.4.20"
 num_cpus = "1.16.0"
 parking_lot = { version = "0.12.1", features = ["serde"] }
 ptree = "0.4.0"

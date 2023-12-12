@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
 use crate::{
-    constants::{ERROR, INFO, SAVE_FILE, SUCCESS, WARNING},
+    constants::{SAVE_FILE, SUCCESS},
     tree::{Tree, TreeData},
-    utils::{apply_filters, apply_transformations, parse_wordlists},
+    utils::{apply_filters, apply_transformations, parse_wordlists, save_to_file},
 };
 use anyhow::Result;
 use clap::Parser;
@@ -12,6 +12,8 @@ use colored::Colorize;
 use futures::future::abortable;
 use futures::stream::StreamExt;
 use indicatif::HumanDuration;
+use log::{error, info, warn};
+use logger::init_logger;
 use parking_lot::Mutex;
 use ptree::print_tree;
 use serde::{Deserialize, Serialize};
@@ -32,6 +34,7 @@ use url::Url;
 mod cli;
 mod constants;
 mod core;
+mod logger;
 mod tree;
 mod utils;
 
@@ -45,6 +48,7 @@ struct Save {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    init_logger();
     let opts = Opts::parse();
     if opts.no_color {
         colored::control::set_override(false);
@@ -61,11 +65,11 @@ async fn main() -> Result<()> {
 
 pub async fn _main(opts: Opts) -> Result<()> {
     if opts.url.is_none() {
-        println!("{} Missing URL", ERROR.to_string().red());
+        error!("Missing URL");
         return Ok(());
     }
     if opts.wordlists.is_empty() {
-        println!("{} Missing wordlists", ERROR.to_string().red());
+        error!("Missing wordlists");
         return Ok(());
     }
     let mut words = parse_wordlists(&opts.wordlists);
@@ -76,9 +80,8 @@ pub async fn _main(opts: Opts) -> Result<()> {
     words.dedup();
     let after = words.len();
     if before != after {
-        println!(
-            "{} {} words loaded, {} after deduplication and filters (-{}%)",
-            INFO.to_string().blue(),
+        info!(
+            "{} words loaded, {} after deduplication and filters (-{}%)",
             before.to_string().bold(),
             after.to_string().bold(),
             ((before - after) as f64 / before as f64 * 100.0)
@@ -87,14 +90,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 .bold()
         );
     } else {
-        println!(
-            "{} {} words loaded",
-            INFO.to_string().blue(),
-            before.to_string().bold()
-        );
+        info!("{} words loaded", before.to_string().bold());
     }
     if words.len() == 0 {
-        println!("{} No words found in wordlists", ERROR.to_string().red());
+        error!("No words found in wordlists");
         return Ok(());
     }
     let depth = Arc::new(Mutex::new(0));
@@ -110,9 +109,8 @@ pub async fn _main(opts: Opts) -> Result<()> {
                         None
                     } else {
                         print_tree(&*root.lock())?;
-                        println!(
-                            "{} Found saved state crawled to depth {}",
-                            INFO.to_string().blue(),
+                        info!(
+                            "Found saved state crawled to depth {}",
                             (*saved.depth.lock() + 1).to_string().blue()
                         );
 
@@ -124,9 +122,8 @@ pub async fn _main(opts: Opts) -> Result<()> {
                         } {
                             *current_indexes.lock() = saved.indexes;
                         } else {
-                            println!(
-                                "{} Wordlists have changed, starting from scratch at depth {}",
-                                WARNING.to_string().yellow(),
+                            warn!(
+                                "Wordlists have changed, starting from scratch at depth {}",
                                 (*saved.depth.lock() + 1).to_string().yellow()
                             );
                         }
@@ -162,24 +159,31 @@ pub async fn _main(opts: Opts) -> Result<()> {
         t
     };
 
+    // Check if the root URL is up
+    let root_url = tree.lock().root.clone().unwrap().lock().data.url.clone();
+    let root_url = Url::parse(&root_url)?;
+    let res = reqwest::get(root_url.clone()).await;
+    if let Err(e) = res {
+        error!("Error while connecting to {}: {}", root_url, e);
+        return Ok(());
+    }
+    let res = res.unwrap();
+
+    tree.lock().root.clone().unwrap().lock().data.status_code = res.status().as_u16();
+
     let threads = opts
         .threads
         .unwrap_or(num_cpus::get() * 10)
         .max(1)
         .min(words.len());
-    println!(
-        "{} Starting crawler with {} threads",
-        INFO.to_string().blue(),
+    info!(
+        "Starting crawler with {} threads",
         threads.to_string().bold(),
     );
 
     let watch = stopwatch::Stopwatch::start_new();
 
-    println!(
-        "{} Press {} to save state and exit",
-        INFO.to_string().blue(),
-        "Ctrl+C".bold()
-    );
+    info!("Press {} to save state and exit", "Ctrl+C".bold());
     let chunks = words
         .chunks(words.len() / threads)
         .map(|x| x.to_vec())
@@ -210,7 +214,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         while let Some(signal) = signals.next().await {
             match signal {
                 SIGINT => {
-                    println!("{} Aborting...", INFO.to_string().blue().bold());
+                    info!("Aborting...");
                     ctrlc_aborted.store(true, Ordering::Relaxed);
                     handle.abort();
                     if !opts.no_save {
@@ -232,11 +236,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                                 file.write_all(content.as_bytes()).unwrap();
                                 file.flush().unwrap();
                                 print!("\x1B[2K\r");
-                                println!(
-                                    "{} Saved state to {}",
-                                    SUCCESS.to_string().green(),
-                                    ctrlc_save_file.bold()
-                                );
+                                info!("Saved state to {}", ctrlc_save_file.bold());
                             }
                             Err(_) => {}
                         }
@@ -268,77 +268,14 @@ pub async fn _main(opts: Opts) -> Result<()> {
             std::fs::remove_file(opts.save_file.clone())?;
         }
         if opts.output.is_some() {
-            let output = opts.output.clone().unwrap();
-            let file_type = output.split(".").last().unwrap_or("json");
-            let mut file = std::fs::File::create(opts.output.clone().unwrap())?;
+            let res = save_to_file(&opts, root, depth, tree);
 
-            match file_type {
-                "json" => {
-                    file.write_all(serde_json::to_string(&*root.lock())?.as_bytes())?;
-                    file.flush()?;
-                }
-                "csv" => {
-                    let mut writer = csv::Writer::from_writer(file);
-                    let mut nodes = Vec::new();
-                    for depth in 0..*depth.lock() {
-                        nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
-                    }
-                    for node in nodes {
-                        writer.serialize(node.lock().data.clone())?;
-                    }
-                    writer.flush()?;
-                }
-                "md" => {
-                    let mut nodes = Vec::new();
-                    for depth in 0..*depth.lock() {
-                        nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
-                    }
-                    for node in nodes {
-                        let data = node.lock().data.clone();
-                        let emoji = utils::get_emoji_for_status_code(data.status_code);
-                        let url = data.url;
-                        let path = data.path;
-                        let depth = data.depth;
-                        let status_code = data.status_code;
-                        let line = format!(
-                            "{}- [{} /{} {}]({})",
-                            "  ".repeat(depth),
-                            emoji,
-                            path.trim_start_matches("/"),
-                            if status_code == 0 {
-                                "".to_string()
-                            } else {
-                                format!("({})", status_code)
-                            },
-                            url,
-                        );
-                        file.write_all(line.as_bytes())?;
-                        file.write_all(b"\n")?;
-                    }
-                    file.flush()?;
-                }
-                "txt" => {
-                    let mut nodes = Vec::new();
-                    for depth in 0..*depth.lock() {
-                        nodes.append(&mut tree.lock().get_nodes_at_depth(depth));
-                    }
-                    for node in nodes {
-                        let data = node.lock().data.clone();
-                        file.write_all(data.url.as_bytes())?;
-                        file.write_all(b"\n")?;
-                    }
-                    file.flush()?;
-                }
-                _ => {
-                    println!(
-                        "{} Invalid output file type",
-                        ERROR.to_string().red().bold()
-                    );
-                    std::process::exit(1);
+            match res {
+                Ok(_) => info!("Saved to {}", opts.output.unwrap().bold()),
+                Err(e) => {
+                    error!("{}", e);
                 }
             }
-
-            println!("{} Saved to {}", SUCCESS.to_string().green(), output.bold());
         }
     }
     if aborted.load(Ordering::Relaxed) {

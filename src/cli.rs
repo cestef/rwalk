@@ -95,13 +95,13 @@ pub struct Opts {
     /// Contains the specified string
     #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfc")]
     pub wordlist_filter_contains: Option<String>,
-    /// Start with the specified string
+    /// Starts with the specified string
     #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfs")]
     pub wordlist_filter_starts_with: Option<String>,
-    /// End with the specified string
+    /// Ends with the specified string
     #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfe")]
     pub wordlist_filter_ends_with: Option<String>,
-    /// Match the specified regex
+    /// Matches the specified regex
     #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "REGEX", visible_alias = "wfr")]
     pub wordlist_filter_regex: Option<String>,
     /// Length range
@@ -116,13 +116,13 @@ pub struct Opts {
     /// Contains the specified string
     #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fc")]
     pub filter_contains: Option<String>,
-    /// Start with the specified string
+    /// Starts with the specified string
     #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fs")]
     pub filter_starts_with: Option<String>,
-    /// End with the specified string
+    /// Ends with the specified string
     #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fe")]
     pub filter_ends_with: Option<String>,
-    /// Match the specified regex
+    /// Matches the specified regex
     #[clap(long, help_heading = Some("Response Filtering"), value_name = "REGEX", visible_alias = "fr")]
     pub filter_regex: Option<String>,
     /// Response length

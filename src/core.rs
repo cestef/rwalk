@@ -220,7 +220,7 @@ pub async fn start(
                                             url
                                         ));
                                     }
-                                }
+                                } 
                             }
                             Err(err) => {
                                 if err.is_timeout() {
