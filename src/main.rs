@@ -49,7 +49,15 @@ struct Save {
 #[tokio::main]
 async fn main() -> Result<()> {
     init_logger();
+    let config_path = dirs::home_dir()
+        .unwrap()
+        .join(".config")
+        .join("rwalk")
+        .join("config");
+    println!("{}", config_path.to_str().unwrap());
+    dotenv::from_path(config_path).ok();
     let opts = Opts::parse();
+
     if opts.no_color {
         colored::control::set_override(false);
     }

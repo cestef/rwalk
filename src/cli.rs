@@ -15,123 +15,136 @@ use url::Url;
 )]
 pub struct Opts {
     /// Target URL
-    #[clap(required_unless_present = "interactive", value_parser = parse_url)]
+    #[clap(required_unless_present = "interactive", value_parser = parse_url, env, hide_env=true, env, hide_env=true)]
     pub url: Option<String>,
     /// Wordlist(s)
-    #[clap(required_unless_present = "interactive")]
+    #[clap(
+        required_unless_present = "interactive",
+        env,
+        hide_env = true,
+        env,
+        hide_env = true
+    )]
     pub wordlists: Vec<String>,
 
     /// Number of threads to use
-    #[clap(short, long)]
+    #[clap(short, long, env, hide_env = true)]
     pub threads: Option<usize>,
     /// Maximum depth to crawl
-    #[clap(short, long, default_value = "1")]
+    #[clap(short, long, default_value = "1", env, hide_env = true)]
     pub depth: Option<usize>,
     /// Output file
-    #[clap(short, long, value_name = "FILE")]
+    #[clap(short, long, value_name = "FILE", env, hide_env = true)]
     pub output: Option<String>,
     /// Request timeout in seconds
-    #[clap(short = 'T', long, default_value = "10")]
+    #[clap(short = 'T', long, default_value = "10", env, hide_env = true)]
     pub timeout: Option<usize>,
     /// User agent
-    #[clap(short, long)]
+    #[clap(short, long, env, hide_env = true)]
     pub user_agent: Option<String>,
     /// HTTP method
-    #[clap(short, long, default_value = "GET", value_parser = method_exists)]
+    #[clap(short, long, default_value = "GET", value_parser = method_exists, env, hide_env=true)]
     pub method: Option<String>,
     /// Data to send with the request
-    #[clap(short, long)]
+    #[clap(short, long, env, hide_env = true)]
     pub data: Option<String>,
     /// Headers to send
-    #[clap(short = 'H', long, value_name = "key:value", value_parser = is_header)]
+    #[clap(short = 'H', long, value_name = "key:value", value_parser = is_header, env, hide_env=true)]
     pub headers: Vec<String>,
     /// Cookies to send
-    #[clap(short, long, value_name = "key=value", value_parser = is_cookie)]
+    #[clap(short, long, value_name = "key=value", value_parser = is_cookie, env, hide_env=true)]
     pub cookies: Vec<String>,
     /// Follow redirects
-    #[clap(short = 'R', long, default_value = "0", value_name = "COUNT")]
+    #[clap(
+        short = 'R',
+        long,
+        default_value = "0",
+        value_name = "COUNT",
+        env,
+        hide_env = true
+    )]
     pub follow_redirects: Option<usize>,
     /// Request throttling (requests per second) per thread
-    #[clap(long, default_value = "0")]
+    #[clap(long, default_value = "0", env, hide_env = true)]
     pub throttle: Option<usize>,
 
     /// Don't use colors
     /// You can also set the NO_COLOR environment variable
-    #[clap(long, alias = "no-colors")]
+    #[clap(long, alias = "no-colors", env, hide_env = true)]
     pub no_color: bool,
     /// Quiet mode
-    #[clap(short, long)]
+    #[clap(short, long, env, hide_env = true)]
     pub quiet: bool,
     /// Interactive mode
-    #[clap(short, long)]
+    #[clap(short, long, env, hide_env = true)]
     pub interactive: bool,
 
     /// Resume from a saved file
-    #[clap(long, help_heading = Some("Resume"))]
+    #[clap(long, help_heading = Some("Resume"), env, hide_env=true)]
     pub resume: bool,
     /// Custom save file
-    #[clap(short = 'f', long, default_value = SAVE_FILE, help_heading = Some("Resume"), value_name = "FILE")]
+    #[clap(short = 'f', long, default_value = SAVE_FILE, help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
     pub save_file: String,
     /// Don't save the state in case you abort
-    #[clap(long, help_heading = Some("Resume"))]
+    #[clap(long, help_heading = Some("Resume"), env, hide_env=true)]
     pub no_save: bool,
 
     /// Wordlist to uppercase
-    #[clap(short='L', long, help_heading = Some("Transformations"), conflicts_with = "transform_upper")]
+    #[clap(short='L', long, help_heading = Some("Transformations"), conflicts_with = "transform_upper", env, hide_env=true)]
     pub transform_lower: bool,
     /// Wordlist to lowercase
-    #[clap(short='U', long, help_heading = Some("Transformations"), conflicts_with = "transform_lower")]
+    #[clap(short='U', long, help_heading = Some("Transformations"), conflicts_with = "transform_lower", env, hide_env=true)]
     pub transform_upper: bool,
     /// Append a prefix to each word
-    #[clap(short='P', long, help_heading = Some("Transformations"), value_name = "PREFIX")]
+    #[clap(short='P', long, help_heading = Some("Transformations"), value_name = "PREFIX", env, hide_env=true)]
     pub transform_prefix: Option<String>,
     /// Append a suffix to each word
-    #[clap(short='S', long, help_heading = Some("Transformations"), value_name = "SUFFIX")]
+    #[clap(short='S', long, help_heading = Some("Transformations"), value_name = "SUFFIX", env, hide_env=true)]
     pub transform_suffix: Option<String>,
     /// Capitalize each word
-    #[clap(short='C', long, help_heading = Some("Transformations"), conflicts_with_all = &["transform_lower", "transform_upper"])]
+    #[clap(short='C', long, help_heading = Some("Transformations"), conflicts_with_all = &["transform_lower", "transform_upper"], env, hide_env=true)]
     pub transform_capitalize: bool,
 
     /// Contains the specified string
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfc")]
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfc", env, hide_env=true)]
     pub wordlist_filter_contains: Option<String>,
     /// Starts with the specified string
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfs")]
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfs", env, hide_env=true)]
     pub wordlist_filter_starts_with: Option<String>,
     /// Ends with the specified string
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfe")]
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfe", env, hide_env=true)]
     pub wordlist_filter_ends_with: Option<String>,
     /// Matches the specified regex
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "REGEX", visible_alias = "wfr")]
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "REGEX", visible_alias = "wfr", env, hide_env=true)]
     pub wordlist_filter_regex: Option<String>,
     /// Length range
     /// e.g.: 5, 5-10, 5,10,15, >5, <5
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "RANGE", visible_alias = "wfl", value_parser(parse_cli_range_input))]
+    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "RANGE", visible_alias = "wfl", value_parser(parse_cli_range_input), env, hide_env=true)]
     pub wordlist_filter_length: Option<String>,
 
     /// Reponse status code,
     /// e.g.: 200, 200-300, 200,300,400, >200, <200
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fsc", value_parser(parse_cli_range_input))]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fsc", value_parser(parse_cli_range_input), env, hide_env=true)]
     pub filter_status_code: Option<String>,
     /// Contains the specified string
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fc")]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fc", env, hide_env=true)]
     pub filter_contains: Option<String>,
     /// Starts with the specified string
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fs")]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fs", env, hide_env=true)]
     pub filter_starts_with: Option<String>,
     /// Ends with the specified string
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fe")]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fe", env, hide_env=true)]
     pub filter_ends_with: Option<String>,
     /// Matches the specified regex
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "REGEX", visible_alias = "fr")]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "REGEX", visible_alias = "fr", env, hide_env=true)]
     pub filter_regex: Option<String>,
     /// Response length
     /// e.g.: 100, >100, <100, 100-200, 100,200,300
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fl", value_parser(parse_cli_range_input))]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fl", value_parser(parse_cli_range_input), env, hide_env=true)]
     pub filter_length: Option<String>,
     /// Response time range in milliseconds
     /// e.g.: >1000, <1000, 1000-2000
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "ft", value_parser(parse_cli_range_input))]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "ft", value_parser(parse_cli_range_input), env, hide_env=true)]
     pub filter_time: Option<String>,
 }
 
