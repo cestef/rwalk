@@ -114,6 +114,21 @@ Response Filtering:
       --filter-time <RANGE>          Response time range in milliseconds e.g.: >1000, <1000, 1000-2000 [aliases: ft]
 ```
 
+### Passing parameters as environment variables
+
+You can pass parameters as environment variables. For example, to set the number of threads to `10`:
+
+```bash
+THREADS=10 rwalk https://example.com path/to/wordlist.txt
+```
+
+is equivalent to:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt -t 10
+```
+The env file located at `~/.config/rwalk/.env` will be loaded automatically.
+
 ### Inputting ranges
 
 In some cases , you may want to input a `<RANGE>` of values. 

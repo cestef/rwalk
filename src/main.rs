@@ -53,7 +53,7 @@ async fn main() -> Result<()> {
         .unwrap()
         .join(".config")
         .join("rwalk")
-        .join("config");
+        .join(".env");
     println!("{}", config_path.to_str().unwrap());
     dotenv::from_path(config_path).ok();
     let opts = Opts::parse();
