@@ -15,16 +15,10 @@ use url::Url;
 )]
 pub struct Opts {
     /// Target URL
-    #[clap(required_unless_present = "interactive", value_parser = parse_url, env, hide_env=true, env, hide_env=true)]
+    #[clap(required_unless_present = "interactive", value_parser = parse_url, env, hide_env=true)]
     pub url: Option<String>,
     /// Wordlist(s)
-    #[clap(
-        required_unless_present = "interactive",
-        env,
-        hide_env = true,
-        env,
-        hide_env = true
-    )]
+    #[clap(env, hide_env = true)]
     pub wordlists: Vec<String>,
 
     /// Number of threads to use

@@ -22,7 +22,7 @@ use signal_hook::consts::signal::*;
 use signal_hook_tokio::Signals;
 use std::{
     collections::HashMap,
-    io::Write,
+    io::{Read, Write},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
         .join(".config")
         .join("rwalk")
         .join(".env");
-    println!("{}", config_path.to_str().unwrap());
+    // println!("{}", config_path.to_str().unwrap());
     dotenv::from_path(config_path).ok();
     let opts = Opts::parse();
 
@@ -76,11 +76,26 @@ pub async fn _main(opts: Opts) -> Result<()> {
         error!("Missing URL");
         return Ok(());
     }
-    if opts.wordlists.is_empty() {
-        error!("Missing wordlists");
-        return Ok(());
-    }
-    let mut words = parse_wordlists(&opts.wordlists);
+
+    let mut words = if opts.wordlists.is_empty() {
+        let stdin = std::io::stdin();
+        let mut handle = stdin.lock();
+        let mut buf = String::new();
+        handle.read_to_string(&mut buf)?;
+        let words: Vec<String> = buf
+            .split('\n')
+            .map(|x| x.to_string())
+            .filter(|x| !x.is_empty())
+            .collect();
+
+        if words.is_empty() {
+            error!("Missing wordlists");
+            return Ok(());
+        }
+        words
+    } else {
+        parse_wordlists(&opts.wordlists)?
+    };
     let before = words.len();
     apply_filters(&opts, &mut words)?;
     apply_transformations(&opts, &mut words);

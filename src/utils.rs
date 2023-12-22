@@ -12,10 +12,10 @@ use crate::{
     tree::{Tree, TreeData, TreeNode},
 };
 
-pub fn parse_wordlists(wordlists: &Vec<String>) -> Vec<String> {
+pub fn parse_wordlists(wordlists: &Vec<String>) -> Result<Vec<String>> {
     let mut wordlist = Vec::new();
     for wordlist_path in wordlists {
-        let mut file = std::fs::File::open(wordlist_path).unwrap();
+        let mut file = std::fs::File::open(wordlist_path)?;
         let mut bytes = Vec::new();
         file.read_to_end(&mut bytes).unwrap();
 
@@ -28,7 +28,7 @@ pub fn parse_wordlists(wordlists: &Vec<String>) -> Vec<String> {
             }
         }
     }
-    wordlist
+    Ok(wordlist)
 }
 
 pub fn banner() {
