@@ -151,11 +151,8 @@ pub struct Opts {
     #[clap(long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
     pub proxy: Option<String>,
     /// Proxy username
-    #[clap(long, help_heading = Some("Proxy"), value_name = "USERNAME", env, hide_env=true, visible_alias = "Pu")]
-    pub proxy_username: Option<String>,
-    /// Proxy password
-    #[clap(long, help_heading = Some("Proxy"), value_name = "PASSWORD", env, hide_env=true, visible_alias = "Pp")]
-    pub proxy_password: Option<String>,
+    #[clap(long, help_heading = Some("Proxy"), value_name = "USER:PASS", env, hide_env=true)]
+    pub proxy_auth: Option<String>,
 }
 
 fn parse_cli_range_input(s: &str) -> Result<String, String> {

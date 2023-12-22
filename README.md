@@ -275,7 +275,11 @@ You can pass a proxy URL with the `--proxy` flag:
 rwalk https://example.com path/to/wordlist.txt --proxy http://pro.xy:8080
 ```
 
-Authentication is also supported with `--proxy-username` (`--Pu`) and `--proxy-password` (`--Pp`).
+Authentication is also supported with `--proxy-auth`:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt --proxy http://pro.xy:8080 --proxy-auth username:password
+```
 
 ## Examples
 
