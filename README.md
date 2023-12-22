@@ -170,16 +170,22 @@ Available filters:
 
 ### Wordlists
 
-You can pass multiple wordlists to rwalk. For example:
+You can pass multiple wordlists to `rwalk`. For example:
 
 ```bash
 rwalk https://example.com path/to/wordlist1.txt path/to/wordlist2.txt
 ```
 
-rwalk will merge the wordlists and remove duplicates. You can also apply filters and transformations to the wordlists (see below).
+`rwalk` will merge the wordlists and remove duplicates. You can also apply filters and transformations to the wordlists (see below).
+
+You can also pass wordlists from stdin:
+
+```bash
+cat path/to/wordlist.txt | rwalk https://example.com
+```
 
 > [!NOTE]
-> A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, rwalk will only load the wordlists if the checksums match. See [Saving progress](#saving-and-resuming-scans) for more information.
+> A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, `rwalk` will only load the wordlists if the checksums match. See [Saving progress](#saving-and-resuming-scans) for more information.
 
 
 ### Wordlist Filters
@@ -233,7 +239,7 @@ Available commands:
 
 ### Output
 
-By default, rwalk will print the results to the terminal. You can also save the results to a file with the `--output` (`-o`) flag:
+By default, `rwalk` will print the results to the terminal. You can also save the results to a file with the `--output` (`-o`) flag:
 
 ```bash
 rwalk https://example.com path/to/wordlist.txt -o results.json
