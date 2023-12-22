@@ -1,5 +1,5 @@
 use colored::Colorize;
-use reqwest::{header::HeaderMap, redirect::Policy};
+use reqwest::{header::HeaderMap, redirect::Policy, Proxy};
 use std::{
     collections::{
         hash_map::Entry::{Occupied, Vacant},
@@ -93,9 +93,23 @@ pub async fn start(
                 } else {
                     Policy::none()
                 })
-                .timeout(std::time::Duration::from_secs(opts.timeout.unwrap() as u64))
-                .build()
-                .unwrap();
+                .timeout(std::time::Duration::from_secs(opts.timeout.unwrap() as u64));
+
+            let client = if let Some(proxy) = opts.proxy.clone() {
+                let proxy = Proxy::all(proxy)?;
+                if opts.proxy_username.is_some() && opts.proxy_password.is_some() {
+                    let proxy_username = opts.proxy_username.clone().unwrap();
+                    let proxy_password = opts.proxy_password.clone().unwrap();
+                    let proxy = proxy.basic_auth(&proxy_username, &proxy_password);
+                    client.proxy(proxy)
+                } else {
+                    client.proxy(proxy)
+                }
+            } else {
+                client
+            };
+
+            let client = client.build()?;
             for (i, chunk) in chunks.iter().enumerate() {
                 let mut tree = tree.lock().clone();
                 let previous_node = previous_node.clone();

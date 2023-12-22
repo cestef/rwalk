@@ -146,6 +146,16 @@ pub struct Opts {
     /// e.g.: >1000, <1000, 1000-2000
     #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "ft", value_parser(parse_cli_range_input), env, hide_env=true)]
     pub filter_time: Option<String>,
+
+    /// Proxy URL
+    #[clap(long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
+    pub proxy: Option<String>,
+    /// Proxy username
+    #[clap(long, help_heading = Some("Proxy"), value_name = "USERNAME", env, hide_env=true, visible_alias = "Pu")]
+    pub proxy_username: Option<String>,
+    /// Proxy password
+    #[clap(long, help_heading = Some("Proxy"), value_name = "PASSWORD", env, hide_env=true, visible_alias = "Pp")]
+    pub proxy_password: Option<String>,
 }
 
 fn parse_cli_range_input(s: &str) -> Result<String, String> {

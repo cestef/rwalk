@@ -14,7 +14,7 @@ A blazing fast web directory scanner written in Rust. It's like [dirsearch](http
 - [x] Write results to file (JSON, CSV, etc.)
 - [x] Configurable request parameters (headers, cookies, etc.)
 - [x] Request throttling
-- [ ] Proxy support
+- [x] Proxy support
 
 ## From [crates.io](https://crates.io/crates/rwalk)
 
@@ -266,6 +266,16 @@ rwalk https://example.com path/to/wordlist.txt -f myscan.json
 ```
 
 The auto-saving behavior can be disabled with `--no-save`.
+
+### Proxy support
+
+You can pass a proxy URL with the `--proxy` flag:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt --proxy http://pro.xy:8080
+```
+
+Authentication is also supported with `--proxy-username` (`--Pu`) and `--proxy-password` (`--Pp`).
 
 ## Examples
 
