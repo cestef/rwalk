@@ -181,7 +181,7 @@ rwalk https://example.com path/to/wordlist1.txt path/to/wordlist2.txt
 You can also pass wordlists from stdin:
 
 ```bash
-cat path/to/wordlist.txt | rwalk https://example.com
+cat path/to/wordlist.txt | rwalk https://example.com -
 ```
 
 > [!NOTE]

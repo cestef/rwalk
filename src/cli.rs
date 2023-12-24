@@ -18,7 +18,7 @@ pub struct Opts {
     #[clap(required_unless_present = "interactive", value_parser = parse_url, env, hide_env=true)]
     pub url: Option<String>,
     /// Wordlist(s)
-    #[clap(env, hide_env = true)]
+    #[clap(required_unless_present = "interactive", env, hide_env = true)]
     pub wordlists: Vec<String>,
 
     /// Number of threads to use
@@ -61,7 +61,9 @@ pub struct Opts {
     /// Request throttling (requests per second) per thread
     #[clap(long, default_value = "0", env, hide_env = true)]
     pub throttle: Option<usize>,
-
+    /// Max time to run (will abort after given time) in seconds
+    #[clap(short = 'M', long, env, hide_env = true)]
+    pub max_time: Option<usize>,
     /// Don't use colors
     /// You can also set the NO_COLOR environment variable
     #[clap(long, alias = "no-colors", env, hide_env = true)]

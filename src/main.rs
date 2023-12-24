@@ -27,7 +27,9 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
+    time::Duration,
 };
+use tokio::time::timeout;
 
 use url::Url;
 
@@ -76,12 +78,13 @@ pub async fn _main(opts: Opts) -> Result<()> {
         error!("Missing URL");
         return Ok(());
     }
-
-    let mut words = if opts.wordlists.is_empty() {
+    let mut words = if opts.wordlists.len() == 1 && opts.wordlists.first().unwrap() == "-" {
         let stdin = std::io::stdin();
         let mut handle = stdin.lock();
+
         let mut buf = String::new();
         handle.read_to_string(&mut buf)?;
+
         let words: Vec<String> = buf
             .split('\n')
             .map(|x| x.to_string())
@@ -96,6 +99,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         parse_wordlists(&opts.wordlists)?
     };
+
     let before = words.len();
     apply_filters(&opts, &mut words)?;
     apply_transformations(&opts, &mut words);
@@ -185,7 +189,11 @@ pub async fn _main(opts: Opts) -> Result<()> {
     // Check if the root URL is up
     let root_url = tree.lock().root.clone().unwrap().lock().data.url.clone();
     let root_url = Url::parse(&root_url)?;
-    let res = reqwest::get(root_url.clone()).await;
+    let tmp_client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(opts.timeout.unwrap() as u64))
+        .connect_timeout(Duration::from_secs(opts.timeout.unwrap() as u64))
+        .build()?;
+    let res = tmp_client.get(root_url.clone()).send().await;
     if let Err(e) = res {
         error!("Error while connecting to {}: {}", root_url, e);
         return Ok(());
@@ -212,15 +220,20 @@ pub async fn _main(opts: Opts) -> Result<()> {
         .map(|x| x.to_vec())
         .collect::<Vec<_>>();
     let chunks = Arc::new(chunks);
-    let (task, handle) = abortable(core::start(
+
+    let main_fun = core::start(
         opts.clone(),
         depth.clone(),
         tree.clone(),
         current_indexes.clone(),
         chunks.clone(),
         words.clone(),
-    ));
-
+    );
+    let (task, handle) = if let Some(max_time) = opts.max_time {
+        abortable(timeout(Duration::from_secs(max_time as u64), main_fun).into_inner())
+    } else {
+        abortable(main_fun)
+    };
     let main_thread = tokio::spawn(task);
     let aborted = Arc::new(AtomicBool::new(false));
     let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(1);
