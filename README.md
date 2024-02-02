@@ -57,50 +57,6 @@ cargo run --release -- https://example.com path/to/wordlist.txt
 You can run `rwalk --help` to see the usage information:
 
 ```text
-A blazing fast web directory scanner
-
-Usage: rwalk [OPTIONS] [URL] [WORDLISTS]...
-
-Arguments:
-  [URL]           Target URL
-  [WORDLISTS]...  Wordlist(s)
-
-Options:
-  -t, --threads <THREADS>         Number of threads to use
-  -d, --depth <DEPTH>             Maximum depth to crawl [default: 1]
-  -o, --output <FILE>             Output file
-  -T, --timeout <TIMEOUT>         Request timeout in seconds [default: 10]
-  -u, --user-agent <USER_AGENT>   User agent
-  -m, --method <METHOD>           HTTP method [default: GET]
-  -d, --data <DATA>               Data to send with the request
-  -H, --headers <key:value>       Headers to send
-  -c, --cookies <key=value>       Cookies to send
-  -R, --follow-redirects <COUNT>  Follow redirects [default: 0]
-      --throttle <THROTTLE>       Request throttling (requests per second) per thread [default: 0]
-  -M, --max-time <MAX_TIME>       Max time to run (will abort after given time) in seconds
-      --no-color                  Don't use colors You can also set the NO_COLOR environment variable
-  -q, --quiet                     Quiet mode
-  -i, --interactive               Interactive mode
-  -h, --help                      Print help
-  -V, --version                   Print version
-
-Resume:
-  -r, --resume            Resume from a saved file
-  -f, --save-file <FILE>  Custom save file [default: .rwalk.json]
-      --no-save           Don't save the state in case you abort
-
-Transformations:
-  -L, --transform-lower            Wordlist to uppercase
-  -U, --transform-upper            Wordlist to lowercase
-  -P, --transform-prefix <PREFIX>  Append a prefix to each word
-
-~
-❯ clear
-
-~
-❯ rwalk --help
-A blazing fast web directory scanner
-
 Usage: rwalk [OPTIONS] [URL] [WORDLISTS]...
 
 Arguments:
