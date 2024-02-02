@@ -15,10 +15,15 @@ use url::Url;
 )]
 pub struct Opts {
     /// Target URL
-    #[clap(required_unless_present = "interactive", value_parser = parse_url, env, hide_env=true)]
+    #[clap(required_unless_present = "interactive", required_unless_present = "resume", value_parser = parse_url, env, hide_env=true)]
     pub url: Option<String>,
     /// Wordlist(s)
-    #[clap(required_unless_present = "interactive", env, hide_env = true)]
+    #[clap(
+        required_unless_present = "interactive",
+        required_unless_present = "resume",
+        env,
+        hide_env = true
+    )]
     pub wordlists: Vec<String>,
 
     /// Number of threads to use
@@ -76,7 +81,7 @@ pub struct Opts {
     pub interactive: bool,
 
     /// Resume from a saved file
-    #[clap(long, help_heading = Some("Resume"), env, hide_env=true)]
+    #[clap(short='r', long, help_heading = Some("Resume"), env, hide_env=true)]
     pub resume: bool,
     /// Custom save file
     #[clap(short = 'f', long, default_value = SAVE_FILE, help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
@@ -299,6 +304,12 @@ async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
             &key.to_string(),
             Some(parse_cli_range_input(value).unwrap()),
         ),
+        ValueType::StringVec => {
+            let re = regex::Regex::new(r#"\[(.*)\]"#).unwrap();
+            let value = re.replace_all(value, "$1").to_string();
+            let value = value.split(",").map(|s| s.to_string()).collect::<Vec<_>>();
+            state.set(&key.to_string(), value)
+        }
     };
 
     match res {
@@ -324,6 +335,7 @@ enum ValueType {
     Bool,
     Usize,
     Range,
+    StringVec,
 }
 
 fn parse_bool(s: &str) -> bool {
@@ -335,6 +347,9 @@ fn parse_bool(s: &str) -> bool {
 }
 
 fn get_value_type(s: &str) -> ValueType {
+    if s.starts_with("[") && s.ends_with("]") {
+        return ValueType::StringVec;
+    }
     if ["true", "false"].contains(&s.to_lowercase().as_str()) {
         return ValueType::Bool;
     }

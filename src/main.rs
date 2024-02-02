@@ -22,7 +22,7 @@ use signal_hook::consts::signal::*;
 use signal_hook_tokio::Signals;
 use std::{
     collections::HashMap,
-    io::{Read, Write},
+    io::{self, Read, Write},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -45,6 +45,8 @@ struct Save {
     tree: Arc<Mutex<Tree<TreeData>>>,
     depth: Arc<Mutex<usize>>,
     wordlist_checksum: String,
+    wordlists: Arc<Vec<String>>,
+    url: String,
     indexes: HashMap<String, Vec<usize>>,
 }
 
@@ -74,12 +76,30 @@ async fn main() -> Result<()> {
 }
 
 pub async fn _main(opts: Opts) -> Result<()> {
-    if opts.url.is_none() {
+    if opts.url.is_none() && !opts.resume {
         error!("Missing URL");
         return Ok(());
     }
+    let saved = if opts.resume {
+        std::fs::read_to_string(opts.save_file.clone())
+    } else {
+        Err(io::Error::new(io::ErrorKind::NotFound, "No save file"))
+    };
+    let saved_json = if let Ok(saved) = saved {
+        Some(serde_json::from_str::<Save>(&saved))
+    } else {
+        None
+    };
+    let resolved_wordlists_paths = if let Some(ref save) = saved_json {
+        match save {
+            Ok(save) => (*save.wordlists).clone(),
+            Err(_) => opts.wordlists.clone(),
+        }
+    } else {
+        opts.wordlists.clone()
+    };
     let mut words = if opts.wordlists.len() == 1 && opts.wordlists.first().unwrap() == "-" {
-        let stdin = std::io::stdin();
+        let stdin = io::stdin();
         let mut handle = stdin.lock();
 
         let mut buf = String::new();
@@ -97,7 +117,13 @@ pub async fn _main(opts: Opts) -> Result<()> {
         }
         words
     } else {
-        parse_wordlists(&opts.wordlists)?
+        let res = parse_wordlists(&resolved_wordlists_paths);
+        if let Err(e) = res {
+            error!("{}", e);
+            return Ok(());
+        }
+
+        res.unwrap()
     };
 
     let before = words.len();
@@ -126,41 +152,41 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let depth = Arc::new(Mutex::new(0));
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =
         Arc::new(Mutex::new(HashMap::new()));
-    let saved = std::fs::read_to_string(opts.save_file.clone());
+
     let saved = if opts.resume {
-        match saved {
-            Ok(saved) => {
-                let saved: Save = serde_json::from_str(&saved)?;
-                if let Some(root) = &saved.tree.clone().lock().root {
+        match saved_json {
+            Some(json) => {
+                let json = json.unwrap();
+                if let Some(root) = &json.tree.clone().lock().root {
                     if root.lock().data.url != opts.url.clone().unwrap() {
                         None
                     } else {
                         print_tree(&*root.lock())?;
                         info!(
                             "Found saved state crawled to depth {}",
-                            (*saved.depth.lock() + 1).to_string().blue()
+                            (*json.depth.lock() + 1).to_string().blue()
                         );
 
-                        *depth.lock() = *saved.depth.lock();
-                        if saved.wordlist_checksum == {
+                        *depth.lock() = *json.depth.lock();
+                        if json.wordlist_checksum == {
                             let mut hasher = Sha256::new();
                             hasher.update(words.join("\n"));
                             format!("{:x}", hasher.finalize())
                         } {
-                            *current_indexes.lock() = saved.indexes;
+                            *current_indexes.lock() = json.indexes;
                         } else {
                             warn!(
                                 "Wordlists have changed, starting from scratch at depth {}",
-                                (*saved.depth.lock() + 1).to_string().yellow()
+                                (*json.depth.lock() + 1).to_string().yellow()
                             );
                         }
-                        Some(saved.tree)
+                        Some(json.tree)
                     }
                 } else {
                     None
                 }
             }
-            Err(_) => None,
+            None => None,
         }
     } else {
         None
@@ -241,8 +267,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let ctrlc_tree = tree.clone();
     let ctrlc_depth = depth.clone();
     let ctrlc_words = words.clone();
+    let ctrlc_lists = Arc::new(opts.wordlists.clone());
     let ctrlc_aborted = aborted.clone();
     let ctrlc_save_file = opts.save_file.clone();
+    let ctrlc_url = opts.url.clone().unwrap();
     let mut signals = Signals::new(&[SIGINT])?;
     let ctrlc_handle = signals.handle();
 
@@ -265,6 +293,8 @@ pub async fn _main(opts: Opts) -> Result<()> {
                             depth: ctrlc_depth.clone(),
                             wordlist_checksum: checksum,
                             indexes: current_indexes.lock().clone(),
+                            wordlists: ctrlc_lists.clone(),
+                            url: ctrlc_url.clone(),
                         });
                         match content {
                             Ok(content) => {

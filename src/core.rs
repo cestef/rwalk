@@ -1,5 +1,9 @@
 use colored::Colorize;
-use reqwest::{header::HeaderMap, redirect::Policy, Proxy};
+use reqwest::{
+    header::{HeaderMap, HeaderName},
+    redirect::Policy,
+    Proxy,
+};
 use std::{
     collections::{
         hash_map::Entry::{Occupied, Vacant},
@@ -13,9 +17,10 @@ use anyhow::Result;
 use parking_lot::Mutex;
 
 use crate::{
+    cli::Opts,
     constants::{ERROR, STATUS_CODES, SUCCESS, WARNING},
     tree::{Tree, TreeData},
-    utils::{is_response_filtered, should_filter}, cli::Opts,
+    utils::{is_response_filtered, should_filter},
 };
 
 pub async fn start(
@@ -38,7 +43,7 @@ pub async fn start(
                 Occupied(entry) => entry.into_mut(),
                 Vacant(entry) => entry.insert(vec![0; chunks.len()]),
             };
-            
+
             let pb = root_progress.add(indicatif::ProgressBar::new((words.len()) as u64))
                 .with_style(
                     indicatif::ProgressStyle::default_bar()
@@ -48,7 +53,6 @@ pub async fn start(
                 .with_message(format!("/{}", previous_node.lock().data.path.trim_start_matches("/")))
                 .with_prefix(format!("d={}", *depth.lock() + 1))
                 .with_position(
-                    
                     index.iter().sum::<usize>() as u64,
                 );
             progresses.insert(previous_node.lock().data.url.clone(), pb);
@@ -62,13 +66,9 @@ pub async fn start(
                 let mut header = header.splitn(2, ":");
                 let key = header.next().unwrap().trim();
                 let value = header.next().unwrap().trim();
-                let parsed_key = key.parse::<reqwest::header::HeaderName>();
-                headers.insert(
-                    parsed_key.unwrap(),
-                    value.parse().unwrap(),
-                );
+                let parsed_key = key.parse::<HeaderName>();
+                headers.insert(parsed_key.unwrap(), value.parse().unwrap());
             }
-            
 
             let cookies = opts.cookies.clone();
             for cookie in &cookies {
@@ -80,7 +80,7 @@ pub async fn start(
                     format!("{}={}", key, value).parse().unwrap(),
                 );
             }
-            
+
             let client = reqwest::Client::builder()
                 .user_agent(
                     opts.user_agent
@@ -157,7 +157,8 @@ pub async fn start(
                         let sleep = if opts.throttle.unwrap() > 0 {
                             let t2 = std::time::Instant::now();
                             let elapsed = t2 - t1;
-                            let sleep = Duration::from_secs_f64(1.0 / opts.throttle.unwrap() as f64);
+                            let sleep =
+                                Duration::from_secs_f64(1.0 / opts.throttle.unwrap() as f64);
                             if elapsed < sleep {
                                 sleep - elapsed
                             } else {
@@ -191,10 +192,10 @@ pub async fn start(
                                     true
                                 };
 
-                                let is_success_code = STATUS_CODES.iter().any(|x| x.contains(&status_code));
+                                let is_success_code =
+                                    STATUS_CODES.iter().any(|x| x.contains(&status_code));
 
-                                if filtered && is_success_code
-                                {
+                                if filtered && is_success_code {
                                     progress.println(format!(
                                         "{} {} {} {}",
                                         if response.status().is_success() {
@@ -213,9 +214,11 @@ pub async fn start(
                                         .dimmed()
                                     ));
                                     // Check if this path is already in the tree
-                                    let found = previous_node.lock().children.iter().any(|child| {
-                                        child.lock().data.path == *word
-                                    });
+                                    let found = previous_node
+                                        .lock()
+                                        .children
+                                        .iter()
+                                        .any(|child| child.lock().data.path == *word);
 
                                     if !found {
                                         tree.insert(
@@ -235,7 +238,7 @@ pub async fn start(
                                             url
                                         ));
                                     }
-                                } 
+                                }
                             }
                             Err(err) => {
                                 if err.is_timeout() {
@@ -274,7 +277,7 @@ pub async fn start(
                 handles.push(handle);
             }
         }
-        
+
         // Wait for all handles to finish
         for handle in handles {
             handle.await?;
