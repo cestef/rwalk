@@ -117,7 +117,7 @@ Response Filtering:
 
 Proxy:
       --proxy <URL>             Proxy URL
-      --proxy-auth <USER:PASS>  Proxy username
+      --proxy-auth <USER:PASS>  Proxy username and password
 ```
 
 ### Passing parameters as environment variables

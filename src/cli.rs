@@ -151,7 +151,7 @@ pub struct Opts {
     /// Proxy URL
     #[clap(long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
     pub proxy: Option<String>,
-    /// Proxy username
+    /// Proxy username and password
     #[clap(long, help_heading = Some("Proxy"), value_name = "USER:PASS", env, hide_env=true)]
     pub proxy_auth: Option<String>,
 }
