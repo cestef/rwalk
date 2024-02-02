@@ -57,11 +57,13 @@ cargo run --release -- https://example.com path/to/wordlist.txt
 You can run `rwalk --help` to see the usage information:
 
 ```text
-Usage: rwalk [OPTIONS] <URL> <WORDLISTS>...
+A blazing fast web directory scanner
+
+Usage: rwalk [OPTIONS] [URL] [WORDLISTS]...
 
 Arguments:
-  <URL>           Target URL
-  <WORDLISTS>...  Wordlist(s)
+  [URL]           Target URL
+  [WORDLISTS]...  Wordlist(s)
 
 Options:
   -t, --threads <THREADS>         Number of threads to use
@@ -69,19 +71,63 @@ Options:
   -o, --output <FILE>             Output file
   -T, --timeout <TIMEOUT>         Request timeout in seconds [default: 10]
   -u, --user-agent <USER_AGENT>   User agent
-  -q, --quiet                     Quiet mode
   -m, --method <METHOD>           HTTP method [default: GET]
   -d, --data <DATA>               Data to send with the request
   -H, --headers <key:value>       Headers to send
   -c, --cookies <key=value>       Cookies to send
   -R, --follow-redirects <COUNT>  Follow redirects [default: 0]
       --throttle <THROTTLE>       Request throttling (requests per second) per thread [default: 0]
+  -M, --max-time <MAX_TIME>       Max time to run (will abort after given time) in seconds
       --no-color                  Don't use colors You can also set the NO_COLOR environment variable
+  -q, --quiet                     Quiet mode
+  -i, --interactive               Interactive mode
   -h, --help                      Print help
   -V, --version                   Print version
 
 Resume:
-      --resume            Resume from a saved file
+  -r, --resume            Resume from a saved file
+  -f, --save-file <FILE>  Custom save file [default: .rwalk.json]
+      --no-save           Don't save the state in case you abort
+
+Transformations:
+  -L, --transform-lower            Wordlist to uppercase
+  -U, --transform-upper            Wordlist to lowercase
+  -P, --transform-prefix <PREFIX>  Append a prefix to each word
+
+~
+❯ clear
+
+~
+❯ rwalk --help
+A blazing fast web directory scanner
+
+Usage: rwalk [OPTIONS] [URL] [WORDLISTS]...
+
+Arguments:
+  [URL]           Target URL
+  [WORDLISTS]...  Wordlist(s)
+
+Options:
+  -t, --threads <THREADS>         Number of threads to use
+  -d, --depth <DEPTH>             Maximum depth to crawl [default: 1]
+  -o, --output <FILE>             Output file
+  -T, --timeout <TIMEOUT>         Request timeout in seconds [default: 10]
+  -u, --user-agent <USER_AGENT>   User agent
+  -m, --method <METHOD>           HTTP method [default: GET]
+  -d, --data <DATA>               Data to send with the request
+  -H, --headers <key:value>       Headers to send
+  -c, --cookies <key=value>       Cookies to send
+  -R, --follow-redirects <COUNT>  Follow redirects [default: 0]
+      --throttle <THROTTLE>       Request throttling (requests per second) per thread [default: 0]
+  -M, --max-time <MAX_TIME>       Max time to run (will abort after given time) in seconds
+      --no-color                  Don't use colors You can also set the NO_COLOR environment variable
+  -q, --quiet                     Quiet mode
+  -i, --interactive               Interactive mode
+  -h, --help                      Print help
+  -V, --version                   Print version
+
+Resume:
+  -r, --resume            Resume from a saved file
   -f, --save-file <FILE>  Custom save file [default: .rwalk.json]
       --no-save           Don't save the state in case you abort
 
@@ -96,22 +142,26 @@ Wordlist Filtering:
       --wordlist-filter-contains <STRING>
           Contains the specified string [aliases: wfc]
       --wordlist-filter-starts-with <STRING>
-          Start with the specified string [aliases: wfs]
+          Starts with the specified string [aliases: wfs]
       --wordlist-filter-ends-with <STRING>
-          End with the specified string [aliases: wfe]
+          Ends with the specified string [aliases: wfe]
       --wordlist-filter-regex <REGEX>
-          Match the specified regex [aliases: wfr]
+          Matches the specified regex [aliases: wfr]
       --wordlist-filter-length <RANGE>
           Length range e.g.: 5, 5-10, 5,10,15, >5, <5 [aliases: wfl]
 
 Response Filtering:
       --filter-status-code <RANGE>   Reponse status code, e.g.: 200, 200-300, 200,300,400, >200, <200 [aliases: fsc]
       --filter-contains <STRING>     Contains the specified string [aliases: fc]
-      --filter-starts-with <STRING>  Start with the specified string [aliases: fs]
-      --filter-ends-with <STRING>    End with the specified string [aliases: fe]
-      --filter-regex <REGEX>         Match the specified regex [aliases: fr]
+      --filter-starts-with <STRING>  Starts with the specified string [aliases: fs]
+      --filter-ends-with <STRING>    Ends with the specified string [aliases: fe]
+      --filter-regex <REGEX>         Matches the specified regex [aliases: fr]
       --filter-length <RANGE>        Response length e.g.: 100, >100, <100, 100-200, 100,200,300 [aliases: fl]
       --filter-time <RANGE>          Response time range in milliseconds e.g.: >1000, <1000, 1000-2000 [aliases: ft]
+
+Proxy:
+      --proxy <URL>             Proxy URL
+      --proxy-auth <USER:PASS>  Proxy username
 ```
 
 ### Passing parameters as environment variables

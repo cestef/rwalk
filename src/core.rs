@@ -4,14 +4,7 @@ use reqwest::{
     redirect::Policy,
     Proxy,
 };
-use std::{
-    collections::{
-        hash_map::Entry::{Occupied, Vacant},
-        HashMap,
-    },
-    sync::Arc,
-    time::Duration,
-};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use anyhow::Result;
 use parking_lot::Mutex;
@@ -38,11 +31,9 @@ pub async fn start(
         let mut handles = Vec::new();
         for previous_node in &previous_nodes {
             let mut indexes = current_indexes.lock();
-            // Indexes of each chunk for this node (initially 0 if not present)
-            let index = match indexes.entry(previous_node.lock().data.url.clone()) {
-                Occupied(entry) => entry.into_mut(),
-                Vacant(entry) => entry.insert(vec![0; chunks.len()]),
-            };
+            let index = indexes
+                .entry(previous_node.lock().data.url.clone())
+                .or_insert_with(|| vec![0; chunks.len()]);
 
             let pb = root_progress.add(indicatif::ProgressBar::new((words.len()) as u64))
                 .with_style(
@@ -60,27 +51,21 @@ pub async fn start(
             let progress = progresses.get(&previous_node.lock().data.url).unwrap();
 
             let mut headers = HeaderMap::new();
-
-            let headers_vec = opts.headers.clone();
-            for header in headers_vec {
+            opts.headers.clone().iter().for_each(|header| {
                 let mut header = header.splitn(2, ":");
                 let key = header.next().unwrap().trim();
                 let value = header.next().unwrap().trim();
-                let parsed_key = key.parse::<HeaderName>();
-                headers.insert(parsed_key.unwrap(), value.parse().unwrap());
-            }
-
-            let cookies = opts.cookies.clone();
-            for cookie in &cookies {
+                headers.insert(key.parse::<HeaderName>().unwrap(), value.parse().unwrap());
+            });
+            opts.cookies.clone().iter().for_each(|cookie| {
                 let mut cookie = cookie.splitn(2, "=");
                 let key = cookie.next().unwrap().trim();
                 let value = cookie.next().unwrap().trim();
-                headers.insert(
+                headers.extend(vec![(
                     reqwest::header::COOKIE,
                     format!("{}={}", key, value).parse().unwrap(),
-                );
-            }
-
+                )]);
+            });
             let client = reqwest::Client::builder()
                 .user_agent(
                     opts.user_agent
@@ -101,6 +86,7 @@ pub async fn start(
                     let mut auth = auth.splitn(2, ":");
                     let username = auth.next().unwrap().trim();
                     let password = auth.next().unwrap().trim();
+
                     let proxy = proxy.basic_auth(username, password);
                     client.proxy(proxy)
                 } else {
