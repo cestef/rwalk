@@ -342,7 +342,17 @@ rwalk https://example.com path/to/wordlist.txt -m POST -d '{"username": "admin",
 - [DirBuster](https://gitlab.com/kalilinux/packages/dirbuster)
 - [OneListForAll](https://github.com/six2dez/OneListForAll)
 
-###
+### How do I get support?
+
+Open an issue or ask in the [Discord server](https://cstef.dev/discord). 
+
+### Is rwalk stable?
+
+rwalk is stable but it's still in the early stages of development. It should work for most use cases but there may be bugs.
+
+### Is rwalk fast?
+
+rwalk is designed to be fast. It's multi-threaded and uses async I/O. It's one of the fastest directory scanners out there.
 
 ## Benchmarks
 
