@@ -457,5 +457,6 @@ async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Re
 }
 
 async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
-    crate::_main(state.clone()).await
+    let _ = crate::_main(state.clone()).await;
+    Ok(())
 }
