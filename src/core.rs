@@ -240,12 +240,27 @@ pub async fn start(
                                         url,
                                         "Check --follow-redirects".dimmed()
                                     ));
-                                } else {
+                                } else if err.is_connect() {
                                     progress.println(format!(
                                         "{} {} {}",
                                         ERROR.to_string().red(),
-                                        "Error".bold(),
+                                        "Connection error".bold(),
                                         url
+                                    ));
+                                } else if err.is_request() {
+                                    progress.println(format!(
+                                        "{} {} {}",
+                                        ERROR.to_string().red(),
+                                        "Request error".bold(),
+                                        url
+                                    ));
+                                } else {
+                                    progress.println(format!(
+                                        "{} {} {} {}",
+                                        ERROR.to_string().red(),
+                                        "Unknown Error".bold(),
+                                        url,
+                                        format!("({})", err).dimmed()
                                     ));
                                 }
                             }
