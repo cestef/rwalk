@@ -57,7 +57,7 @@ pub struct Opts {
     #[clap(
         short = 'R',
         long,
-        default_value = "0",
+        default_value = "2",
         value_name = "COUNT",
         env,
         hide_env = true
