@@ -125,7 +125,7 @@ pub struct Opts {
 
     /// Reponse status code,
     /// e.g.: 200, 200-300, 200,300,400, >200, <200
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fsc", value_parser(parse_cli_range_input), env, hide_env=true)]
+    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fsc", value_parser(parse_cli_range_input), env, hide_env=true, default_value = "200-299,300-399,400-403,500-599")]
     pub filter_status_code: Option<String>,
     /// Contains the specified string
     #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fc", env, hide_env=true)]

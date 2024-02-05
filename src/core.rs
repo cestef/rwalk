@@ -11,7 +11,7 @@ use parking_lot::Mutex;
 
 use crate::{
     cli::Opts,
-    constants::{ERROR, STATUS_CODES, SUCCESS, WARNING},
+    constants::{ERROR, SUCCESS, WARNING},
     tree::{Tree, TreeData},
     utils::{is_response_filtered, should_filter},
 };
@@ -46,6 +46,7 @@ pub async fn start(
                 .with_position(
                     index.iter().sum::<usize>() as u64,
                 );
+            pb.enable_steady_tick(Duration::from_millis(100));
             progresses.insert(previous_node.lock().data.url.clone(), pb);
 
             let progress = progresses.get(&previous_node.lock().data.url).unwrap();
@@ -178,10 +179,7 @@ pub async fn start(
                                     true
                                 };
 
-                                let is_success_code =
-                                    STATUS_CODES.iter().any(|x| x.contains(&status_code));
-
-                                if filtered && is_success_code {
+                                if filtered {
                                     progress.println(format!(
                                         "{} {} {} {}",
                                         if response.status().is_success() {
