@@ -20,6 +20,10 @@ jobs:
                   profile: minimal
                   toolchain: stable
                   override: true
+            - run: cargo run -- --generate-markdown > HELP.md
+            - run: git add HELP.md
+            - run: git commit -m "Update HELP.md" || true
+            - run: git push
 
             - run: cargo publish --token ${CRATES_TOKEN}
               env:
