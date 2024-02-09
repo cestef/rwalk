@@ -23,7 +23,7 @@ jobs:
             - run: cargo run -- --generate-markdown > HELP.md
             - run: git add HELP.md
             - run: git commit -m "Update HELP.md" || true
-            - run: git push
+            - run: git push origin HEAD:refs/heads/main
 
             - run: cargo publish --token ${CRATES_TOKEN}
               env:
