@@ -110,6 +110,9 @@ pub struct Opts {
     /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash"
     #[clap(short, long, help_heading = Some("Filtering"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>))]
     pub filter: Vec<(String, String)>,
+    /// Treat filters as or instead of and
+    #[clap(long, help_heading = Some("Filtering"), env, hide_env=true)]
+    pub or: bool,
 
     /// Proxy URL
     #[clap(short='P', long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]

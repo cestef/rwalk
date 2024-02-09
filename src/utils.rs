@@ -194,75 +194,81 @@ pub fn apply_transformations(opts: &Opts, words: &mut Vec<String>) {
 
 // Returns true if the response should be kept
 pub fn is_response_filtered(opts: &Opts, res_text: &str, status_code: u16, time: u16) -> bool {
+    let mut outs: Vec<bool> = Vec::new();
     for filter in &opts.filter {
         let not = filter.0.starts_with("!");
-        match filter.0.trim_start_matches("!") {
+        let out = match filter.0.trim_start_matches("!") {
             "time" => {
                 let parsed_filter_time = parse_range_input(&filter.1).unwrap();
                 if !check_range(&parsed_filter_time, time as usize) {
-                    return not;
+                    not
                 } else {
-                    return !not;
+                    !not
                 }
             }
             "status" => {
                 let parsed_filter_status_code = parse_range_input(&filter.1).unwrap();
                 if !check_range(&parsed_filter_status_code, status_code as usize) {
-                    return not;
+                    not
                 } else {
-                    return !not;
+                    !not
                 }
             }
             "contains" => {
                 if !res_text.contains(&filter.1) {
-                    return not;
+                    not
                 } else {
-                    return !not;
+                    !not
                 }
             }
             "starts" => {
                 if !res_text.starts_with(&filter.1) {
-                    return not;
+                    not
                 } else {
-                    return !not;
+                    !not
                 }
             }
             "ends" => {
                 if !res_text.ends_with(&filter.1) {
-                    return not;
+                    not
                 } else {
-                    return !not;
+                    !not
                 }
             }
             "regex" => {
                 let re = regex::Regex::new(&filter.1).unwrap();
                 if !re.is_match(res_text) {
-                    return not;
+                    not
                 } else {
-                    return !not;
+                    !not
                 }
             }
             "length" => {
                 let parsed_filter_length = parse_range_input(&filter.1).unwrap();
                 if !check_range(&parsed_filter_length, res_text.len()) {
-                    return not;
+                    not
                 } else {
-                    return !not;
+                    !not
                 }
             }
             "hash" => {
                 let hash = md5::compute(res_text);
                 if !filter.1.contains(&format!("{:x}", hash)) {
-                    return not;
+                    not
                 } else {
-                    return !not;
+                    !not
                 }
             }
-            _ => {}
-        }
+            _ => true,
+        };
+        outs.push(out);
     }
 
-    false
+    if opts.or {
+        outs.iter().any(|&x| x)
+    } else {
+        outs.iter().all(|&x| x)
+    }
 }
 
 pub fn check_range(ranges: &Vec<(usize, usize)>, num: usize) -> bool {
