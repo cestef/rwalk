@@ -227,6 +227,28 @@ pub async fn start(
                                                     ),
                                                 });
                                             }
+                                            "body" => {
+                                                additions.push(Addition {
+                                                    key: "body".to_string(),
+                                                    value: text.clone(),
+                                                });
+                                            }
+                                            "headers" => {
+                                                additions.push(Addition {
+                                                    key: "headers".to_string(),
+                                                    value: response.headers().iter().fold(
+                                                        "\n".to_string(),
+                                                        |acc, (key, value)| {
+                                                            format!(
+                                                                "{}{}: {}\n",
+                                                                acc,
+                                                                key,
+                                                                value.to_str().unwrap()
+                                                            )
+                                                        },
+                                                    ),
+                                                });
+                                            }
                                             _ => {}
                                         }
                                     }

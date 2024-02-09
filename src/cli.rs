@@ -85,7 +85,7 @@ pub struct Opts {
     /// Unsecure mode, disables SSL certificate validation
     #[clap(long, env, hide_env = true)]
     pub insecure: bool,
-    /// Show response additional body information: "length", "hash", "headers_length", "headers_hash"
+    /// Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers"
     #[clap(long, env, hide_env = true)]
     pub show: Vec<String>,
 

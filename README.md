@@ -174,6 +174,23 @@ Available transformations:
 - `capitalize`
 - `reverse`
 
+### Additional response details
+
+If you need more details about the matched responses, you can use the `--show` flag. For example, to show the body hash and length:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt --show hash --show length 
+```
+
+Available details:
+
+- `length`
+- `hash`
+- `headers`
+- `body`
+- `headers_length`
+- `headers_hash`
+
 ### Interactive mode
 
 You can use the `--interactive` (`-i`) flag to enter interactive mode. In this mode, you can set parameters one by one and run the scan when you're ready.
