@@ -24,14 +24,14 @@ A blazing fast web directory scanner
 
   Default value: `1`
 * `-o`, `--output <FILE>` — Output file
-* `-T`, `--timeout <TIMEOUT>` — Request timeout in seconds
+* `--timeout <TIMEOUT>` — Request timeout in seconds
 
   Default value: `10`
 * `-u`, `--user-agent <USER_AGENT>` — User agent
 * `-m`, `--method <METHOD>` — HTTP method
 
   Default value: `GET`
-* `-d`, `--data <DATA>` — Data to send with the request
+* `-D`, `--data <DATA>` — Data to send with the request
 * `-H`, `--headers <key:value>` — Headers to send
 * `-c`, `--cookies <key=value>` — Cookies to send
 * `-R`, `--follow-redirects <COUNT>` — Follow redirects
@@ -42,33 +42,49 @@ A blazing fast web directory scanner
   Default value: `0`
 * `-M`, `--max-time <MAX_TIME>` — Max time to run (will abort after given time) in seconds
 * `--no-color` — Don't use colors You can also set the NO_COLOR environment variable
+
+  Possible values: `true`, `false`
+
 * `-q`, `--quiet` — Quiet mode
+
+  Possible values: `true`, `false`
+
 * `-i`, `--interactive` — Interactive mode
+
+  Possible values: `true`, `false`
+
+* `--insecure` — Unsecure mode, disables SSL certificate validation
+
+  Possible values: `true`, `false`
+
+* `--show <SHOW>` — Show response additional body information: "length", "hash", "headers_length", "headers_hash"
 * `-r`, `--resume` — Resume from a saved file
-* `-f`, `--save-file <FILE>` — Custom save file
+
+  Possible values: `true`, `false`
+
+* `--save-file <FILE>` — Custom save file
 
   Default value: `.rwalk.json`
 * `--no-save` — Don't save the state in case you abort
-* `-L`, `--transform-lower` — Wordlist to uppercase
-* `-U`, `--transform-upper` — Wordlist to lowercase
-* `-P`, `--transform-prefix <PREFIX>` — Append a prefix to each word
-* `-S`, `--transform-suffix <SUFFIX>` — Append a suffix to each word
-* `-C`, `--transform-capitalize` — Capitalize each word
-* `--wordlist-filter-contains <STRING>` — Contains the specified string
-* `--wordlist-filter-starts-with <STRING>` — Starts with the specified string
-* `--wordlist-filter-ends-with <STRING>` — Ends with the specified string
-* `--wordlist-filter-regex <REGEX>` — Matches the specified regex
-* `--wordlist-filter-length <RANGE>` — Length range e.g.: 5, 5-10, 5,10,15, >5, <5
-* `--filter-status-code <RANGE>` — Reponse status code, e.g.: 200, 200-300, 200,300,400, >200, <200
 
-  Default value: `200-299,300-399,400-403,500-599`
-* `--filter-contains <STRING>` — Contains the specified string
-* `--filter-starts-with <STRING>` — Starts with the specified string
-* `--filter-ends-with <STRING>` — Ends with the specified string
-* `--filter-regex <REGEX>` — Matches the specified regex
-* `--filter-length <RANGE>` — Response length e.g.: 100, >100, <100, 100-200, 100,200,300
-* `--filter-time <RANGE>` — Response time range in milliseconds e.g.: >1000, <1000, 1000-2000
-* `--proxy <URL>` — Proxy URL
+  Possible values: `true`, `false`
+
+* `-T`, `--transform <TRANSFORM>` — Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
+* `-w`, `--wordlist-filter <KEY:FILTER>` — Wordlist filtering: "contains", "starts", "ends", "regex", "length"
+* `-f`, `--filter <KEY:FILTER>` — Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash"
+* `-P`, `--proxy <URL>` — Proxy URL
 * `--proxy-auth <USER:PASS>` — Proxy username and password
+* `--generate-markdown` — Generate markdown help - for developers
 
+  Possible values: `true`, `false`
+
+
+
+
+<hr/>
+
+<small><i>
+    This document was generated automatically by
+    <a href="https://crates.io/crates/clap-markdown"><code>clap-markdown</code></a>.
+</i></small>
 
