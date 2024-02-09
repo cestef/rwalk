@@ -209,6 +209,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                     .trim_end_matches('/')
                     .to_string(),
                 status_code: 0,
+                extra: serde_json::Value::Null,
             },
             None,
         );
@@ -219,6 +220,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let root_url = tree.lock().root.clone().unwrap().lock().data.url.clone();
     let root_url = Url::parse(&root_url)?;
     let tmp_client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(opts.insecure)
         .timeout(Duration::from_secs(opts.timeout.unwrap() as u64))
         .connect_timeout(Duration::from_secs(opts.timeout.unwrap() as u64))
         .build()?;
@@ -330,7 +332,9 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
         let root = tree.lock().root.clone().unwrap().clone();
 
-        print_tree(&*root.lock())?;
+        if !opts.quiet {
+            print_tree(&*root.lock())?;
+        }
 
         // Remove save file if it's the default one
         if has_saved && opts.save_file == SAVE_FILE {

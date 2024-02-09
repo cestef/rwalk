@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Context, Result};
 use colored::Colorize;
 use parking_lot::Mutex;
 use std::{
@@ -15,7 +15,12 @@ use crate::{
 pub fn parse_wordlists(wordlists: &Vec<String>) -> Result<Vec<String>> {
     let mut wordlist = Vec::new();
     for wordlist_path in wordlists {
-        let mut file = std::fs::File::open(wordlist_path)?;
+        let mut file = std::fs::File::open(wordlist_path).with_context(|| {
+            format!(
+                "Failed to open wordlist file: {}",
+                wordlist_path.to_string().bold().red()
+            )
+        })?;
         let mut bytes = Vec::new();
         file.read_to_end(&mut bytes).unwrap();
 
@@ -72,116 +77,194 @@ pub fn get_emoji_for_status_code(status_code: u16) -> String {
 }
 
 pub fn apply_filters(opts: &Opts, words: &mut Vec<String>) -> Result<()> {
-    if opts.wordlist_filter_contains.is_some() {
-        let filter_contains = opts.wordlist_filter_contains.clone().unwrap();
-        words.retain(|word| word.contains(&filter_contains));
+    for filter in &opts.wordlist_filter {
+        let not = filter.0.starts_with("!");
+        match filter.0.trim_start_matches("!") {
+            "contains" => {
+                words.retain(|word| {
+                    if not {
+                        !word.contains(&filter.1)
+                    } else {
+                        word.contains(&filter.1)
+                    }
+                });
+            }
+            "starts" => {
+                words.retain(|word| {
+                    if not {
+                        !word.starts_with(&filter.1)
+                    } else {
+                        word.starts_with(&filter.1)
+                    }
+                });
+            }
+            "ends" => {
+                words.retain(|word| {
+                    if not {
+                        !word.ends_with(&filter.1)
+                    } else {
+                        word.ends_with(&filter.1)
+                    }
+                });
+            }
+            "regex" => {
+                let re = regex::Regex::new(&filter.1)?;
+                words.retain(|word| {
+                    if not {
+                        !re.is_match(word)
+                    } else {
+                        re.is_match(word)
+                    }
+                });
+            }
+            "length" => {
+                let parsed_filter_length = parse_range_input(&filter.1)?;
+                words.retain(|word| {
+                    if not {
+                        !check_range(&parsed_filter_length, word.len())
+                    } else {
+                        check_range(&parsed_filter_length, word.len())
+                    }
+                });
+            }
+            _ => {}
+        }
     }
-    if opts.wordlist_filter_starts_with.is_some() {
-        let filter_starts_with = opts.wordlist_filter_starts_with.clone().unwrap();
-        words.retain(|word| word.starts_with(&filter_starts_with));
-    }
-    if opts.wordlist_filter_ends_with.is_some() {
-        let filter_ends_with = opts.wordlist_filter_ends_with.clone().unwrap();
-        words.retain(|word| word.ends_with(&filter_ends_with));
-    }
-    if opts.wordlist_filter_regex.is_some() {
-        let filter_regex = opts.wordlist_filter_regex.clone().unwrap();
-        let re = regex::Regex::new(&filter_regex)?;
-        words.retain(|word| re.is_match(&word));
-    }
-    if opts.wordlist_filter_length.is_some() {
-        let filter_length = opts.wordlist_filter_length.clone().unwrap();
-        let parsed_filter_length = parse_range_input(&filter_length).unwrap();
-        words.retain(|word| check_range(&parsed_filter_length, word.len()));
-    }
-
     Ok(())
 }
 
 pub fn apply_transformations(opts: &Opts, words: &mut Vec<String>) {
-    if opts.transform_lower {
-        words.iter_mut().for_each(|word| {
-            *word = word.to_lowercase();
-        });
-    }
-    if opts.transform_upper {
-        words.iter_mut().for_each(|word| {
-            *word = word.to_uppercase();
-        });
-    }
-    if opts.transform_prefix.is_some() {
-        let transform_prefix = opts.transform_prefix.clone().unwrap();
-        words.iter_mut().for_each(|word| {
-            *word = format!("{}{}", transform_prefix, word);
-        });
-    }
-    if opts.transform_suffix.is_some() {
-        let transform_suffix = opts.transform_suffix.clone().unwrap();
-        words.iter_mut().for_each(|word| {
-            *word = format!("{}{}", word, transform_suffix);
-        });
-    }
-    if opts.transform_capitalize {
-        words.iter_mut().for_each(|word| {
-            *word = word.to_lowercase();
-            let mut chars = word.chars();
-            if let Some(first_char) = chars.next() {
-                *word = format!("{}{}", first_char.to_uppercase(), chars.as_str());
+    for transformation in &opts.transform {
+        match transformation.0.as_str() {
+            "lower" => {
+                words.iter_mut().for_each(|word| {
+                    *word = word.to_lowercase();
+                });
             }
-        });
+            "upper" => {
+                words.iter_mut().for_each(|word| {
+                    *word = word.to_uppercase();
+                });
+            }
+            "prefix" => {
+                let transform_prefix = transformation.1.clone().unwrap();
+                words.iter_mut().for_each(|word| {
+                    *word = format!("{}{}", transform_prefix, word);
+                });
+            }
+            "suffix" => {
+                let transform_suffix = transformation.1.clone().unwrap();
+                words.iter_mut().for_each(|word| {
+                    *word = format!("{}{}", word, transform_suffix);
+                });
+            }
+            "capitalize" => {
+                words.iter_mut().for_each(|word| {
+                    *word = word.to_lowercase();
+                    let mut chars = word.chars();
+                    if let Some(first_char) = chars.next() {
+                        *word = format!("{}{}", first_char.to_uppercase(), chars.as_str());
+                    }
+                });
+            }
+            "reverse" => {
+                words.iter_mut().for_each(|word| {
+                    *word = word.chars().rev().collect::<String>();
+                });
+            }
+            "remove" => {
+                let transform_remove = transformation.1.clone().unwrap();
+                words.iter_mut().for_each(|word| {
+                    *word = word.replace(&transform_remove, "");
+                });
+            }
+            "replace" => {
+                let transform_replace = transformation.1.clone().unwrap();
+                let parts = transform_replace.split("=").collect::<Vec<_>>();
+                if parts.len() == 2 {
+                    words.iter_mut().for_each(|word| {
+                        *word = word.replace(parts[0], parts[1]);
+                    });
+                }
+            }
+            _ => {}
+        }
     }
 }
 
+// Returns true if the response should be kept
 pub fn is_response_filtered(opts: &Opts, res_text: &str, status_code: u16, time: u16) -> bool {
-    if opts.filter_time.is_some() {
-        let filter_time = opts.filter_time.clone().unwrap();
-        let parsed_filter_time = parse_range_input(&filter_time).unwrap();
-        if !check_range(&parsed_filter_time, time as usize) {
-            return false;
-        }
-    }
-    if opts.filter_status_code.is_some() {
-        let filter_status_code = opts.filter_status_code.clone().unwrap();
-        let parsed_filter_status_code = parse_range_input(&filter_status_code).unwrap();
-        if !check_range(&parsed_filter_status_code, status_code as usize) {
-            return false;
-        }
-    }
-    if opts.filter_contains.is_some() {
-        let filter_contains = opts.filter_contains.clone().unwrap();
-        if !res_text.contains(&filter_contains) {
-            return false;
-        }
-    }
-    if opts.filter_starts_with.is_some() {
-        let filter_starts_with = opts.filter_starts_with.clone().unwrap();
-        if !res_text.starts_with(&filter_starts_with) {
-            return false;
-        }
-    }
-    if opts.filter_ends_with.is_some() {
-        let filter_ends_with = opts.filter_ends_with.clone().unwrap();
-        if !res_text.ends_with(&filter_ends_with) {
-            return false;
-        }
-    }
-    if opts.filter_regex.is_some() {
-        let filter_regex = opts.filter_regex.clone().unwrap();
-        let re = regex::Regex::new(&filter_regex).unwrap();
-        if !re.is_match(&res_text) {
-            return false;
-        }
-    }
-    if opts.filter_length.is_some() {
-        let filter_length = opts.filter_length.clone().unwrap();
-        let parsed_filter_length = parse_range_input(&filter_length).unwrap();
-        if !check_range(&parsed_filter_length, res_text.len()) {
-            return false;
+    for filter in &opts.filter {
+        let not = filter.0.starts_with("!");
+        match filter.0.trim_start_matches("!") {
+            "time" => {
+                let parsed_filter_time = parse_range_input(&filter.1).unwrap();
+                if !check_range(&parsed_filter_time, time as usize) {
+                    return not;
+                } else {
+                    return !not;
+                }
+            }
+            "status" => {
+                let parsed_filter_status_code = parse_range_input(&filter.1).unwrap();
+                if !check_range(&parsed_filter_status_code, status_code as usize) {
+                    return not;
+                } else {
+                    return !not;
+                }
+            }
+            "contains" => {
+                if !res_text.contains(&filter.1) {
+                    return not;
+                } else {
+                    return !not;
+                }
+            }
+            "starts" => {
+                if !res_text.starts_with(&filter.1) {
+                    return not;
+                } else {
+                    return !not;
+                }
+            }
+            "ends" => {
+                if !res_text.ends_with(&filter.1) {
+                    return not;
+                } else {
+                    return !not;
+                }
+            }
+            "regex" => {
+                let re = regex::Regex::new(&filter.1).unwrap();
+                if !re.is_match(res_text) {
+                    return not;
+                } else {
+                    return !not;
+                }
+            }
+            "length" => {
+                let parsed_filter_length = parse_range_input(&filter.1).unwrap();
+                if !check_range(&parsed_filter_length, res_text.len()) {
+                    return not;
+                } else {
+                    return !not;
+                }
+            }
+            "hash" => {
+                let hash = md5::compute(res_text);
+                if !filter.1.contains(&format!("{:x}", hash)) {
+                    return not;
+                } else {
+                    return !not;
+                }
+            }
+            _ => {}
         }
     }
 
-    true
+    false
 }
+
 pub fn check_range(ranges: &Vec<(usize, usize)>, num: usize) -> bool {
     for range in ranges {
         if num >= range.0 && num <= range.1 {
@@ -190,7 +273,8 @@ pub fn check_range(ranges: &Vec<(usize, usize)>, num: usize) -> bool {
     }
     false
 }
-pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>, String> {
+
+pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>> {
     let mut ranges = Vec::new();
     let parts = s.split(",").collect::<Vec<_>>();
     for part in parts {
@@ -200,14 +284,14 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>, String> {
         if part.starts_with(">") {
             let num = part[1..].parse::<usize>();
             match num {
-                Ok(num) => ranges.push((num, usize::MAX)),
-                Err(_) => return Err("Invalid range".to_string()),
+                Ok(num) => ranges.push((num + 1, usize::MAX)),
+                Err(_) => bail!("Invalid range"),
             }
         } else if part.starts_with("<") {
             let num = part[1..].parse::<usize>();
             match num {
-                Ok(num) => ranges.push((0, num)),
-                Err(_) => return Err("Invalid range".to_string()),
+                Ok(num) => ranges.push((0, num - 1)),
+                Err(_) => bail!("Invalid range"),
             }
         } else {
             let part = part.trim();
@@ -216,32 +300,21 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>, String> {
                 let num = parts[0].parse::<usize>();
                 match num {
                     Ok(num) => ranges.push((num, num)),
-                    Err(_) => return Err("Invalid range".to_string()),
+                    Err(_) => bail!("Invalid range"),
                 }
             } else if parts.len() == 2 {
                 let num1 = parts[0].parse::<usize>();
                 let num2 = parts[1].parse::<usize>();
                 match (num1, num2) {
                     (Ok(num1), Ok(num2)) => ranges.push((num1, num2)),
-                    _ => return Err("Invalid range".to_string()),
+                    _ => bail!("Invalid range"),
                 }
             } else {
-                return Err("Invalid range".to_string());
+                bail!("Invalid range")
             }
         }
     }
     Ok(ranges)
-}
-
-/// Check if any response filter is set
-pub fn should_filter(opts: &Opts) -> bool {
-    return opts.filter_status_code.is_some()
-        || opts.filter_contains.is_some()
-        || opts.filter_starts_with.is_some()
-        || opts.filter_ends_with.is_some()
-        || opts.filter_regex.is_some()
-        || opts.filter_length.is_some()
-        || opts.filter_time.is_some();
 }
 
 pub fn save_to_file(

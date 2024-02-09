@@ -4,6 +4,7 @@ use colored::Colorize;
 use parking_lot::Mutex;
 use ptree::TreeItem;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::utils::get_emoji_for_status_code_colored;
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,6 +19,7 @@ pub struct TreeData {
     pub depth: usize,
     pub path: String,
     pub status_code: u16,
+    pub extra: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

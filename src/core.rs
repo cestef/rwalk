@@ -4,6 +4,8 @@ use reqwest::{
     redirect::Policy,
     Proxy,
 };
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use anyhow::Result;
@@ -13,7 +15,7 @@ use crate::{
     cli::Opts,
     constants::{ERROR, SUCCESS, WARNING},
     tree::{Tree, TreeData},
-    utils::{is_response_filtered, should_filter},
+    utils::is_response_filtered,
 };
 
 pub async fn start(
@@ -68,6 +70,7 @@ pub async fn start(
                 )]);
             });
             let client = reqwest::Client::builder()
+                .danger_accept_invalid_certs(opts.insecure)
                 .user_agent(
                     opts.user_agent
                         .clone()
@@ -160,28 +163,75 @@ pub async fn start(
                         match response {
                             Ok(mut response) => {
                                 let status_code = response.status().as_u16();
-                                let filtered = if should_filter(&opts) {
-                                    let mut text = String::new();
-                                    while let Ok(chunk) = response.chunk().await {
-                                        if let Some(chunk) = chunk {
-                                            text.push_str(&String::from_utf8_lossy(&chunk));
-                                        } else {
-                                            break;
-                                        }
+                                let mut text = String::new();
+                                while let Ok(chunk) = response.chunk().await {
+                                    if let Some(chunk) = chunk {
+                                        text.push_str(&String::from_utf8_lossy(&chunk));
+                                    } else {
+                                        break;
                                     }
-                                    is_response_filtered(
-                                        &opts,
-                                        &text,
-                                        status_code,
-                                        t1.elapsed().as_millis() as u16,
-                                    )
-                                } else {
-                                    true
-                                };
+                                }
+                                let filtered = is_response_filtered(
+                                    &opts,
+                                    &text,
+                                    status_code,
+                                    t1.elapsed().as_millis() as u16,
+                                );
 
                                 if filtered {
+                                    #[derive(Debug, Serialize, Deserialize)]
+                                    struct Addition {
+                                        key: String,
+                                        value: String,
+                                    }
+                                    let mut additions: Vec<Addition> = vec![];
+
+                                    for show in &opts.show {
+                                        match show.as_str() {
+                                            "length" => {
+                                                additions.push(Addition {
+                                                    key: "body_length".to_string(),
+                                                    value: text.len().to_string(),
+                                                });
+                                            }
+                                            "hash" => {
+                                                additions.push(Addition {
+                                                    key: "body_hash".to_string(),
+                                                    value: format!("{:x}", md5::compute(&text)),
+                                                });
+                                            }
+                                            "headers_length" => {
+                                                additions.push(Addition {
+                                                    key: "headers_length".to_string(),
+                                                    value: response.headers().len().to_string(),
+                                                });
+                                            }
+                                            "headers_hash" => {
+                                                additions.push(Addition {
+                                                    key: "headers_hash".to_string(),
+                                                    value: format!(
+                                                        "{:x}",
+                                                        md5::compute(
+                                                            &response.headers().iter().fold(
+                                                                String::new(),
+                                                                |acc, (key, value)| {
+                                                                    format!(
+                                                                        "{}{}: {}\n",
+                                                                        acc,
+                                                                        key,
+                                                                        value.to_str().unwrap()
+                                                                    )
+                                                                }
+                                                            )
+                                                        )
+                                                    ),
+                                                });
+                                            }
+                                            _ => {}
+                                        }
+                                    }
                                     progress.println(format!(
-                                        "{} {} {} {}",
+                                        "{} {} {} {} {}",
                                         if response.status().is_success() {
                                             SUCCESS.to_string().green()
                                         } else if response.status().is_redirection() {
@@ -195,7 +245,15 @@ pub async fn start(
                                             "{}ms",
                                             t1.elapsed().as_millis().to_string().bold()
                                         )
-                                        .dimmed()
+                                        .dimmed(),
+                                        additions.iter().fold("".to_string(), |acc, addition| {
+                                            format!(
+                                                "{}{}: {}\n",
+                                                acc,
+                                                addition.key.dimmed().bold(),
+                                                addition.value.dimmed()
+                                            )
+                                        })
                                     ));
                                     // Check if this path is already in the tree
                                     let found = previous_node
@@ -211,6 +269,7 @@ pub async fn start(
                                                 depth: data.depth + 1,
                                                 path: word.clone(),
                                                 status_code,
+                                                extra: json!(additions),
                                             },
                                             Some(previous_node.clone()),
                                         );

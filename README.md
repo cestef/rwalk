@@ -89,26 +89,28 @@ You can use the following formats:
 
 ### Response Filtering
 
-To cherry-pick the responses, you can use the `--filter-*` flags to filter specific responses. For example, to only show responses that contain `admin`:
+To cherry-pick the responses, you can use the `--filter` (`-f`) flags to filter specific responses. For example, to only show responses that contain `admin`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --filter-contains admin
+rwalk https://example.com path/to/wordlist.txt --filter contains:admin
 ```
 
 or only requests that took more than `1` second:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --filter-time ">1000"
+rwalk https://example.com path/to/wordlist.txt --filter "time:\\>1000"
 ```
 
 Available filters:
 
-- `--filter-starts-with` _`<STRING>`_ or `--fs`
-- `--filter-ends-with` _`<STRING>`_ or `--fe`
-- `--filter-contains` _`<STRING>`_ or `--fc`
-- `--filter-regex` _`<REGEX>`_ or `--fr`
-- `--filter-length` _`<LENGTH>`_ or `--fl`
-- `--filter-status-code` _`<CODE>`_ or `--fsc`
+- `starts`: _`<STRING>`_ 
+- `ends`: _`<STRING>`_
+- `contains`: _`<STRING>`_
+- `regex`: _`<REGEX>`_
+- `length`: _`<RANGE>`_
+- `status`: _`<RANGE>`_
+- `time`: _`<RANGE>`_
+- `hash`: _`<STRING>`_ (MD5)
 
 ### Wordlists
 
@@ -132,38 +134,45 @@ cat path/to/wordlist.txt | rwalk https://example.com -
 
 ### Wordlist Filters
 
-You can filter words from the wordlist by using the `--wordlist-filter-*` (`--wf*`) flags. For example, to only use words that start with `admin`:
+You can filter words from the wordlist by using the `--wordlist-filter` (`-w`) flag. For example, to only use words that start with `admin`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --wordlist-filter-starts-with admin
+rwalk https://example.com path/to/wordlist.txt --wordlist-filter starts:admin
 ```
 
 Available filters:
 
-- `--wordlist-filter-starts-with` _`<STRING>`_ or `--wfs`
-- `--wordlist-filter-ends-with` _`<STRING>`_ or `--wfe` 
-- `--wordlist-filter-contains` _`<STRING>`_ or `--wfc`
-- `--wordlist-filter-regex` _`<REGEX>`_ or `--wfr` 
-- `--wordlist-filter-length` _`<LENGTH>`_ or `--wfl` 
-- `--wordlist-filter-min-length` _`<LENGTH>`_ or `--wfm`
-- `--wordlist-filter-max-length` _`<LENGTH>`_ or `--wfx`
+- `starts`: _`<STRING>`_
+- `ends`: _`<STRING>`_ 
+- `contains`: _`<STRING>`_ 
+- `regex`: _`<REGEX>`_
+- `length`: _`<RANGE>`_
 
 
 ### Wordlist Transformations
 
-To quickly modify the wordlist, you can use the `--transform-*` flags. For example, to add a prefix to all words in the wordlist:
+To quickly modify the wordlist, you can use the `--transform` flag. For example, to add a suffix to all words in the wordlist:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --transform-prefix "."
+rwalk https://example.com path/to/wordlist.txt --transform suffix:.php
+```
+
+To replace all occurrences of `admin` with `administrator`:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt --transform replace:admin=administrator
 ```
 
 Available transformations:
 
-- `--transform-prefix` _`<PREFIX>`_ or `-P`
-- `--transform-suffix` _`<SUFFIX>`_ or `-S`
-- `--transform-upper` or `-U`
-- `--transform-lower` or `-L`
-- `--transform-capitalize` or `-C`
+- `prefix`: _`<STRING>`_
+- `suffix`: _`<SUFFIX>`_
+- `remove`: _`<STRING>`_
+- `replace`: _`<OLD=NEW>`_
+- `upper`
+- `lower`
+- `capitalize`
+- `reverse`
 
 ### Interactive mode
 
@@ -253,13 +262,13 @@ rwalk https://example.com path/to/wordlist.txt -H "X-Forwarded-For: 203.0.113.19
 ### Follow redirects
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -F 2
+rwalk https://example.com path/to/wordlist.txt -R 2
 ```
 
 ### Request throttling
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -R 5 -t 10
+rwalk https://example.com path/to/wordlist.txt --throttle 5 -t 10 
 ```
 
 This will send `50` (`5`×`10` threads) requests per second. See [Throttling](#throttling) for more information.
@@ -285,10 +294,6 @@ Open an issue or ask in the [Discord server](https://cstef.dev/discord).
 ### Is rwalk stable?
 
 rwalk is stable but it's still in the early stages of development. It should work for most use cases but there may be bugs.
-
-### Is rwalk fast?
-
-rwalk is designed to be fast. It's multi-threaded and uses async I/O. It's one of the fastest directory scanners out there.
 
 ## Benchmarks
 

@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use crate::{constants::SAVE_FILE, utils::parse_range_input};
 use anyhow::Result;
 use clap::Parser;
@@ -37,7 +39,7 @@ pub struct Opts {
     #[clap(short, long, value_name = "FILE", env, hide_env = true)]
     pub output: Option<String>,
     /// Request timeout in seconds
-    #[clap(short = 'T', long, default_value = "10", env, hide_env = true)]
+    #[clap(long, default_value = "10", env, hide_env = true)]
     pub timeout: Option<usize>,
     /// User agent
     #[clap(short, long, env, hide_env = true)]
@@ -80,77 +82,37 @@ pub struct Opts {
     /// Interactive mode
     #[clap(short, long, env, hide_env = true)]
     pub interactive: bool,
+    /// Unsecure mode, disables SSL certificate validation
+    #[clap(long, env, hide_env = true)]
+    pub insecure: bool,
+    /// Show response additional body information: "length", "hash", "headers_length", "headers_hash"
+    #[clap(long, env, hide_env = true)]
+    pub show: Vec<String>,
 
     /// Resume from a saved file
     #[clap(short='r', long, help_heading = Some("Resume"), env, hide_env=true)]
     pub resume: bool,
     /// Custom save file
-    #[clap(short = 'f', long, default_value = SAVE_FILE, help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
+    #[clap(long, default_value = SAVE_FILE, help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
     pub save_file: String,
     /// Don't save the state in case you abort
     #[clap(long, help_heading = Some("Resume"), env, hide_env=true)]
     pub no_save: bool,
 
-    /// Wordlist to uppercase
-    #[clap(short='L', long, help_heading = Some("Transformations"), conflicts_with = "transform_upper", env, hide_env=true)]
-    pub transform_lower: bool,
-    /// Wordlist to lowercase
-    #[clap(short='U', long, help_heading = Some("Transformations"), conflicts_with = "transform_lower", env, hide_env=true)]
-    pub transform_upper: bool,
-    /// Append a prefix to each word
-    #[clap(short='P', long, help_heading = Some("Transformations"), value_name = "PREFIX", env, hide_env=true)]
-    pub transform_prefix: Option<String>,
-    /// Append a suffix to each word
-    #[clap(short='S', long, help_heading = Some("Transformations"), value_name = "SUFFIX", env, hide_env=true)]
-    pub transform_suffix: Option<String>,
-    /// Capitalize each word
-    #[clap(short='C', long, help_heading = Some("Transformations"), conflicts_with_all = &["transform_lower", "transform_upper"], env, hide_env=true)]
-    pub transform_capitalize: bool,
+    /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
+    #[clap(short='T', long, help_heading = Some("Transformations"), env, hide_env=true, value_parser(parse_key_or_key_val::<String, String>))]
+    pub transform: Vec<(String, Option<String>)>,
 
-    /// Contains the specified string
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfc", env, hide_env=true)]
-    pub wordlist_filter_contains: Option<String>,
-    /// Starts with the specified string
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfs", env, hide_env=true)]
-    pub wordlist_filter_starts_with: Option<String>,
-    /// Ends with the specified string
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "STRING", visible_alias = "wfe", env, hide_env=true)]
-    pub wordlist_filter_ends_with: Option<String>,
-    /// Matches the specified regex
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "REGEX", visible_alias = "wfr", env, hide_env=true)]
-    pub wordlist_filter_regex: Option<String>,
-    /// Length range
-    /// e.g.: 5, 5-10, 5,10,15, >5, <5
-    #[clap(long, help_heading = Some("Wordlist Filtering"), value_name = "RANGE", visible_alias = "wfl", value_parser(parse_cli_range_input), env, hide_env=true)]
-    pub wordlist_filter_length: Option<String>,
+    /// Wordlist filtering: "contains", "starts", "ends", "regex", "length"
+    #[clap(short='w', long, help_heading = Some("Filtering"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>), visible_alias = "wf")]
+    pub wordlist_filter: Vec<(String, String)>,
 
-    /// Reponse status code,
-    /// e.g.: 200, 200-300, 200,300,400, >200, <200
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fsc", value_parser(parse_cli_range_input), env, hide_env=true, default_value = "200-299,300-399,400-403,500-599")]
-    pub filter_status_code: Option<String>,
-    /// Contains the specified string
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fc", env, hide_env=true)]
-    pub filter_contains: Option<String>,
-    /// Starts with the specified string
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fs", env, hide_env=true)]
-    pub filter_starts_with: Option<String>,
-    /// Ends with the specified string
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "STRING", visible_alias = "fe", env, hide_env=true)]
-    pub filter_ends_with: Option<String>,
-    /// Matches the specified regex
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "REGEX", visible_alias = "fr", env, hide_env=true)]
-    pub filter_regex: Option<String>,
-    /// Response length
-    /// e.g.: 100, >100, <100, 100-200, 100,200,300
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "fl", value_parser(parse_cli_range_input), env, hide_env=true)]
-    pub filter_length: Option<String>,
-    /// Response time range in milliseconds
-    /// e.g.: >1000, <1000, 1000-2000
-    #[clap(long, help_heading = Some("Response Filtering"), value_name = "RANGE", visible_alias = "ft", value_parser(parse_cli_range_input), env, hide_env=true)]
-    pub filter_time: Option<String>,
+    /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash"
+    #[clap(short, long, help_heading = Some("Filtering"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>))]
+    pub filter: Vec<(String, String)>,
 
     /// Proxy URL
-    #[clap(long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
+    #[clap(short='P', long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
     pub proxy: Option<String>,
     /// Proxy username and password
     #[clap(long, help_heading = Some("Proxy"), value_name = "USER:PASS", env, hide_env=true)]
@@ -161,7 +123,39 @@ pub struct Opts {
     pub generate_markdown: bool,
 }
 
-fn parse_cli_range_input(s: &str) -> Result<String, String> {
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
+where
+    T: std::str::FromStr,
+    T::Err: Error + Send + Sync + 'static,
+    U: std::str::FromStr,
+    U::Err: Error + Send + Sync + 'static,
+{
+    let pos = s
+        .find(':')
+        .ok_or_else(|| format!("invalid KEY:value: no `:` found in `{s}`"))?;
+    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+}
+
+fn parse_key_or_key_val<T, U>(
+    s: &str,
+) -> Result<(T, Option<U>), Box<dyn Error + Send + Sync + 'static>>
+where
+    T: std::str::FromStr,
+    T::Err: Error + Send + Sync + 'static,
+    U: std::str::FromStr,
+    U::Err: Error + Send + Sync + 'static,
+{
+    if s.contains(':') {
+        let pos = s
+            .find(':')
+            .ok_or_else(|| format!("invalid KEY:value: no `:` found in `{s}`"))?;
+        Ok((s[..pos].parse()?, Some(s[pos + 1..].parse()?)))
+    } else {
+        Ok((s.parse()?, None))
+    }
+}
+
+fn parse_cli_range_input(s: &str) -> Result<String> {
     parse_range_input(s)?;
     Ok(s.to_string())
 }
