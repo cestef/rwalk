@@ -190,13 +190,13 @@ pub async fn start(
                                         match show.as_str() {
                                             "length" => {
                                                 additions.push(Addition {
-                                                    key: "body_length".to_string(),
+                                                    key: "length".to_string(),
                                                     value: text.len().to_string(),
                                                 });
                                             }
                                             "hash" => {
                                                 additions.push(Addition {
-                                                    key: "body_hash".to_string(),
+                                                    key: "hash".to_string(),
                                                     value: format!("{:x}", md5::compute(&text)),
                                                 });
                                             }
@@ -231,7 +231,7 @@ pub async fn start(
                                         }
                                     }
                                     progress.println(format!(
-                                        "{} {} {} {} {}",
+                                        "{} {} {} {}{}",
                                         if response.status().is_success() {
                                             SUCCESS.to_string().green()
                                         } else if response.status().is_redirection() {
@@ -248,7 +248,7 @@ pub async fn start(
                                         .dimmed(),
                                         additions.iter().fold("".to_string(), |acc, addition| {
                                             format!(
-                                                "{}{}: {}\n",
+                                                "{} | {}: {}",
                                                 acc,
                                                 addition.key.dimmed().bold(),
                                                 addition.value.dimmed()
