@@ -15,12 +15,13 @@ use url::Url;
 )]
 pub struct Opts {
     /// Target URL
-    #[clap(required_unless_present = "interactive", required_unless_present = "resume", value_parser = parse_url, env, hide_env=true)]
+    #[clap(required_unless_present = "interactive", required_unless_present = "resume", required_unless_present = "generate_markdown", value_parser = parse_url, env, hide_env=true)]
     pub url: Option<String>,
     /// Wordlist(s)
     #[clap(
         required_unless_present = "interactive",
         required_unless_present = "resume",
+        required_unless_present = "generate_markdown",
         env,
         hide_env = true
     )]
@@ -45,7 +46,7 @@ pub struct Opts {
     #[clap(short, long, default_value = "GET", value_parser = method_exists, env, hide_env=true)]
     pub method: Option<String>,
     /// Data to send with the request
-    #[clap(short, long, env, hide_env = true)]
+    #[clap(short = 'D', long, env, hide_env = true)]
     pub data: Option<String>,
     /// Headers to send
     #[clap(short = 'H', long, value_name = "key:value", value_parser = is_header, env, hide_env=true)]
@@ -154,6 +155,10 @@ pub struct Opts {
     /// Proxy username and password
     #[clap(long, help_heading = Some("Proxy"), value_name = "USER:PASS", env, hide_env=true)]
     pub proxy_auth: Option<String>,
+
+    /// Generate markdown help - for developers
+    #[clap(long, hide = true)]
+    pub generate_markdown: bool,
 }
 
 fn parse_cli_range_input(s: &str) -> Result<String, String> {
