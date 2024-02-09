@@ -72,6 +72,10 @@ A blazing fast web directory scanner
 * `-T`, `--transform <TRANSFORM>` — Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
 * `-w`, `--wordlist-filter <KEY:FILTER>` — Wordlist filtering: "contains", "starts", "ends", "regex", "length"
 * `-f`, `--filter <KEY:FILTER>` — Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash"
+* `--or` — Treat filters as or instead of and
+
+  Possible values: `true`, `false`
+
 * `-P`, `--proxy <URL>` — Proxy URL
 * `--proxy-auth <USER:PASS>` — Proxy username and password
 * `--generate-markdown` — Generate markdown help - for developers
