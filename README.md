@@ -1,8 +1,17 @@
+
 <p align="center">
     <img src="assets/header.png" alt="rwalk" />
 </p>
 
+[![Crates.io](https://img.shields.io/crates/v/rwalk)](https://crates.io/crates/rwalk)
+[![GitHub](https://img.shields.io/github/license/cestef/rwalk)](LICENSE)
+
+
 A blazing fast web directory scanner written in Rust. It's like [dirsearch](https://github.com/maurosoria/dirsearch) but faster and with less features.
+It is designed to be fast in [**recursive scans**](#recursive-scan) and to be able to handle large wordlists. 
+
+Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features such as **parameter fuzzing**, **header discovery**, etc.
+
 
 ## Features
 
@@ -55,6 +64,7 @@ cargo run --release -- https://example.com path/to/wordlist.txt
 ## Usage
 
 You can run `rwalk --help` or [read the help file](HELP.md) for more information.
+
 
 ### Passing parameters as environment variables
 
@@ -293,7 +303,7 @@ This will send `50` (`5`×`10` threads) requests per second. See [Throttling](#t
 ### Custom request body
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -m POST -d '{"username": "admin", "password": "admin"}'
+rwalk https://example.com path/to/wordlist.txt -m POST -D '{"username": "admin", "password": "admin"}'
 ```
 
 ## FAQ
