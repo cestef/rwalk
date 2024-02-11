@@ -62,7 +62,6 @@ impl<T> Tree<T> {
     }
 
     /// Recursively get all nodes at a given depth
-
     fn get_nodes_at_depth_recursive(
         &self,
         node: &Option<Arc<Mutex<TreeNode<T>>>>,

@@ -41,7 +41,7 @@ pub async fn start(
                 .with_style(
                     indicatif::ProgressStyle::default_bar()
                         .template("{spinner:.blue} (ETA. {eta}) {wide_bar} {pos}/{len} ({per_sec:>11}) | {prefix:>3} {msg:>14.bold}")?
-                        .progress_chars("█▉▊▋▌▍▎▏ "),
+                        .progress_chars("█▉▊▋▌▍▎▏░"),
                     )
                 .with_message(format!("/{}", previous_node.lock().data.path.trim_start_matches("/")))
                 .with_prefix(format!("d={}", *depth.lock() + 1))
@@ -367,4 +367,12 @@ pub async fn start(
         *depth.lock() += 1;
     }
     Ok(())
+}
+
+pub struct Fuzzer {}
+
+impl Fuzzer {
+    pub fn new() -> Self {
+        Fuzzer {}
+    }
 }
