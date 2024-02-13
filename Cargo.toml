@@ -1,6 +1,6 @@
 [package]
 name = "rwalk"
-version = "0.3.8"
+version = "0.3.9"
 authors = ["cstef"]
 description = "A blazing fast web directory scanner"
 license = "MIT"
