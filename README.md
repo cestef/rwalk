@@ -233,6 +233,11 @@ Available output formats:
 
 The throttling value will be multiplied by the number of threads. For example, if you have `10` threads and a throttling value of `5`, the total number of requests per second will be `50`.
 
+
+```bash
+rwalk https://example.com path/to/wordlist.txt --throttle 5 -t 10 
+```
+
 ### Saving and resuming scans
 
 By default, if you abort the scan with <kbd>Ctrl</kbd> + <kbd>C</kbd>, rwalk will save the progress to a file called `.rwalk.json`. You can resume the scan by running with `--resume`:
@@ -245,8 +250,6 @@ If you want to save the progress to a different file, you can use the `--save-fi
 
 ```bash
 rwalk https://example.com path/to/wordlist.txt --save-file myscan.json 
-# or
-rwalk https://example.com path/to/wordlist.txt -f myscan.json
 ```
 
 The auto-saving behavior can be disabled with `--no-save`.
@@ -291,14 +294,6 @@ rwalk https://example.com path/to/wordlist.txt -H "X-Forwarded-For: 203.0.113.19
 ```bash
 rwalk https://example.com path/to/wordlist.txt -R 2
 ```
-
-### Request throttling
-
-```bash
-rwalk https://example.com path/to/wordlist.txt --throttle 5 -t 10 
-```
-
-This will send `50` (`5`×`10` threads) requests per second. See [Throttling](#throttling) for more information.
 
 ### Custom request body
 
