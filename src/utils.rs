@@ -195,7 +195,19 @@ pub fn apply_transformations(opts: &Opts, words: &mut Vec<String>) {
 // Returns true if the response should be kept
 pub fn is_response_filtered(opts: &Opts, res_text: &str, status_code: u16, time: u16) -> bool {
     let mut outs: Vec<bool> = Vec::new();
-    for filter in &opts.filter {
+
+    let filters = if opts.filter.iter().any(|e| e.0 == "status") {
+        opts.filter.clone()
+    } else {
+        let mut filters = opts.filter.clone();
+        filters.push((
+            "status".to_string(),
+            "200-299,301,302,307,401,403,405,500".to_string(),
+        ));
+        filters
+    };
+
+    for filter in filters {
         let not = filter.0.starts_with("!");
         let out = match filter.0.trim_start_matches("!") {
             "time" => {
