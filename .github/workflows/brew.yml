@@ -1,7 +1,8 @@
 on:
     release:
         types: [published]
-
+    workflow_dispatch:
+name: Homebrew Releaser
 jobs:
     homebrew-releaser:
         runs-on: ubuntu-latest
