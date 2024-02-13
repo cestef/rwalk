@@ -17,19 +17,21 @@ use logger::init_logger;
 use parking_lot::Mutex;
 use ptree::print_tree;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use signal_hook::consts::signal::*;
 use signal_hook_tokio::Signals;
 use std::{
     collections::HashMap,
-    io::{self, Read, Write},
+    io,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
     time::Duration,
 };
-use tokio::time::timeout;
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    time::timeout,
+};
 
 use url::Url;
 
@@ -84,7 +86,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         return Ok(());
     }
     let saved = if opts.resume {
-        std::fs::read_to_string(opts.save_file.clone())
+        tokio::fs::read_to_string(opts.save_file.clone()).await
     } else {
         Err(io::Error::new(io::ErrorKind::NotFound, "No save file"))
     };
@@ -102,11 +104,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
         opts.wordlists.clone()
     };
     let mut words = if opts.wordlists.len() == 1 && opts.wordlists.first().unwrap() == "-" {
-        let stdin = io::stdin();
-        let mut handle = stdin.lock();
+        let mut stdin = tokio::io::stdin();
 
         let mut buf = String::new();
-        handle.read_to_string(&mut buf)?;
+        stdin.read_to_string(&mut buf).await?;
 
         let words: Vec<String> = buf
             .split('\n')
@@ -172,9 +173,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
                         *depth.lock() = *json.depth.lock();
                         if json.wordlist_checksum == {
-                            let mut hasher = Sha256::new();
-                            hasher.update(words.join("\n"));
-                            format!("{:x}", hasher.finalize())
+                            format!("{:x}", md5::compute(words.join("\n")))
                         } {
                             *current_indexes.lock() = json.indexes;
                         } else {
@@ -287,12 +286,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                     ctrlc_aborted.store(true, Ordering::Relaxed);
                     handle.abort();
                     if !opts.no_save {
-                        let checksum = {
-                            let mut hasher = Sha256::new();
-                            hasher.update(ctrlc_words.join("\n"));
-                            hasher.finalize()
-                        };
-                        let checksum = format!("{:x}", checksum);
+                        let checksum = format!("{:x}", md5::compute(ctrlc_words.join("\n")));
                         let content = serde_json::to_string(&Save {
                             tree: ctrlc_tree.clone(),
                             depth: ctrlc_depth.clone(),
@@ -303,9 +297,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
                         });
                         match content {
                             Ok(content) => {
-                                let mut file = std::fs::File::create(&ctrlc_save_file).unwrap();
-                                file.write_all(content.as_bytes()).unwrap();
-                                file.flush().unwrap();
+                                let mut file =
+                                    tokio::fs::File::create(&ctrlc_save_file).await.unwrap();
+                                file.write_all(content.as_bytes()).await.unwrap();
+                                file.flush().await.unwrap();
                                 print!("\x1B[2K\r");
                                 info!("Saved state to {}", ctrlc_save_file.bold());
                             }
@@ -338,7 +333,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
         // Remove save file if it's the default one
         if has_saved && opts.save_file == SAVE_FILE {
-            std::fs::remove_file(opts.save_file.clone())?;
+            tokio::fs::remove_file(opts.save_file.clone()).await?;
         }
         if opts.output.is_some() {
             let res = save_to_file(&opts, root, depth, tree);
