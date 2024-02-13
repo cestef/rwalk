@@ -5,6 +5,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/rwalk)](https://crates.io/crates/rwalk)
 [![GitHub](https://img.shields.io/github/license/cestef/rwalk)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/cestef/rwalk)](https://github.com/cestef/rwalk/releases/latest)
 
 
 A blazing fast web directory scanner written in Rust. It's like [dirsearch](https://github.com/maurosoria/dirsearch) but faster and with less features.
