@@ -1,40 +1,13 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use colored::Colorize;
 use parking_lot::Mutex;
-use std::{
-    io::{Read, Write},
-    sync::Arc,
-};
+use std::{io::Write, sync::Arc};
 
 use crate::{
     cli::Opts,
     constants::BANNER_STR,
     tree::{Tree, TreeData, TreeNode},
 };
-
-pub fn parse_wordlists(wordlists: &Vec<String>) -> Result<Vec<String>> {
-    let mut wordlist = Vec::new();
-    for wordlist_path in wordlists {
-        let mut file = std::fs::File::open(wordlist_path).with_context(|| {
-            format!(
-                "Failed to open wordlist file: {}",
-                wordlist_path.to_string().bold().red()
-            )
-        })?;
-        let mut bytes = Vec::new();
-        file.read_to_end(&mut bytes).unwrap();
-
-        let contents = unsafe { String::from_utf8_unchecked(bytes) };
-
-        for word in contents.split("\n") {
-            let word = word.trim();
-            if word.len() > 0 {
-                wordlist.push(word.to_string());
-            }
-        }
-    }
-    Ok(wordlist)
-}
 
 pub fn banner() {
     println!("{}", BANNER_STR.to_string().bold().bright_red());
@@ -47,15 +20,6 @@ pub fn banner() {
     println!("");
 }
 
-pub fn hide_cursor() {
-    print!("\x1B[?25l");
-    std::io::stdout().flush().unwrap();
-}
-
-pub fn show_cursor() {
-    print!("\x1B[?25h");
-    std::io::stdout().flush().unwrap();
-}
 pub fn get_emoji_for_status_code_colored(status_code: u16) -> String {
     match status_code {
         200..=299 => "✓".green().to_string(),
@@ -73,122 +37,6 @@ pub fn get_emoji_for_status_code(status_code: u16) -> String {
         400..=403 => "✖".to_string(),
         500..=599 => "⚠".to_string(),
         _ => "⚠".to_string(),
-    }
-}
-
-pub fn apply_filters(opts: &Opts, words: &mut Vec<String>) -> Result<()> {
-    for filter in &opts.wordlist_filter {
-        let not = filter.0.starts_with("!");
-        match filter.0.trim_start_matches("!") {
-            "contains" => {
-                words.retain(|word| {
-                    if not {
-                        !word.contains(&filter.1)
-                    } else {
-                        word.contains(&filter.1)
-                    }
-                });
-            }
-            "starts" => {
-                words.retain(|word| {
-                    if not {
-                        !word.starts_with(&filter.1)
-                    } else {
-                        word.starts_with(&filter.1)
-                    }
-                });
-            }
-            "ends" => {
-                words.retain(|word| {
-                    if not {
-                        !word.ends_with(&filter.1)
-                    } else {
-                        word.ends_with(&filter.1)
-                    }
-                });
-            }
-            "regex" => {
-                let re = regex::Regex::new(&filter.1)?;
-                words.retain(|word| {
-                    if not {
-                        !re.is_match(word)
-                    } else {
-                        re.is_match(word)
-                    }
-                });
-            }
-            "length" => {
-                let parsed_filter_length = parse_range_input(&filter.1)?;
-                words.retain(|word| {
-                    if not {
-                        !check_range(&parsed_filter_length, word.len())
-                    } else {
-                        check_range(&parsed_filter_length, word.len())
-                    }
-                });
-            }
-            _ => {}
-        }
-    }
-    Ok(())
-}
-
-pub fn apply_transformations(opts: &Opts, words: &mut Vec<String>) {
-    for transformation in &opts.transform {
-        match transformation.0.as_str() {
-            "lower" => {
-                words.iter_mut().for_each(|word| {
-                    *word = word.to_lowercase();
-                });
-            }
-            "upper" => {
-                words.iter_mut().for_each(|word| {
-                    *word = word.to_uppercase();
-                });
-            }
-            "prefix" => {
-                let transform_prefix = transformation.1.clone().unwrap();
-                words.iter_mut().for_each(|word| {
-                    *word = format!("{}{}", transform_prefix, word);
-                });
-            }
-            "suffix" => {
-                let transform_suffix = transformation.1.clone().unwrap();
-                words.iter_mut().for_each(|word| {
-                    *word = format!("{}{}", word, transform_suffix);
-                });
-            }
-            "capitalize" => {
-                words.iter_mut().for_each(|word| {
-                    *word = word.to_lowercase();
-                    let mut chars = word.chars();
-                    if let Some(first_char) = chars.next() {
-                        *word = format!("{}{}", first_char.to_uppercase(), chars.as_str());
-                    }
-                });
-            }
-            "reverse" => {
-                words.iter_mut().for_each(|word| {
-                    *word = word.chars().rev().collect::<String>();
-                });
-            }
-            "remove" => {
-                let transform_remove = transformation.1.clone().unwrap();
-                words.iter_mut().for_each(|word| {
-                    *word = word.replace(&transform_remove, "");
-                });
-            }
-            "replace" => {
-                let transform_replace = transformation.1.clone().unwrap();
-                let parts = transform_replace.split("=").collect::<Vec<_>>();
-                if parts.len() == 2 {
-                    words.iter_mut().for_each(|word| {
-                        *word = word.replace(parts[0], parts[1]);
-                    });
-                }
-            }
-            _ => {}
-        }
     }
 }
 

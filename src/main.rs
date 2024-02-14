@@ -3,7 +3,7 @@
 use crate::{
     constants::{SAVE_FILE, SUCCESS},
     tree::{Tree, TreeData},
-    utils::{apply_filters, apply_transformations, parse_wordlists, save_to_file},
+    utils::save_to_file,
 };
 use anyhow::Result;
 use clap::Parser;
@@ -28,10 +28,7 @@ use std::{
     },
     time::Duration,
 };
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    time::timeout,
-};
+use tokio::{io::AsyncWriteExt, time::timeout};
 
 use url::Url;
 
@@ -41,6 +38,7 @@ mod constants;
 mod logger;
 mod tree;
 mod utils;
+mod wordlists;
 
 #[derive(Serialize, Deserialize)]
 struct Save {
@@ -102,38 +100,17 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         opts.wordlists.clone()
     };
-    let mut words = if opts.wordlists.len() == 1 && opts.wordlists.first().unwrap() == "-" {
-        let mut stdin = tokio::io::stdin();
 
-        let mut buf = String::new();
-        stdin.read_to_string(&mut buf).await?;
-
-        let words: Vec<String> = buf
-            .split('\n')
-            .map(|x| x.to_string())
-            .filter(|x| !x.is_empty())
-            .collect();
-
-        if words.is_empty() {
-            error!("Missing wordlists");
-            return Ok(());
-        }
-        words
-    } else {
-        let res = parse_wordlists(&resolved_wordlists_paths);
-        if let Err(e) = res {
-            error!("{}", e);
-            return Ok(());
-        }
-
-        res.unwrap()
-    };
+    let mut words = wordlists::parse(&resolved_wordlists_paths).await?;
 
     let before = words.len();
-    apply_filters(&opts, &mut words)?;
-    apply_transformations(&opts, &mut words);
+
+    wordlists::filters(&opts, &mut words)?;
+    wordlists::transformations(&opts, &mut words);
+
     words.sort_unstable();
     words.dedup();
+
     let after = words.len();
     if before != after {
         info!(
