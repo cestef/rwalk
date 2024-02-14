@@ -36,6 +36,7 @@ mod cli;
 mod client;
 mod constants;
 mod filters;
+mod interactive;
 mod logger;
 mod runner;
 mod tree;
@@ -72,7 +73,7 @@ async fn main() -> Result<()> {
         utils::banner();
     }
     if opts.interactive {
-        cli::main_interactive().await
+        interactive::main().await
     } else {
         _main(opts.clone()).await
     }
