@@ -36,8 +36,8 @@ use tokio::{
 use url::Url;
 
 mod cli;
+mod common;
 mod constants;
-mod core;
 mod logger;
 mod tree;
 mod utils;
@@ -250,7 +250,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         .collect::<Vec<_>>();
     let chunks = Arc::new(chunks);
 
-    let main_fun = core::start(
+    let main_fun = common::start(
         opts.clone(),
         depth.clone(),
         tree.clone(),
