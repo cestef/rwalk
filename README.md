@@ -14,7 +14,7 @@ It is designed to be fast in [**recursive scans**](#recursive-scan) and to be ab
 Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features such as **parameter fuzzing**, **header discovery**, etc.
 
 <p align="center">
-    <img src="assets/rwalk.gif" width="auto" height="350px">
+    <img src="assets/rwalk.gif">
 </p>
 
 ## Features
