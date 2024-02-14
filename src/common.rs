@@ -1,6 +1,10 @@
 use colored::Colorize;
 use serde_json::json;
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use anyhow::Result;
 use parking_lot::Mutex;
@@ -71,29 +75,27 @@ pub async fn start(
                             .unwrap()[i];
                         let word = chunk[index].clone();
                         let data = previous_node.lock().data.clone();
+
                         let mut url = data.url.clone();
                         match url.ends_with('/') {
                             true => url.push_str(&word),
                             false => url.push_str(&format!("/{}", word)),
                         }
+
                         let sender = crate::client::get_sender(&opts, &url, &client);
-                        let t1 = std::time::Instant::now();
+
+                        let t1 = Instant::now();
+
                         let response = sender.send().await;
-                        let sleep = if opts.throttle.unwrap() > 0 {
-                            let t2 = std::time::Instant::now();
-                            let elapsed = t2 - t1;
-                            let sleep =
-                                Duration::from_secs_f64(1.0 / opts.throttle.unwrap() as f64);
-                            if elapsed < sleep {
-                                sleep - elapsed
-                            } else {
-                                Duration::from_secs_f64(0.0)
+
+                        if let Some(throttle) = opts.throttle {
+                            if throttle > 0 {
+                                let elapsed = t1.elapsed();
+                                let sleep_duration = Duration::from_secs_f64(1.0 / throttle as f64);
+                                if let Some(sleep) = sleep_duration.checked_sub(elapsed) {
+                                    tokio::time::sleep(sleep).await;
+                                }
                             }
-                        } else {
-                            Duration::from_secs_f64(0.0)
-                        };
-                        if sleep.as_secs_f64() > 0.0 {
-                            tokio::time::sleep(sleep).await;
                         }
                         match response {
                             Ok(mut response) => {
@@ -229,7 +231,7 @@ pub async fn start(
             handle.await?;
         }
 
-        // Go to the next depth (/a/b/c -> /a/b/c/...)
+        // Go to the next depth (/a/b/c -> /a/b/c/d)
         *depth.lock() += 1;
     }
     Ok(())
