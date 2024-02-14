@@ -346,6 +346,18 @@ Each tool was run `10` times with `100` threads. The results are below:
 | `dirsearch` | 8.528 ± 0.149 |   8.278 |   8.743 | 3.54 ± 0.15 |
 | `ffuf`      | 2.552 ± 0.181 |   2.380 |   3.005 | 1.06 ± 0.09 |
 
+If you want to run the benchmarks yourself, you can use the `bench` command:
+
+```bash
+just bench
+```
+
+Positional arguments can also be passed.
+
+```bash
+just bench <URL> <WORDLIST_FILE> <THREADS>
+```
+
 ## License
 
 Licensed under the [MIT License](LICENSE).
