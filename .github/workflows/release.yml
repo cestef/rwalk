@@ -42,9 +42,14 @@ jobs:
         runs-on: ${{ matrix.os }}
         steps:
             - uses: actions/checkout@v4
+            - name: Generate tag
+              id: tag
+              # Get the latest tag without the v prefix
+              run: echo "tag=$(git describe --tags --abbrev=0 | sed 's/v//')" >> $GITHUB_OUTPUT
+
             - uses: taiki-e/upload-rust-binary-action@v1
               with:
                   bin: rwalk
                   target: ${{ matrix.target }}
                   token: ${{ secrets.GITHUB_TOKEN }}
-                  archive: $bin-$tag-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
+                  archive: $bin-${{ steps.tag.outputs.tag }}-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
