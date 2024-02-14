@@ -82,7 +82,7 @@ pub struct Opts {
     /// Interactive mode
     #[clap(short, long, env, hide_env = true)]
     pub interactive: bool,
-    /// Unsecure mode, disables SSL certificate validation
+    /// Insecure mode, disables SSL certificate validation
     #[clap(long, env, hide_env = true)]
     pub insecure: bool,
     /// Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers"

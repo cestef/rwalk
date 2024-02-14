@@ -53,7 +53,7 @@ A blazing fast web directory scanner
 
   Possible values: `true`, `false`
 
-* `--insecure` — Unsecure mode, disables SSL certificate validation
+* `--insecure` — Insecure mode, disables SSL certificate validation
 
   Possible values: `true`, `false`
 
