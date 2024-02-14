@@ -26,29 +26,36 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 - [x] Request throttling
 - [x] Proxy support
 
-## From [crates.io](https://crates.io/crates/rwalk)
+## Installation
 
-### Installation
+### From [homebrew](https://brew.sh)
+
+```bash
+brew install cestef/tap/rwalk
+```
+
+### From [crates.io](https://crates.io/crates/rwalk)
 
 ```bash
 cargo install rwalk
 ```
 
-### Running
-
-```bash
-rwalk https://example.com path/to/wordlist.txt
-```
-## From source
-
-### Installation
+### From source
 
 ```bash
 git clone https://github.com/cestef/rwalk.git
 cd rwalk
+cargo install --path .
 ```
 
-### Running
+<small>
+    <p align="center">
+        <i>You can also download the latest binary from the <a href="https://github.com/cestef/rwalk/releases/latest">releases page</a>.</i>
+    </p>
+</small>
+
+
+## Development
 
 **With [just](https://github.com/casey/just)**
 
@@ -122,6 +129,12 @@ Available filters:
 - `status`: _`<RANGE>`_
 - `time`: _`<RANGE>`_
 - `hash`: _`<STRING>`_ (MD5)
+
+**Note:** Each filter can be negated by adding a `!` before the filter. For example, to exclude responses that contain `admin`:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt --filter "!contains:admin"
+```
 
 ### Wordlists
 
