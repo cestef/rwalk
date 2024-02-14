@@ -169,14 +169,14 @@ pub fn from_save(
 
             *depth.lock() = *save.depth.lock();
             if save.wordlist_checksum == { format!("{:x}", md5::compute(words.join("\n"))) } {
-                *current_indexes.lock() = save.indexes;
+                *current_indexes.lock() = save.indexes.clone();
             } else {
                 warn!(
                     "Wordlists have changed, starting from scratch at depth {}",
                     (*save.depth.lock() + 1).to_string().yellow()
                 );
             }
-            Ok(save.tree)
+            Ok(save.tree.clone())
         }
     } else {
         Err(anyhow::anyhow!("No saved state found"))
