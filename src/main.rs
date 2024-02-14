@@ -12,7 +12,7 @@ use colored::Colorize;
 use futures::future::abortable;
 use futures::stream::StreamExt;
 use indicatif::HumanDuration;
-use log::{error, info, warn};
+use log::{error, info};
 use logger::init_logger;
 use parking_lot::Mutex;
 use ptree::print_tree;
@@ -133,45 +133,25 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =
         Arc::new(Mutex::new(HashMap::new()));
 
-    let saved = if opts.resume {
+    let saved_tree = if opts.resume {
         match saved_json {
-            Some(json) => {
-                let json = json.unwrap();
-                if let Some(root) = &json.tree.clone().lock().root {
-                    if opts.url.is_some() && root.lock().data.url != opts.url.clone().unwrap() {
-                        None
-                    } else {
-                        print_tree(&*root.lock())?;
-                        info!(
-                            "Found saved state crawled to depth {}",
-                            (*json.depth.lock() + 1).to_string().blue()
-                        );
-
-                        *depth.lock() = *json.depth.lock();
-                        if json.wordlist_checksum == {
-                            format!("{:x}", md5::compute(words.join("\n")))
-                        } {
-                            *current_indexes.lock() = json.indexes;
-                        } else {
-                            warn!(
-                                "Wordlists have changed, starting from scratch at depth {}",
-                                (*json.depth.lock() + 1).to_string().yellow()
-                            );
-                        }
-                        Some(json.tree)
-                    }
-                } else {
-                    None
-                }
-            }
+            Some(json) => Some(tree::from_save(
+                &opts,
+                &json.unwrap(),
+                depth.clone(),
+                current_indexes.clone(),
+                words.clone(),
+            )?),
             None => None,
         }
     } else {
         None
     };
-    let has_saved = saved.is_some();
-    let tree = if let Some(saved) = saved {
-        saved
+
+    let has_saved = saved_tree.is_some();
+
+    let tree = if let Some(saved_tree) = saved_tree {
+        saved_tree
     } else {
         let t = Arc::new(Mutex::new(Tree::new()));
         t.lock().insert(

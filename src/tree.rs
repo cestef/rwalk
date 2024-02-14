@@ -1,12 +1,14 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
+use anyhow::Result;
 use colored::Colorize;
+use log::{info, warn};
 use parking_lot::Mutex;
-use ptree::TreeItem;
+use ptree::{print_tree, TreeItem};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::utils::get_emoji_for_status_code_colored;
+use crate::{cli::Opts, utils::get_emoji_for_status_code_colored, Save};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TreeNode<T> {
     pub data: T,
@@ -143,5 +145,40 @@ impl TreeItem for TreeNode<TreeData> {
             style.paint(&self.data.path.trim_start_matches("/"))
         )?;
         Ok(())
+    }
+}
+
+pub fn from_save(
+    opts: &Opts,
+    save: &Save,
+    depth: Arc<Mutex<usize>>,
+    current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
+    words: Vec<String>,
+) -> Result<Arc<Mutex<Tree<TreeData>>>> {
+    if let Some(root) = &save.tree.clone().lock().root {
+        if opts.url.is_some() && root.lock().data.url != opts.url.clone().unwrap() {
+            Err(anyhow::anyhow!(
+                "The URL of the saved state does not match the URL provided"
+            ))
+        } else {
+            print_tree(&*root.lock())?;
+            info!(
+                "Found saved state crawled to depth {}",
+                (*save.depth.lock() + 1).to_string().blue()
+            );
+
+            *depth.lock() = *save.depth.lock();
+            if save.wordlist_checksum == { format!("{:x}", md5::compute(words.join("\n"))) } {
+                *current_indexes.lock() = save.indexes;
+            } else {
+                warn!(
+                    "Wordlists have changed, starting from scratch at depth {}",
+                    (*save.depth.lock() + 1).to_string().yellow()
+                );
+            }
+            Ok(save.tree)
+        }
+    } else {
+        Err(anyhow::anyhow!("No saved state found"))
     }
 }
