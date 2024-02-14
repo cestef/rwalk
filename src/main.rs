@@ -60,7 +60,6 @@ async fn main() -> Result<()> {
         .join(".config")
         .join("rwalk")
         .join(".env");
-    // println!("{}", config_path.to_str().unwrap());
     dotenv::from_path(config_path).ok();
     let opts = Opts::parse();
     if opts.generate_markdown {
