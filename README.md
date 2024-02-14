@@ -156,7 +156,7 @@ cat path/to/wordlist.txt | rwalk https://example.com -
 ```
 
 > [!NOTE]
-> A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, `rwalk` will only load the wordlists if the checksums match. See [Saving progress](#saving-and-resuming-scans) for more information.
+> A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, `rwalk` will only load the wordlists if the checksums match. See [Saving and Resuming scans](#saving-and-resuming-scans) for more information.
 
 
 ### Wordlist Filters
@@ -260,7 +260,7 @@ rwalk https://example.com path/to/wordlist.txt --throttle 5 -t 10
 By default, if you abort the scan with <kbd>Ctrl</kbd> + <kbd>C</kbd>, rwalk will save the progress to a file called `.rwalk.json`. You can resume the scan by running with `--resume`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --resume
+rwalk --resume
 ```
 
 If you want to save the progress to a different file, you can use the `--save-file` flag:
