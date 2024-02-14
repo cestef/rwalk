@@ -47,9 +47,8 @@ struct Save {
     tree: Arc<Mutex<Tree<TreeData>>>,
     depth: Arc<Mutex<usize>>,
     wordlist_checksum: String,
-    wordlists: Arc<Vec<String>>,
-    url: String,
     indexes: HashMap<String, Vec<usize>>,
+    opts: Opts,
 }
 
 #[tokio::main]
@@ -94,16 +93,16 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         None
     };
-    let resolved_wordlists_paths = if let Some(ref save) = saved_json {
-        match save {
-            Ok(save) => (*save.wordlists).clone(),
-            Err(_) => opts.wordlists.clone(),
-        }
+
+    let opts = if let Some(ref save) = saved_json {
+        let mut saved_opts = save.as_ref().unwrap().opts.clone();
+        saved_opts.merge(&opts);
+        saved_opts
     } else {
-        opts.wordlists.clone()
+        opts.clone()
     };
 
-    let mut words = wordlists::parse(&resolved_wordlists_paths).await?;
+    let mut words = wordlists::parse(&opts.wordlists).await?;
 
     let before = words.len();
 
@@ -227,10 +226,9 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let ctrlc_tree = tree.clone();
     let ctrlc_depth = depth.clone();
     let ctrlc_words = words.clone();
-    let ctrlc_lists = Arc::new(opts.wordlists.clone());
+    let ctrlc_opts = opts.clone();
     let ctrlc_aborted = aborted.clone();
     let ctrlc_save_file = opts.save_file.clone();
-    let ctrlc_url = tree.lock().root.clone().unwrap().lock().data.url.clone();
     let mut signals = Signals::new(&[SIGINT])?;
     let ctrlc_handle = signals.handle();
 
@@ -248,8 +246,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                             depth: ctrlc_depth.clone(),
                             wordlist_checksum: checksum,
                             indexes: current_indexes.lock().clone(),
-                            wordlists: ctrlc_lists.clone(),
-                            url: ctrlc_url.clone(),
+                            opts: ctrlc_opts.clone(),
                         });
                         match content {
                             Ok(content) => {
