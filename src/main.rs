@@ -34,10 +34,10 @@ use url::Url;
 
 mod cli;
 mod client;
-mod common;
 mod constants;
 mod filters;
 mod logger;
+mod runner;
 mod tree;
 mod utils;
 mod wordlists;
@@ -207,7 +207,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         .collect::<Vec<_>>();
     let chunks = Arc::new(chunks);
 
-    let main_fun = common::start(
+    let main_fun = runner::start(
         opts.clone(),
         depth.clone(),
         tree.clone(),

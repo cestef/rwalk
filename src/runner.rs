@@ -145,13 +145,12 @@ pub async fn start(
                                         })
                                     ));
                                     // Check if this path is already in the tree
-                                    let found = previous_node
+                                    if !previous_node
                                         .lock()
                                         .children
                                         .iter()
-                                        .any(|child| child.lock().data.path == *word);
-
-                                    if !found {
+                                        .any(|child| child.lock().data.path == *word)
+                                    {
                                         tree.insert(
                                             TreeData {
                                                 url: url.clone(),
