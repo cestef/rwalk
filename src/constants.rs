@@ -14,3 +14,5 @@ pub const BANNER_STR: &str = r#"
 "#;
 pub const SAVE_FILE: &str = ".rwalk.json";
 pub const STATUS_CODES: [RangeInclusive<u16>; 4] = [200..=299, 300..=399, 400..=403, 500..=599];
+pub const PROGRESS_TEMPLATE: &str = "{spinner:.blue} (ETA. {eta}) {wide_bar} {pos}/{len} ({per_sec:>11}) | {prefix:>3} {msg:>14.bold}";
+pub const PROGRESS_CHARS: &str = "█▉▊▋▌▍▎▏░";

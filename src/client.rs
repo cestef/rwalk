@@ -56,3 +56,21 @@ pub fn build(opts: &Opts) -> Result<reqwest::Client> {
 
     Ok(client.build()?)
 }
+
+pub fn get_sender(opts: &Opts, url: &str, client: &reqwest::Client) -> reqwest::RequestBuilder {
+    match opts.method.clone().unwrap().as_str() {
+        "GET" => client.get(url),
+        "POST" => client
+            .post(url)
+            .body(opts.data.clone().unwrap_or("".to_string())),
+        "PUT" => client
+            .put(url)
+            .body(opts.data.clone().unwrap_or("".to_string())),
+        "DELETE" => client.delete(url),
+        "HEAD" => client.head(url),
+        "OPTIONS" => client.request(reqwest::Method::OPTIONS, url),
+        "TRACE" => client.request(reqwest::Method::TRACE, url),
+        "CONNECT" => client.request(reqwest::Method::CONNECT, url),
+        _ => panic!("Invalid HTTP method"),
+    }
+}

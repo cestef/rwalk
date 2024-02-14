@@ -8,7 +8,7 @@ use parking_lot::Mutex;
 
 use crate::{
     cli::Opts,
-    constants::{ERROR, SUCCESS, WARNING},
+    constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
     tree::{Tree, TreeData},
     utils::is_response_filtered,
 };
@@ -32,17 +32,19 @@ pub async fn start(
                 .entry(previous_node.lock().data.url.clone())
                 .or_insert_with(|| vec![0; chunks.len()]);
 
-            let pb = root_progress.add(indicatif::ProgressBar::new((words.len()) as u64))
+            let pb = root_progress
+                .add(indicatif::ProgressBar::new((words.len()) as u64))
                 .with_style(
                     indicatif::ProgressStyle::default_bar()
-                        .template("{spinner:.blue} (ETA. {eta}) {wide_bar} {pos}/{len} ({per_sec:>11}) | {prefix:>3} {msg:>14.bold}")?
-                        .progress_chars("█▉▊▋▌▍▎▏░"),
-                    )
-                .with_message(format!("/{}", previous_node.lock().data.path.trim_start_matches("/")))
+                        .template(PROGRESS_TEMPLATE)?
+                        .progress_chars(PROGRESS_CHARS),
+                )
+                .with_message(format!(
+                    "/{}",
+                    previous_node.lock().data.path.trim_start_matches("/")
+                ))
                 .with_prefix(format!("d={}", *depth.lock() + 1))
-                .with_position(
-                    index.iter().sum::<usize>() as u64,
-                );
+                .with_position(index.iter().sum::<usize>() as u64);
             pb.enable_steady_tick(Duration::from_millis(100));
             progresses.insert(previous_node.lock().data.url.clone(), pb);
 
@@ -72,25 +74,11 @@ pub async fn start(
                         let word = chunk[index].clone();
                         let data = previous_node.lock().data.clone();
                         let mut url = data.url.clone();
-                        if !url.ends_with("/") {
-                            url.push_str("/");
+                        match url.ends_with('/') {
+                            true => url.push_str(&word),
+                            false => url.push_str(&format!("/{}", word)),
                         }
-                        url.push_str(&word);
-                        let sender = match opts.method.clone().unwrap().as_str() {
-                            "GET" => client.get(&url),
-                            "POST" => client
-                                .post(&url)
-                                .body(opts.data.clone().unwrap_or("".to_string())),
-                            "PUT" => client
-                                .put(&url)
-                                .body(opts.data.clone().unwrap_or("".to_string())),
-                            "DELETE" => client.delete(&url),
-                            "HEAD" => client.head(&url),
-                            "OPTIONS" => client.request(reqwest::Method::OPTIONS, &url),
-                            "TRACE" => client.request(reqwest::Method::TRACE, &url),
-                            "CONNECT" => client.request(reqwest::Method::CONNECT, &url),
-                            _ => panic!("Invalid HTTP method"),
-                        };
+                        let sender = crate::client::get_sender(&opts, &url, &client);
                         let t1 = std::time::Instant::now();
                         let response = sender.send().await;
                         let sleep = if opts.throttle.unwrap() > 0 {
@@ -317,12 +305,4 @@ pub async fn start(
         *depth.lock() += 1;
     }
     Ok(())
-}
-
-pub struct Fuzzer {}
-
-impl Fuzzer {
-    pub fn new() -> Self {
-        Fuzzer {}
-    }
 }
