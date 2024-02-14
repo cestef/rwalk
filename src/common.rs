@@ -1,9 +1,4 @@
 use colored::Colorize;
-use reqwest::{
-    header::{HeaderMap, HeaderName},
-    redirect::Policy,
-    Proxy,
-};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::HashMap, sync::Arc, time::Duration};
@@ -53,54 +48,8 @@ pub async fn start(
 
             let progress = progresses.get(&previous_node.lock().data.url).unwrap();
 
-            let mut headers = HeaderMap::new();
-            opts.headers.clone().iter().for_each(|header| {
-                let mut header = header.splitn(2, ":");
-                let key = header.next().unwrap().trim();
-                let value = header.next().unwrap().trim();
-                headers.insert(key.parse::<HeaderName>().unwrap(), value.parse().unwrap());
-            });
-            opts.cookies.clone().iter().for_each(|cookie| {
-                let mut cookie = cookie.splitn(2, "=");
-                let key = cookie.next().unwrap().trim();
-                let value = cookie.next().unwrap().trim();
-                headers.extend(vec![(
-                    reqwest::header::COOKIE,
-                    format!("{}={}", key, value).parse().unwrap(),
-                )]);
-            });
-            let client = reqwest::Client::builder()
-                .danger_accept_invalid_certs(opts.insecure)
-                .user_agent(
-                    opts.user_agent
-                        .clone()
-                        .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
-                )
-                .default_headers(headers)
-                .redirect(if opts.follow_redirects.unwrap() > 0 {
-                    Policy::limited(opts.follow_redirects.unwrap())
-                } else {
-                    Policy::none()
-                })
-                .timeout(std::time::Duration::from_secs(opts.timeout.unwrap() as u64));
+            let client = crate::client::build(&opts)?;
 
-            let client = if let Some(proxy) = opts.proxy.clone() {
-                let proxy = Proxy::all(proxy)?;
-                if let Some(auth) = opts.proxy_auth.clone() {
-                    let mut auth = auth.splitn(2, ":");
-                    let username = auth.next().unwrap().trim();
-                    let password = auth.next().unwrap().trim();
-
-                    let proxy = proxy.basic_auth(username, password);
-                    client.proxy(proxy)
-                } else {
-                    client.proxy(proxy)
-                }
-            } else {
-                client
-            };
-
-            let client = client.build()?;
             for (i, chunk) in chunks.iter().enumerate() {
                 let mut tree = tree.lock().clone();
                 let previous_node = previous_node.clone();

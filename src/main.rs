@@ -33,6 +33,7 @@ use tokio::{io::AsyncWriteExt, time::timeout};
 use url::Url;
 
 mod cli;
+mod client;
 mod common;
 mod constants;
 mod logger;
@@ -174,11 +175,9 @@ pub async fn _main(opts: Opts) -> Result<()> {
     // Check if the root URL is up
     let root_url = tree.lock().root.clone().unwrap().lock().data.url.clone();
     let root_url = Url::parse(&root_url)?;
-    let tmp_client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(opts.insecure)
-        .timeout(Duration::from_secs(opts.timeout.unwrap() as u64))
-        .connect_timeout(Duration::from_secs(opts.timeout.unwrap() as u64))
-        .build()?;
+
+    let tmp_client = client::build(&opts)?;
+
     let res = tmp_client.get(root_url.clone()).send().await;
     if let Err(e) = res {
         error!("Error while connecting to {}: {}", root_url, e);
