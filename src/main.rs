@@ -161,7 +161,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
             Some(json) => {
                 let json = json.unwrap();
                 if let Some(root) = &json.tree.clone().lock().root {
-                    if root.lock().data.url != opts.url.clone().unwrap() {
+                    if opts.url.is_some() && root.lock().data.url != opts.url.clone().unwrap() {
                         None
                     } else {
                         print_tree(&*root.lock())?;
@@ -273,7 +273,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let ctrlc_lists = Arc::new(opts.wordlists.clone());
     let ctrlc_aborted = aborted.clone();
     let ctrlc_save_file = opts.save_file.clone();
-    let ctrlc_url = opts.url.clone().unwrap();
+    let ctrlc_url = tree.lock().root.clone().unwrap().lock().data.url.clone();
     let mut signals = Signals::new(&[SIGINT])?;
     let ctrlc_handle = signals.handle();
 

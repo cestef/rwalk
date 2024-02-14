@@ -330,10 +330,11 @@ pub async fn start(
                                     ));
                                 } else if err.is_request() {
                                     progress.println(format!(
-                                        "{} {} {}",
+                                        "{} {} {} {}",
                                         ERROR.to_string().red(),
                                         "Request error".bold(),
-                                        url
+                                        url,
+                                        format!("({})", err).dimmed()
                                     ));
                                 } else {
                                     progress.println(format!(

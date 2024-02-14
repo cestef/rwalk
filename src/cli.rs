@@ -227,9 +227,10 @@ pub async fn main_interactive() -> Result<()> {
                     "exit" | "quit" | "q" => exit(&mut rl, args, &mut state).await,
                     "clear" | "cls" => clear(&mut rl, args, &mut state).await,
                     "set" | "s" => set(&mut rl, args, &mut state).await,
+                    "append" | "a" => append(&mut rl, args, &mut state).await,
                     "unset" | "u" => unset(&mut rl, args, &mut state).await,
                     "get" | "g" => get(&mut rl, args, &mut state).await,
-                    "list" | "ls" => list(&mut rl, args, &mut state).await,
+                    "list" | "ls" | "l" => list(&mut rl, args, &mut state).await,
                     "run" | "r" => run(&mut rl, args, &mut state).await,
                     _ => {
                         println!("Unknown command: {}", cmd);
@@ -328,6 +329,55 @@ async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
             }
         }
     }
+    Ok(())
+}
+
+async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+    if args.len() != 2 {
+        println!("Usage: append <key> <value>");
+        return Ok(());
+    }
+    let key = args[0];
+    let value = args[1];
+
+    let re = regex::Regex::new(r#"\[(.*)\]"#).unwrap();
+    let current_value = match state.getenum(&key.to_string()) {
+        Ok(value) => {
+            let s = format!("{:?}", value);
+            // depth(Some(1)) or depth(None)
+            let re = regex::Regex::new(format!(r#"{}\(Some\((.*)\)\)"#, key).as_str()).unwrap();
+            let s = re.replace_all(&s, "$1").to_string();
+            // depth(1)
+            let re = regex::Regex::new(format!(r#"{}\((.*)\)"#, key).as_str()).unwrap();
+            let s = re.replace_all(&s, "$1").to_string();
+            s
+        }
+        Err(_) => "".to_string(),
+    };
+    let current_value = re.replace_all(&current_value, "$1").to_string();
+    let mut current_value = current_value
+        .split(",")
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>();
+    let mut value = value.split(",").map(|s| s.to_string()).collect::<Vec<_>>();
+    current_value.append(&mut value);
+    let res = state.set(
+        &key.to_string(),
+        current_value
+            .iter()
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>(),
+    );
+
+    match res {
+        Ok(_) => {}
+        Err(e) => {
+            println!("Error: {}", e);
+            return Ok(());
+        }
+    }
+
     Ok(())
 }
 
