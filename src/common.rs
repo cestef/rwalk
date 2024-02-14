@@ -1,5 +1,4 @@
 use colored::Colorize;
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
@@ -10,7 +9,6 @@ use crate::{
     cli::Opts,
     constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
     tree::{Tree, TreeData},
-    utils::is_response_filtered,
 };
 
 pub async fn start(
@@ -108,87 +106,17 @@ pub async fn start(
                                         break;
                                     }
                                 }
-                                let filtered = is_response_filtered(
+                                let filtered = crate::filters::check(
                                     &opts,
                                     &text,
                                     status_code,
-                                    t1.elapsed().as_millis() as u16,
+                                    t1.elapsed().as_millis(),
                                 );
 
                                 if filtered {
-                                    #[derive(Debug, Serialize, Deserialize)]
-                                    struct Addition {
-                                        key: String,
-                                        value: String,
-                                    }
-                                    let mut additions: Vec<Addition> = vec![];
+                                    let additions =
+                                        crate::filters::parse_show(&opts, &text, &response);
 
-                                    for show in &opts.show {
-                                        match show.as_str() {
-                                            "length" => {
-                                                additions.push(Addition {
-                                                    key: "length".to_string(),
-                                                    value: text.len().to_string(),
-                                                });
-                                            }
-                                            "hash" => {
-                                                additions.push(Addition {
-                                                    key: "hash".to_string(),
-                                                    value: format!("{:x}", md5::compute(&text)),
-                                                });
-                                            }
-                                            "headers_length" => {
-                                                additions.push(Addition {
-                                                    key: "headers_length".to_string(),
-                                                    value: response.headers().len().to_string(),
-                                                });
-                                            }
-                                            "headers_hash" => {
-                                                additions.push(Addition {
-                                                    key: "headers_hash".to_string(),
-                                                    value: format!(
-                                                        "{:x}",
-                                                        md5::compute(
-                                                            &response.headers().iter().fold(
-                                                                String::new(),
-                                                                |acc, (key, value)| {
-                                                                    format!(
-                                                                        "{}{}: {}\n",
-                                                                        acc,
-                                                                        key,
-                                                                        value.to_str().unwrap()
-                                                                    )
-                                                                }
-                                                            )
-                                                        )
-                                                    ),
-                                                });
-                                            }
-                                            "body" => {
-                                                additions.push(Addition {
-                                                    key: "body".to_string(),
-                                                    value: text.clone(),
-                                                });
-                                            }
-                                            "headers" => {
-                                                additions.push(Addition {
-                                                    key: "headers".to_string(),
-                                                    value: response.headers().iter().fold(
-                                                        "\n".to_string(),
-                                                        |acc, (key, value)| {
-                                                            format!(
-                                                                "{}{}: {}\n",
-                                                                acc,
-                                                                key,
-                                                                value.to_str().unwrap()
-                                                            )
-                                                        },
-                                                    ),
-                                                });
-                                            }
-                                            _ => {}
-                                        }
-                                    }
                                     progress.println(format!(
                                         "{} {} {} {}{}",
                                         if response.status().is_success() {

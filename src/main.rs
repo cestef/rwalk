@@ -36,6 +36,7 @@ mod cli;
 mod client;
 mod common;
 mod constants;
+mod filters;
 mod logger;
 mod tree;
 mod utils;
