@@ -340,11 +340,11 @@ The following benchmarks were run on a 2023 MacBook Pro with an M3 Pro chip on a
 
 Each tool was run `10` times with `100` threads. The results are below:
 
-| Command     |       Mean [s] | Min [s] | Max [s] |    Relative |
-| :---------- | -------------: | ------: | ------: | ----------: |
-| `rwalk`     |  6.068 ± 0.146 |   5.869 |   6.318 | 1.15 ± 0.03 |
-| `dirsearch` | 14.263 ± 0.250 |  13.861 |  14.719 | 2.70 ± 0.07 |
-| `ffuf`      |  5.285 ± 0.090 |   5.154 |   5.358 |        1.00 |
+| Command     |      Mean [s] | Min [s] | Max [s] |    Relative |
+| :---------- | ------------: | ------: | ------: | ----------: |
+| `rwalk`     | 2.406 ± 0.094 |   2.273 |   2.539 |        1.00 |
+| `dirsearch` | 8.528 ± 0.149 |   8.278 |   8.743 | 3.54 ± 0.15 |
+| `ffuf`      | 2.552 ± 0.181 |   2.380 |   3.005 | 1.06 ± 0.09 |
 
 ## License
 
