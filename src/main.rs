@@ -204,7 +204,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         .collect::<Vec<_>>();
     let chunks = Arc::new(chunks);
 
-    let runner = runner::start::Runner::new(
+    let runner = runner::Runner::new(
         opts.clone(),
         depth.clone(),
         tree.clone(),
