@@ -12,6 +12,7 @@ use colored::Colorize;
 use futures::future::abortable;
 use futures::stream::StreamExt;
 use indicatif::HumanDuration;
+use inter_struct::prelude::*;
 use log::{error, info};
 use logger::init_logger;
 use parking_lot::Mutex;
@@ -97,7 +98,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     let opts = if let Some(ref save) = saved_json {
         let mut saved_opts = save.as_ref().unwrap().opts.clone();
-        saved_opts.merge(&opts);
+        saved_opts.merge(opts);
         saved_opts
     } else {
         opts.clone()

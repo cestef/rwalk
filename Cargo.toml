@@ -24,6 +24,7 @@ env_logger = "0.10.1"
 field_accessor = { git = "https://github.com/cestef/field_accessor" }
 futures = "0.3.29"
 indicatif = "0.17.7"
+inter-struct = "0.2.1"
 lazy_static = "1.4.0"
 log = "0.4.20"
 md5 = "0.7.0"

@@ -4,10 +4,12 @@ use crate::constants::SAVE_FILE;
 use anyhow::Result;
 use clap::Parser;
 use field_accessor::FieldAccessor;
+use inter_struct::prelude::*;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Parser, Clone, Debug, Default, FieldAccessor, Serialize, Deserialize)]
+#[derive(Parser, Clone, Debug, Default, FieldAccessor, Serialize, Deserialize, StructMerge)]
+#[struct_merge("crate::cli::Opts")]
 #[clap(
     version,
     author = "cstef",
@@ -122,99 +124,6 @@ pub struct Opts {
     /// Generate markdown help - for developers
     #[clap(long, hide = true)]
     pub generate_markdown: bool,
-}
-
-impl Opts {
-    pub fn merge(&mut self, other: &Opts) {
-        if other.url.is_some() {
-            self.url = other.url.clone();
-        }
-        if other.wordlists.len() > 0 {
-            self.wordlists = other.wordlists.clone();
-        }
-        if other.threads.is_some() {
-            self.threads = other.threads;
-        }
-        if other.depth.is_some() {
-            self.depth = other.depth;
-        }
-        if other.output.is_some() {
-            self.output = other.output.clone();
-        }
-        if other.timeout.is_some() {
-            self.timeout = other.timeout;
-        }
-        if other.user_agent.is_some() {
-            self.user_agent = other.user_agent.clone();
-        }
-        if other.method.is_some() {
-            self.method = other.method.clone();
-        }
-        if other.data.is_some() {
-            self.data = other.data.clone();
-        }
-        if other.headers.len() > 0 {
-            self.headers = other.headers.clone();
-        }
-        if other.cookies.len() > 0 {
-            self.cookies = other.cookies.clone();
-        }
-        if other.follow_redirects.is_some() {
-            self.follow_redirects = other.follow_redirects;
-        }
-        if other.throttle.is_some() {
-            self.throttle = other.throttle;
-        }
-        if other.max_time.is_some() {
-            self.max_time = other.max_time;
-        }
-        if other.no_color {
-            self.no_color = other.no_color;
-        }
-        if other.quiet {
-            self.quiet = other.quiet;
-        }
-        if other.interactive {
-            self.interactive = other.interactive;
-        }
-        if other.insecure {
-            self.insecure = other.insecure;
-        }
-        if other.show.len() > 0 {
-            self.show = other.show.clone();
-        }
-        if other.resume {
-            self.resume = other.resume;
-        }
-        if other.save_file != SAVE_FILE {
-            self.save_file = other.save_file.clone();
-        }
-        if other.no_save {
-            self.no_save = other.no_save;
-        }
-        if other.transform.len() > 0 {
-            self.transform = other.transform.clone();
-        }
-        if other.wordlist_filter.len() > 0 {
-            self.wordlist_filter = other.wordlist_filter.clone();
-        }
-        if other.filter.len() > 0 {
-            self.filter = other.filter.clone();
-        }
-        if other.or {
-            self.or = other.or;
-        }
-        if other.proxy.is_some() {
-            self.proxy = other.proxy.clone();
-        }
-        if other.proxy_auth.is_some() {
-            self.proxy_auth = other.proxy_auth.clone();
-        }
-
-        if other.generate_markdown {
-            self.generate_markdown = other.generate_markdown;
-        }
-    }
 }
 
 fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
