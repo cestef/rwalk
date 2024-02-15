@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cli::Opts,
+    cli::opts::Opts,
     utils::{check_range, parse_range_input},
 };
 

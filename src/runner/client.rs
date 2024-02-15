@@ -5,7 +5,7 @@ use reqwest::{
     Proxy,
 };
 
-use crate::cli::Opts;
+use crate::cli::opts::Opts;
 
 pub fn build(opts: &Opts) -> Result<reqwest::Client> {
     let mut headers = HeaderMap::new();

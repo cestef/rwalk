@@ -24,10 +24,10 @@ env_logger = "0.10.1"
 field_accessor = { git = "https://github.com/cestef/field_accessor" }
 futures = "0.3.29"
 indicatif = "0.17.7"
-inter-struct = "0.2.1"
 lazy_static = "1.4.0"
 log = "0.4.20"
 md5 = "0.7.0"
+merge-struct = "0.1.0"
 num_cpus = "1.16.0"
 parking_lot = { version = "0.12.1", features = ["serde"] }
 ptree = "0.4.0"

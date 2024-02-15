@@ -3,11 +3,15 @@ use colored::Colorize;
 use parking_lot::Mutex;
 use std::{io::Write, sync::Arc};
 
-use crate::{
-    cli::Opts,
+use crate::cli::opts::Opts;
+use crate::utils::{
     constants::BANNER_STR,
     tree::{Tree, TreeData, TreeNode},
 };
+
+pub mod constants;
+pub mod logger;
+pub mod tree;
 
 pub fn banner() {
     println!("{}", BANNER_STR.to_string().bold().bright_red());

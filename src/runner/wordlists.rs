@@ -3,7 +3,7 @@ use colored::Colorize;
 use tokio::io::AsyncReadExt;
 
 use crate::{
-    cli::Opts,
+    cli::opts::Opts,
     utils::{check_range, parse_range_input},
 };
 

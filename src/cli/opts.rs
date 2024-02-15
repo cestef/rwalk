@@ -1,15 +1,17 @@
-use std::error::Error;
-
-use crate::constants::SAVE_FILE;
-use anyhow::Result;
-use clap::Parser;
+use crate::utils::constants::SAVE_FILE;
 use field_accessor::FieldAccessor;
 use inter_struct::prelude::*;
 use serde::{Deserialize, Serialize};
-use url::Url;
+
+use anyhow::Result;
+use clap::Parser;
+
+use super::helpers::{
+    parse_cookie, parse_header, parse_key_or_key_val, parse_key_val, parse_method, parse_url,
+};
 
 #[derive(Parser, Clone, Debug, Default, FieldAccessor, Serialize, Deserialize, StructMerge)]
-#[struct_merge("crate::cli::Opts")]
+#[struct_merge("crate::cli::opts::Opts")]
 #[clap(
     version,
     author = "cstef",
@@ -124,79 +126,4 @@ pub struct Opts {
     /// Generate markdown help - for developers
     #[clap(long, hide = true)]
     pub generate_markdown: bool,
-}
-
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
-where
-    T: std::str::FromStr,
-    T::Err: Error + Send + Sync + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + Send + Sync + 'static,
-{
-    let pos = s
-        .find(':')
-        .ok_or_else(|| format!("invalid KEY:value: no `:` found in `{s}`"))?;
-    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
-}
-
-fn parse_key_or_key_val<T, U>(
-    s: &str,
-) -> Result<(T, Option<U>), Box<dyn Error + Send + Sync + 'static>>
-where
-    T: std::str::FromStr,
-    T::Err: Error + Send + Sync + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + Send + Sync + 'static,
-{
-    if s.contains(':') {
-        let pos = s
-            .find(':')
-            .ok_or_else(|| format!("invalid KEY:value: no `:` found in `{s}`"))?;
-        Ok((s[..pos].parse()?, Some(s[pos + 1..].parse()?)))
-    } else {
-        Ok((s.parse()?, None))
-    }
-}
-
-fn parse_url(s: &str) -> Result<String, String> {
-    let s = if !s.starts_with("http://") && !s.starts_with("https://") {
-        format!("http://{}", s)
-    } else {
-        s.to_string()
-    };
-    let url = Url::parse(&s);
-    match url {
-        Ok(url) => Ok(url.to_string()),
-        Err(_) => Err("Invalid URL".to_string()),
-    }
-}
-
-fn parse_header(s: &str) -> Result<String, String> {
-    // key: value
-    let parts = s.split(":").collect::<Vec<_>>();
-    if parts.len() != 2 {
-        return Err("Invalid header".to_string());
-    }
-    Ok(s.to_string())
-}
-
-fn parse_cookie(s: &str) -> Result<String, String> {
-    // key=value
-    let parts = s.split("=").collect::<Vec<_>>();
-    if parts.len() != 2 {
-        return Err("Invalid cookie".to_string());
-    }
-    Ok(s.to_string())
-}
-
-fn parse_method(s: &str) -> Result<String, String> {
-    let methods = vec![
-        "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT",
-    ];
-    let s = s.to_uppercase();
-    if methods.contains(&s.as_str()) {
-        Ok(s.to_string())
-    } else {
-        Err("Invalid HTTP method".to_string())
-    }
 }

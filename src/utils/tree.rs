@@ -8,7 +8,7 @@ use ptree::{print_tree, TreeItem};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::{cli::Opts, utils::get_emoji_for_status_code_colored, Save};
+use crate::{cli::opts::Opts, utils::get_emoji_for_status_code_colored, Save};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TreeNode<T> {
     pub data: T,

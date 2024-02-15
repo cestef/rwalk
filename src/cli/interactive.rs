@@ -1,5 +1,5 @@
-use crate::cli::OptsGetterSetter;
-use crate::{cli::Opts, utils::parse_range_input};
+use crate::cli::opts::OptsGetterSetter;
+use crate::{cli::opts::Opts, utils::parse_range_input};
 use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;

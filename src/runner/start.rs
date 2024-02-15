@@ -10,12 +10,14 @@ use anyhow::Result;
 use parking_lot::Mutex;
 
 use crate::{
-    cli::Opts,
-    constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
-    tree::{Tree, TreeData},
+    cli::opts::Opts,
+    utils::{
+        constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
+        tree::{Tree, TreeData},
+    },
 };
 
-pub async fn start(
+pub async fn run(
     opts: Opts,
     depth: Arc<Mutex<usize>>,
     tree: Arc<Mutex<Tree<TreeData>>>,
@@ -52,7 +54,7 @@ pub async fn start(
 
             let progress = progresses.get(&previous_node.lock().data.url).unwrap();
 
-            let client = crate::client::build(&opts)?;
+            let client = super::client::build(&opts)?;
 
             for (i, chunk) in chunks.iter().enumerate() {
                 let mut tree = tree.lock().clone();
@@ -82,7 +84,7 @@ pub async fn start(
                             false => url.push_str(&format!("/{}", word)),
                         }
 
-                        let sender = crate::client::get_sender(&opts, &url, &client);
+                        let sender = super::client::get_sender(&opts, &url, &client);
 
                         let t1 = Instant::now();
 
@@ -108,7 +110,7 @@ pub async fn start(
                                         break;
                                     }
                                 }
-                                let filtered = crate::filters::check(
+                                let filtered = super::filters::check(
                                     &opts,
                                     &text,
                                     status_code,
@@ -117,7 +119,7 @@ pub async fn start(
 
                                 if filtered {
                                     let additions =
-                                        crate::filters::parse_show(&opts, &text, &response);
+                                        super::filters::parse_show(&opts, &text, &response);
 
                                     progress.println(format!(
                                         "{} {} {} {}{}",

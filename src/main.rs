@@ -1,20 +1,19 @@
 #![allow(dead_code)]
 
-use crate::{
+use crate::utils::{
     constants::{SAVE_FILE, SUCCESS},
+    save_to_file,
     tree::{Tree, TreeData},
-    utils::save_to_file,
 };
-use anyhow::Result;
+use anyhow::{bail, Result};
 use clap::Parser;
-use cli::Opts;
+use cli::opts::Opts;
 use colored::Colorize;
 use futures::future::abortable;
 use futures::stream::StreamExt;
 use indicatif::HumanDuration;
-use inter_struct::prelude::*;
 use log::{error, info};
-use logger::init_logger;
+use merge_struct::merge;
 use parking_lot::Mutex;
 use ptree::print_tree;
 use serde::{Deserialize, Serialize};
@@ -34,15 +33,8 @@ use tokio::{io::AsyncWriteExt, time::timeout};
 use url::Url;
 
 mod cli;
-mod client;
-mod constants;
-mod filters;
-mod interactive;
-mod logger;
 mod runner;
-mod tree;
 mod utils;
-mod wordlists;
 
 #[derive(Serialize, Deserialize)]
 struct Save {
@@ -55,7 +47,7 @@ struct Save {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    init_logger();
+    utils::logger::init_logger();
     let config_path = dirs::home_dir()
         .unwrap()
         .join(".config")
@@ -74,7 +66,7 @@ async fn main() -> Result<()> {
         utils::banner();
     }
     if opts.interactive {
-        interactive::main().await
+        cli::interactive::main().await
     } else {
         _main(opts.clone()).await
     }
@@ -86,7 +78,11 @@ pub async fn _main(opts: Opts) -> Result<()> {
         return Ok(());
     }
     let saved = if opts.resume {
-        tokio::fs::read_to_string(opts.save_file.clone()).await
+        let res = tokio::fs::read_to_string(opts.save_file.clone()).await;
+        if !res.is_ok() {
+            bail!("No save file: {}", opts.save_file.clone().dimmed());
+        }
+        res
     } else {
         Err(io::Error::new(io::ErrorKind::NotFound, "No save file"))
     };
@@ -97,19 +93,19 @@ pub async fn _main(opts: Opts) -> Result<()> {
     };
 
     let opts = if let Some(ref save) = saved_json {
-        let mut saved_opts = save.as_ref().unwrap().opts.clone();
-        saved_opts.merge(opts);
-        saved_opts
+        let saved_opts = save.as_ref().unwrap().opts.clone();
+        let merged = merge(&saved_opts, &opts)?;
+        merged
     } else {
         opts.clone()
     };
 
-    let mut words = wordlists::parse(&opts.wordlists).await?;
+    let mut words = runner::wordlists::parse(&opts.wordlists).await?;
 
     let before = words.len();
 
-    wordlists::filters(&opts, &mut words)?;
-    wordlists::transformations(&opts, &mut words);
+    runner::wordlists::filters(&opts, &mut words)?;
+    runner::wordlists::transformations(&opts, &mut words);
 
     words.sort_unstable();
     words.dedup();
@@ -138,7 +134,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     let saved_tree = if opts.resume {
         match saved_json {
-            Some(json) => Some(tree::from_save(
+            Some(json) => Some(utils::tree::from_save(
                 &opts,
                 &json.unwrap(),
                 depth.clone(),
@@ -178,7 +174,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let root_url = tree.lock().root.clone().unwrap().lock().data.url.clone();
     let root_url = Url::parse(&root_url)?;
 
-    let tmp_client = client::build(&opts)?;
+    let tmp_client = runner::client::build(&opts)?;
 
     let res = tmp_client.get(root_url.clone()).send().await;
     if let Err(e) = res {
@@ -208,7 +204,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         .collect::<Vec<_>>();
     let chunks = Arc::new(chunks);
 
-    let main_fun = runner::start(
+    let main_fun = runner::start::run(
         opts.clone(),
         depth.clone(),
         tree.clone(),
