@@ -1,6 +1,5 @@
 use crate::utils::constants::SAVE_FILE;
 use field_accessor::FieldAccessor;
-use inter_struct::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
@@ -10,8 +9,7 @@ use super::helpers::{
     parse_cookie, parse_header, parse_key_or_key_val, parse_key_val, parse_method, parse_url,
 };
 
-#[derive(Parser, Clone, Debug, Default, FieldAccessor, Serialize, Deserialize, StructMerge)]
-#[struct_merge("crate::cli::opts::Opts")]
+#[derive(Parser, Clone, Debug, Default, FieldAccessor, Serialize, Deserialize)]
 #[clap(
     version,
     author = "cstef",
