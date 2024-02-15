@@ -13,7 +13,7 @@ use futures::future::abortable;
 use futures::stream::StreamExt;
 use indicatif::HumanDuration;
 use log::{error, info};
-use merge_struct::merge;
+use merge::Merge;
 use parking_lot::Mutex;
 use ptree::print_tree;
 use serde::{Deserialize, Serialize};
@@ -78,9 +78,9 @@ pub async fn _main(opts: Opts) -> Result<()> {
         return Ok(());
     }
     let saved = if opts.resume {
-        let res = tokio::fs::read_to_string(opts.save_file.clone()).await;
+        let res = tokio::fs::read_to_string(opts.save_file.clone().unwrap()).await;
         if !res.is_ok() {
-            bail!("No save file: {}", opts.save_file.clone().dimmed());
+            bail!("No save file: {}", opts.save_file.clone().unwrap().dimmed());
         }
         res
     } else {
@@ -93,9 +93,9 @@ pub async fn _main(opts: Opts) -> Result<()> {
     };
 
     let opts = if let Some(ref save) = saved_json {
-        let saved_opts = save.as_ref().unwrap().opts.clone();
-        let merged = merge(&saved_opts, &opts)?;
-        merged
+        let mut saved_opts = save.as_ref().unwrap().opts.clone();
+        saved_opts.merge(opts.clone());
+        saved_opts
     } else {
         opts.clone()
     };
@@ -249,11 +249,13 @@ pub async fn _main(opts: Opts) -> Result<()> {
                         match content {
                             Ok(content) => {
                                 let mut file =
-                                    tokio::fs::File::create(&ctrlc_save_file).await.unwrap();
+                                    tokio::fs::File::create(&ctrlc_save_file.clone().unwrap())
+                                        .await
+                                        .unwrap();
                                 file.write_all(content.as_bytes()).await.unwrap();
                                 file.flush().await.unwrap();
                                 print!("\x1B[2K\r");
-                                info!("Saved state to {}", ctrlc_save_file.bold());
+                                info!("Saved state to {}", ctrlc_save_file.clone().unwrap().bold());
                             }
                             Err(_) => {}
                         }
@@ -283,8 +285,8 @@ pub async fn _main(opts: Opts) -> Result<()> {
         }
 
         // Remove save file if it's the default one
-        if has_saved && opts.save_file == SAVE_FILE {
-            tokio::fs::remove_file(opts.save_file.clone()).await?;
+        if has_saved && opts.save_file.clone().unwrap() == SAVE_FILE {
+            tokio::fs::remove_file(opts.save_file.clone().unwrap()).await?;
         }
         if opts.output.is_some() {
             let res = save_to_file(&opts, root, depth, tree);
