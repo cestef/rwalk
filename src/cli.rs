@@ -45,16 +45,16 @@ pub struct Opts {
     #[clap(short, long, env, hide_env = true)]
     pub user_agent: Option<String>,
     /// HTTP method
-    #[clap(short, long, default_value = "GET", value_parser = method_exists, env, hide_env=true)]
+    #[clap(short, long, default_value = "GET", value_parser = parse_method, env, hide_env=true)]
     pub method: Option<String>,
     /// Data to send with the request
     #[clap(short = 'D', long, env, hide_env = true)]
     pub data: Option<String>,
     /// Headers to send
-    #[clap(short = 'H', long, value_name = "key:value", value_parser = is_header, env, hide_env=true)]
+    #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true)]
     pub headers: Vec<String>,
     /// Cookies to send
-    #[clap(short, long, value_name = "key=value", value_parser = is_cookie, env, hide_env=true)]
+    #[clap(short, long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true)]
     pub cookies: Vec<String>,
     /// Follow redirects
     #[clap(
@@ -171,7 +171,7 @@ fn parse_url(s: &str) -> Result<String, String> {
     }
 }
 
-fn is_header(s: &str) -> Result<String, String> {
+fn parse_header(s: &str) -> Result<String, String> {
     // key: value
     let parts = s.split(":").collect::<Vec<_>>();
     if parts.len() != 2 {
@@ -180,7 +180,7 @@ fn is_header(s: &str) -> Result<String, String> {
     Ok(s.to_string())
 }
 
-fn is_cookie(s: &str) -> Result<String, String> {
+fn parse_cookie(s: &str) -> Result<String, String> {
     // key=value
     let parts = s.split("=").collect::<Vec<_>>();
     if parts.len() != 2 {
@@ -189,7 +189,7 @@ fn is_cookie(s: &str) -> Result<String, String> {
     Ok(s.to_string())
 }
 
-fn method_exists(s: &str) -> Result<String, String> {
+fn parse_method(s: &str) -> Result<String, String> {
     let methods = vec![
         "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT",
     ];
