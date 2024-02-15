@@ -204,7 +204,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         .collect::<Vec<_>>();
     let chunks = Arc::new(chunks);
 
-    let runner = runner::Runner::new(
+    let main_fun = runner::start::run(
         opts.clone(),
         depth.clone(),
         tree.clone(),
@@ -212,11 +212,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
         chunks.clone(),
         words.clone(),
     );
-
     let (task, handle) = if let Some(max_time) = opts.max_time {
-        abortable(timeout(Duration::from_secs(max_time as u64), runner.run()).into_inner())
+        abortable(timeout(Duration::from_secs(max_time as u64), main_fun).into_inner())
     } else {
-        abortable(runner.run())
+        abortable(main_fun)
     };
     let main_thread = tokio::spawn(task);
     let aborted = Arc::new(AtomicBool::new(false));
