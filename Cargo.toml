@@ -8,7 +8,7 @@ repository = "https://github.com/cestef/rwalk"
 readme = "README.md"
 keywords = ["web", "directory", "scanner", "fuzzing", "bruteforce"]
 edition = "2021"
-exclude = ["assets/*", ".github/*"]
+exclude = ["assets/*", ".github/*", "common.txt"]
 
 [dependencies]
 anyhow = "1.0.75"
