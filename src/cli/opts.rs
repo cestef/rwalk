@@ -1,5 +1,5 @@
 use crate::utils::constants::SAVE_FILE;
-use field_accessor::FieldAccessor;
+use field_accessor_pub::FieldAccessor;
 use serde::{Deserialize, Serialize};
 
 use super::helpers::{
