@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     cli::opts::Opts,
-    utils::{check_range, parse_range_input},
+    utils::{check_range, constants::STATUS_CODES, parse_range_input},
 };
 
 // Returns true if the response should be kept
@@ -13,10 +13,7 @@ pub fn check(opts: &Opts, res_text: &str, status_code: u16, time: u128) -> bool 
         opts.filter.clone()
     } else {
         let mut filters = opts.filter.clone();
-        filters.push((
-            "status".to_string(),
-            "200-299,301,302,307,401,403,405,500".to_string(),
-        ));
+        filters.push(("status".to_string(), STATUS_CODES.to_string()));
         filters
     };
 
