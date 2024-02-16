@@ -109,6 +109,10 @@ pub struct Opts {
     #[clap(long, help_heading = Some("Resume"), env, hide_env=true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub no_save: bool,
+    /// Keep the save file after finishing when using --resume
+    #[clap(long, help_heading = Some("Resume"), env, hide_env=true, visible_alias = "keep")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    pub keep_save: bool,
 
     /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
     #[clap(short='T', long, help_heading = Some("Transformations"), env, hide_env=true, value_parser(parse_key_or_key_val::<String, String>))]

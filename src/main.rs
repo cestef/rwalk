@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::utils::{
-    constants::{SAVE_FILE, SUCCESS},
+    constants::SUCCESS,
     save_to_file,
     tree::{Tree, TreeData},
 };
@@ -284,8 +284,8 @@ pub async fn _main(opts: Opts) -> Result<()> {
             print_tree(&*root.lock())?;
         }
 
-        // Remove save file if it's the default one
-        if has_saved && opts.save_file.clone().unwrap() == SAVE_FILE {
+        // Remove save file after finishing resuming
+        if has_saved && !opts.keep_save {
             tokio::fs::remove_file(opts.save_file.clone().unwrap()).await?;
         }
         if opts.output.is_some() {

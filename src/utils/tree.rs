@@ -161,12 +161,11 @@ pub fn from_save(
                 "The URL of the saved state does not match the URL provided"
             ))
         } else {
-            print_tree(&*root.lock())?;
             info!(
                 "Found saved state crawled to depth {}",
-                (*save.depth.lock() + 1).to_string().blue()
+                (*save.depth.lock() + 1).to_string().bold()
             );
-
+            print_tree(&*root.lock())?;
             *depth.lock() = *save.depth.lock();
             if save.wordlist_checksum == { format!("{:x}", md5::compute(words.join("\n"))) } {
                 *current_indexes.lock() = save.indexes.clone();
