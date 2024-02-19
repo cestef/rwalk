@@ -23,7 +23,11 @@ A blazing fast web directory scanner
 
   Default value: `recursive`
 
-  Possible values: `recursive`, `recursion`, `r`, `permutations`, `p`, `permutation`, `classic`, `c`
+  Possible values: `recursive`, `recursion`, `r`, `classic`, `c`
+
+* `-p`, `--permutations` — Permutations mode
+
+  Possible values: `true`, `false`
 
 * `-t`, `--threads <THREADS>` — Number of threads to use
 * `-d`, `--depth <DEPTH>` — Crawl recursively until given depth
@@ -40,6 +44,9 @@ A blazing fast web directory scanner
 * `-D`, `--data <DATA>` — Data to send with the request
 * `-H`, `--headers <key:value>` — Headers to send
 * `-c`, `--cookies <key=value>` — Cookies to send
+* `--fuzz-key <FUZZ_KEY>` — Change the default fuzz-key
+
+  Default value: `$`
 * `-R`, `--follow-redirects <COUNT>` — Follow redirects
 
   Default value: `2`
