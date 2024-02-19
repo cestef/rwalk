@@ -36,11 +36,16 @@ pub struct Opts {
         long,
         default_value = "recursive",
         value_name = "MODE",
-        value_parser = clap::builder::PossibleValuesParser::new(["recursive", "recursion", "r", "permutations", "p", "permutation", "classic", "c"]),
+        value_parser = clap::builder::PossibleValuesParser::new(["recursive", "recursion", "r", "classic", "c"]),
         env,
         hide_env = true
     )]
     pub mode: Option<String>,
+    /// Permutations mode
+    #[clap(short, long, env, hide_env = true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    pub permutations: bool,
+
     /// Number of threads to use
     #[clap(short, long, env, hide_env = true)]
     pub threads: Option<usize>,

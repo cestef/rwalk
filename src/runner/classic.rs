@@ -13,6 +13,7 @@ use crate::{
 use anyhow::Result;
 use colored::Colorize;
 use indicatif::ProgressBar;
+use itertools::Itertools;
 use log::info;
 use parking_lot::Mutex;
 use serde_json::json;
@@ -30,15 +31,32 @@ pub async fn run(
     spinner.set_message(format!("Generating URLs..."));
     spinner.enable_steady_tick(Duration::from_millis(100));
 
-    let urls: Vec<String> = words
-        .clone()
-        .iter()
-        .map(|c| {
-            let mut url = url.clone();
-            url = url.replace(REPLACE_KEYWORD, c);
-            url
-        })
-        .collect();
+    let urls: Vec<String> = if opts.permutations {
+        let token_count = url.matches(REPLACE_KEYWORD).count();
+        let combinations: Vec<_> = words.iter().permutations(token_count).collect();
+
+        combinations
+            .clone()
+            .iter()
+            .map(|c| {
+                let mut url = url.clone();
+                for word in c {
+                    url = url.replace(REPLACE_KEYWORD, word);
+                }
+                url
+            })
+            .collect()
+    } else {
+        words
+            .clone()
+            .iter()
+            .map(|c| {
+                let mut url = url.clone();
+                url = url.replace(REPLACE_KEYWORD, c);
+                url
+            })
+            .collect()
+    };
     spinner.finish_and_clear();
     info!("Generated {} URLs", urls.clone().len().to_string().bold());
 

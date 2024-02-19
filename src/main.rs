@@ -103,7 +103,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 );
             }
         }
-        Mode::Permutations | Mode::Classic => {
+        Mode::Classic => {
             if url.matches(REPLACE_KEYWORD).count() == 0 {
                 url = url.trim_end_matches('/').to_string() + "/" + REPLACE_KEYWORD;
                 warn!(
@@ -193,9 +193,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         let t = Arc::new(Mutex::new(Tree::new()));
         let cleaned_url = match mode {
             Mode::Recursive => url.clone(),
-            Mode::Permutations | Mode::Classic => {
-                url.split(REPLACE_KEYWORD).collect::<Vec<_>>()[0].to_string()
-            }
+            Mode::Classic => url.split(REPLACE_KEYWORD).collect::<Vec<_>>()[0].to_string(),
         };
         t.lock().insert(
             TreeData {
@@ -255,14 +253,6 @@ pub async fn _main(opts: Opts) -> Result<()> {
                     .collect::<Vec<_>>(),
             ),
             words.clone(),
-        )
-        .boxed(),
-        Mode::Permutations => runner::permutations::run(
-            url.clone(),
-            opts.clone(),
-            tree.clone(),
-            words.clone(),
-            threads,
         )
         .boxed(),
         Mode::Classic => runner::classic::run(
@@ -336,8 +326,12 @@ pub async fn _main(opts: Opts) -> Result<()> {
             HumanDuration(watch.elapsed()).to_string().bold(),
             ((match mode {
                 Mode::Recursive => words.len() * *current_depth.lock(),
-                Mode::Classic => words.len(),
-                Mode::Permutations => words.len().pow(url.matches(REPLACE_KEYWORD).count() as u32),
+                Mode::Classic =>
+                    if opts.permutations {
+                        words.len().pow(url.matches(REPLACE_KEYWORD).count() as u32)
+                    } else {
+                        words.len()
+                    },
             }) as f64
                 / watch.elapsed().as_secs_f64())
             .round()
