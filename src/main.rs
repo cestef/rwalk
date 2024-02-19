@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::utils::{
-    constants::{REPLACE_KEYWORD, SUCCESS},
+    constants::SUCCESS,
     save_to_file,
     structs::Mode,
     tree::{Tree, TreeData},
@@ -90,10 +90,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 error!("Missing depth");
                 return Ok(());
             }
-            if url.matches(REPLACE_KEYWORD).count() > 0 {
+            if url.matches(opts.fuzz_key.clone().unwrap().as_str()).count() > 0 {
                 warn!(
                     "URL contains the replace keyword: {}, this is supported with {}",
-                    REPLACE_KEYWORD.bold(),
+                    opts.fuzz_key.clone().unwrap().bold(),
                     format!(
                         "{} {} | {}",
                         "--mode".dimmed(),
@@ -104,11 +104,13 @@ pub async fn _main(opts: Opts) -> Result<()> {
             }
         }
         Mode::Classic => {
-            if url.matches(REPLACE_KEYWORD).count() == 0 {
-                url = url.trim_end_matches('/').to_string() + "/" + REPLACE_KEYWORD;
+            if url.matches(opts.fuzz_key.clone().unwrap().as_str()).count() == 0 {
+                url = url.trim_end_matches('/').to_string()
+                    + "/"
+                    + opts.fuzz_key.clone().unwrap().as_str();
                 warn!(
                     "URL does not contain the replace keyword: {}, it will be treated as: {}",
-                    REPLACE_KEYWORD.bold(),
+                    opts.fuzz_key.clone().unwrap().bold(),
                     url.bold()
                 );
             }
@@ -193,7 +195,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
         let t = Arc::new(Mutex::new(Tree::new()));
         let cleaned_url = match mode {
             Mode::Recursive => url.clone(),
-            Mode::Classic => url.split(REPLACE_KEYWORD).collect::<Vec<_>>()[0].to_string(),
+            Mode::Classic => url
+                .split(opts.fuzz_key.clone().unwrap().as_str())
+                .collect::<Vec<_>>()[0]
+                .to_string(),
         };
         t.lock().insert(
             TreeData {
@@ -328,7 +333,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 Mode::Recursive => words.len() * *current_depth.lock(),
                 Mode::Classic =>
                     if opts.permutations {
-                        words.len().pow(url.matches(REPLACE_KEYWORD).count() as u32)
+                        words.len().pow(url.matches(opts.fuzz_key.clone().unwrap().as_str()).count() as u32)
                     } else {
                         words.len()
                     },

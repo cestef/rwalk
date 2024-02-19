@@ -75,6 +75,9 @@ pub struct Opts {
     #[clap(short, long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true)]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub cookies: Vec<String>,
+    /// Change the default fuzz-key
+    #[clap(long, env, hide_env = true, default_value = "$")]
+    pub fuzz_key: Option<String>,
     /// Follow redirects
     #[clap(
         short = 'R',

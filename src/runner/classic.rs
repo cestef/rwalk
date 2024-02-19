@@ -6,7 +6,7 @@ use std::{
 use crate::{
     cli::opts::Opts,
     utils::{
-        constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, REPLACE_KEYWORD, SUCCESS, WARNING},
+        constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
         tree::{Tree, TreeData},
     },
 };
@@ -32,7 +32,7 @@ pub async fn run(
     spinner.enable_steady_tick(Duration::from_millis(100));
 
     let urls: Vec<String> = if opts.permutations {
-        let token_count = url.matches(REPLACE_KEYWORD).count();
+        let token_count = url.matches(opts.fuzz_key.clone().unwrap().as_str()).count();
         let combinations: Vec<_> = words.iter().permutations(token_count).collect();
 
         combinations
@@ -41,7 +41,7 @@ pub async fn run(
             .map(|c| {
                 let mut url = url.clone();
                 for word in c {
-                    url = url.replace(REPLACE_KEYWORD, word);
+                    url = url.replace(opts.fuzz_key.clone().unwrap().as_str(), word);
                 }
                 url
             })
@@ -52,7 +52,7 @@ pub async fn run(
             .iter()
             .map(|c| {
                 let mut url = url.clone();
-                url = url.replace(REPLACE_KEYWORD, c);
+                url = url.replace(opts.fuzz_key.clone().unwrap().as_str(), c);
                 url
             })
             .collect()
