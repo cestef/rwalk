@@ -19,8 +19,14 @@ A blazing fast web directory scanner
 
 ###### **Options:**
 
+* `-m`, `--mode <MODE>` — Crawl mode
+
+  Default value: `recursive`
+
+  Possible values: `recursive`, `recursion`, `r`, `permutations`, `p`, `permutation`, `classic`, `c`
+
 * `-t`, `--threads <THREADS>` — Number of threads to use
-* `-d`, `--depth <DEPTH>` — Maximum depth to crawl
+* `-d`, `--depth <DEPTH>` — Crawl recursively until given depth
 
   Default value: `1`
 * `-o`, `--output <FILE>` — Output file
@@ -28,7 +34,7 @@ A blazing fast web directory scanner
 
   Default value: `10`
 * `-u`, `--user-agent <USER_AGENT>` — User agent
-* `-m`, `--method <METHOD>` — HTTP method
+* `-X`, `--method <METHOD>` — HTTP method
 
   Default value: `GET`
 * `-D`, `--data <DATA>` — Data to send with the request
@@ -66,6 +72,10 @@ A blazing fast web directory scanner
 
   Default value: `.rwalk.json`
 * `--no-save` — Don't save the state in case you abort
+
+  Possible values: `true`, `false`
+
+* `--keep-save` — Keep the save file after finishing when using --resume
 
   Possible values: `true`, `false`
 
