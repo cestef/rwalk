@@ -105,7 +105,7 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub interactive: bool,
     /// Insecure mode, disables SSL certificate validation
-    #[clap(long, env, hide_env = true)]
+    #[clap(long, env, hide_env = true, visible_alias = "unsecure")]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub insecure: bool,
     /// Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers"
