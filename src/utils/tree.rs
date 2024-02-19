@@ -80,6 +80,14 @@ impl<T> Tree<T> {
             }
         }
     }
+
+    pub fn insert_datas(&mut self, datas: Vec<T>) {
+        // Insert nodes into the root
+        let mut previous_node: Option<Arc<Mutex<TreeNode<T>>>> = self.root.clone();
+        for data in datas {
+            previous_node = Some(self.insert(data, previous_node));
+        }
+    }
 }
 
 impl TreeItem for TreeNode<String> {

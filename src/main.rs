@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
 use crate::utils::{
-    constants::SUCCESS,
+    constants::{REPLACE_KEYWORD, SUCCESS},
     save_to_file,
+    structs::Mode,
     tree::{Tree, TreeData},
 };
 use anyhow::{bail, Result};
@@ -10,9 +11,9 @@ use clap::Parser;
 use cli::opts::Opts;
 use colored::Colorize;
 use futures::future::abortable;
-use futures::stream::StreamExt;
+use futures::{stream::StreamExt, FutureExt};
 use indicatif::HumanDuration;
-use log::{error, info};
+use log::{error, info, warn};
 use merge::Merge;
 use parking_lot::Mutex;
 use ptree::print_tree;
@@ -77,6 +78,43 @@ pub async fn _main(opts: Opts) -> Result<()> {
         error!("Missing URL");
         return Ok(());
     }
+    let mode: Mode = if opts.depth.unwrap() > 1 {
+        Mode::Recursive
+    } else {
+        opts.mode.as_deref().unwrap().into()
+    };
+    let mut url = opts.url.clone().unwrap();
+    match mode {
+        Mode::Recursive => {
+            if opts.depth.is_none() {
+                error!("Missing depth");
+                return Ok(());
+            }
+            if url.matches(REPLACE_KEYWORD).count() > 0 {
+                warn!(
+                    "URL contains the replace keyword: {}, this is supported with {}",
+                    REPLACE_KEYWORD.bold(),
+                    format!(
+                        "{} {} | {}",
+                        "--mode".dimmed(),
+                        "permutations".bold(),
+                        "classic".bold()
+                    )
+                );
+            }
+        }
+        Mode::Permutations | Mode::Classic => {
+            if url.matches(REPLACE_KEYWORD).count() == 0 {
+                url = url.trim_end_matches('/').to_string() + "/" + REPLACE_KEYWORD;
+                warn!(
+                    "URL does not contain the replace keyword: {}, it will be treated as: {}",
+                    REPLACE_KEYWORD.bold(),
+                    url.bold()
+                );
+            }
+        }
+    }
+
     let saved = if opts.resume {
         let res = tokio::fs::read_to_string(opts.save_file.clone().unwrap()).await;
         if !res.is_ok() {
@@ -128,7 +166,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         error!("No words found in wordlists");
         return Ok(());
     }
-    let depth = Arc::new(Mutex::new(0));
+    let current_depth = Arc::new(Mutex::new(0));
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =
         Arc::new(Mutex::new(HashMap::new()));
 
@@ -137,7 +175,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
             Some(json) => Some(utils::tree::from_save(
                 &opts,
                 &json.unwrap(),
-                depth.clone(),
+                current_depth.clone(),
                 current_indexes.clone(),
                 words.clone(),
             )?),
@@ -153,11 +191,17 @@ pub async fn _main(opts: Opts) -> Result<()> {
         saved_tree
     } else {
         let t = Arc::new(Mutex::new(Tree::new()));
+        let cleaned_url = match mode {
+            Mode::Recursive => url.clone(),
+            Mode::Permutations | Mode::Classic => {
+                url.split(REPLACE_KEYWORD).collect::<Vec<_>>()[0].to_string()
+            }
+        };
         t.lock().insert(
             TreeData {
-                url: opts.url.clone().unwrap(),
+                url: cleaned_url.clone(),
                 depth: 0,
-                path: Url::parse(&opts.url.clone().unwrap())?
+                path: Url::parse(&cleaned_url.clone())?
                     .path()
                     .to_string()
                     .trim_end_matches('/')
@@ -198,20 +242,38 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let watch = stopwatch::Stopwatch::start_new();
 
     info!("Press {} to save state and exit", "Ctrl+C".bold());
-    let chunks = words
-        .chunks(words.len() / threads)
-        .map(|x| x.to_vec())
-        .collect::<Vec<_>>();
-    let chunks = Arc::new(chunks);
-
-    let main_fun = runner::start::run(
-        opts.clone(),
-        depth.clone(),
-        tree.clone(),
-        current_indexes.clone(),
-        chunks.clone(),
-        words.clone(),
-    );
+    let main_fun = match mode {
+        Mode::Recursive => runner::recursive::run(
+            opts.clone(),
+            current_depth.clone(),
+            tree.clone(),
+            current_indexes.clone(),
+            Arc::new(
+                words
+                    .chunks(words.len() / threads)
+                    .map(|x| x.to_vec())
+                    .collect::<Vec<_>>(),
+            ),
+            words.clone(),
+        )
+        .boxed(),
+        Mode::Permutations => runner::permutations::run(
+            url.clone(),
+            opts.clone(),
+            tree.clone(),
+            words.clone(),
+            threads,
+        )
+        .boxed(),
+        Mode::Classic => runner::classic::run(
+            url.clone(),
+            opts.clone(),
+            tree.clone(),
+            words.clone(),
+            threads,
+        )
+        .boxed(),
+    };
     let (task, handle) = if let Some(max_time) = opts.max_time {
         abortable(timeout(Duration::from_secs(max_time as u64), main_fun).into_inner())
     } else {
@@ -222,7 +284,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(1);
 
     let ctrlc_tree = tree.clone();
-    let ctrlc_depth = depth.clone();
+    let ctrlc_depth = current_depth.clone();
     let ctrlc_words = words.clone();
     let ctrlc_opts = opts.clone();
     let ctrlc_aborted = aborted.clone();
@@ -272,10 +334,15 @@ pub async fn _main(opts: Opts) -> Result<()> {
             "{} Done in {} with an average of {} req/s",
             SUCCESS.to_string().green(),
             HumanDuration(watch.elapsed()).to_string().bold(),
-            ((words.len() * *depth.lock()) as f64 / watch.elapsed().as_secs_f64())
-                .round()
-                .to_string()
-                .bold()
+            ((match mode {
+                Mode::Recursive => words.len() * *current_depth.lock(),
+                Mode::Classic => words.len(),
+                Mode::Permutations => words.len().pow(url.matches(REPLACE_KEYWORD).count() as u32),
+            }) as f64
+                / watch.elapsed().as_secs_f64())
+            .round()
+            .to_string()
+            .bold()
         );
 
         let root = tree.lock().root.clone().unwrap().clone();
@@ -289,7 +356,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
             tokio::fs::remove_file(opts.save_file.clone().unwrap()).await?;
         }
         if opts.output.is_some() {
-            let res = save_to_file(&opts, root, depth, tree);
+            let res = save_to_file(&opts, root, current_depth, tree);
 
             match res {
                 Ok(_) => info!("Saved to {}", opts.output.unwrap().bold()),

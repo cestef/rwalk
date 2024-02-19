@@ -30,12 +30,22 @@ pub struct Opts {
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub wordlists: Vec<String>,
-
+    /// Crawl mode
+    #[clap(
+        short,
+        long,
+        default_value = "recursive",
+        value_name = "MODE",
+        value_parser = clap::builder::PossibleValuesParser::new(["recursive", "recursion", "r", "permutations", "p", "permutation", "classic", "c"]),
+        env,
+        hide_env = true
+    )]
+    pub mode: Option<String>,
     /// Number of threads to use
     #[clap(short, long, env, hide_env = true)]
     pub threads: Option<usize>,
-    /// Maximum depth to crawl
-    #[clap(short, long, default_value = "1", env, hide_env = true)]
+    /// Crawl recursively until given depth
+    #[clap(short, long, env, hide_env = true, default_value = "1")]
     pub depth: Option<usize>,
     /// Output file
     #[clap(short, long, value_name = "FILE", env, hide_env = true)]
@@ -47,7 +57,7 @@ pub struct Opts {
     #[clap(short, long, env, hide_env = true)]
     pub user_agent: Option<String>,
     /// HTTP method
-    #[clap(short, long, default_value = "GET", value_parser = parse_method, env, hide_env=true)]
+    #[clap(short = 'X', long, default_value = "GET", value_parser = parse_method, env, hide_env=true)]
     pub method: Option<String>,
     /// Data to send with the request
     #[clap(short = 'D', long, env, hide_env = true)]

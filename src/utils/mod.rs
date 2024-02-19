@@ -11,6 +11,7 @@ use crate::utils::{
 
 pub mod constants;
 pub mod logger;
+pub mod structs;
 pub mod tree;
 
 pub fn banner() {
