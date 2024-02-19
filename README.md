@@ -75,38 +75,6 @@ cargo run --release -- https://example.com path/to/wordlist.txt
 
 You can run `rwalk --help` or [read the help file](HELP.md) for more information.
 
-
-### Passing parameters as environment variables
-
-You can pass parameters as environment variables. For example, to set the number of threads to `10`:
-
-```bash
-THREADS=10 rwalk https://example.com path/to/wordlist.txt
-```
-
-is equivalent to:
-
-```bash
-rwalk https://example.com path/to/wordlist.txt -t 10
-```
-The env file located at `~/.config/rwalk/.env` will be loaded automatically.
-
-### Inputting ranges
-
-In some cases , you may want to input a `<RANGE>` of values. 
-You can use the following formats:
-
-| Format       | Description                                               |
-| :----------- | :-------------------------------------------------------- |
-| `5`          | Exactly `5`                                               |
-| `5-10`       | Between `5` and `10` (inclusive)                          |
-| `5,10`       | Exactly `5` or `10`                                       |
-| `>5`         | Greater than `5`                                          |
-| `<5`         | Less than `5`                                             |
-| `5,10,15`    | Exactly `5`, `10`, or `15`                                |
-| `>5,10,15`   | Greater than `5`, or exactly `10` or `15`                 |
-| `5-10,15-20` | Between `5` and `10` or between `15` and `20` (inclusive) |
-
 ### Response Filtering
 
 To cherry-pick the responses, you can use the `--filter` (`-f`) flags to filter specific responses. For example, to only show responses that contain `admin`:
@@ -137,6 +105,22 @@ Available filters:
 ```bash
 rwalk https://example.com path/to/wordlist.txt --filter "!contains:admin"
 ```
+
+### Inputting ranges
+
+In some cases , you may want to input a `<RANGE>` of values. 
+You can use the following formats:
+
+| Format       | Description                                               |
+| :----------- | :-------------------------------------------------------- |
+| `5`          | Exactly `5`                                               |
+| `5-10`       | Between `5` and `10` (inclusive)                          |
+| `5,10`       | Exactly `5` or `10`                                       |
+| `>5`         | Greater than `5`                                          |
+| `<5`         | Less than `5`                                             |
+| `5,10,15`    | Exactly `5`, `10`, or `15`                                |
+| `>5,10,15`   | Greater than `5`, or exactly `10` or `15`                 |
+| `5-10,15-20` | Between `5` and `10` or between `15` and `20` (inclusive) |
 
 ### Wordlists
 
@@ -217,6 +201,40 @@ Available details:
 - `headers_length`
 - `headers_hash`
 
+### Scanning modes
+
+By default `rwalk` will use a recursive-like scan. You can change the depth of the scan with the `--depth` (`-d`) flag:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt -d 3
+```
+
+A more traditional scan can be done with the `--mode classic` flag:
+
+```bash
+rwalk https://example.com/$ path/to/wordlist.txt --mode classic
+```
+
+Notice that the `$` character is used to indicate the position of the wordlist in the URL.
+This character can be changed with the `--fuzz-key` flag.
+
+In case you want to explore more complex URL structures, you can use the `classic` mode in combination with the `--permutations` flag, which will generate all possible permutations of the wordlist:
+
+```bash
+rwalk https://example.com/$/abcd/$ path/to/wordlist.txt --mode classic --permutations
+```
+
+This will generate all possible combinations of the wordlist in the URL, e.g.:
+
+```
+https://example.com/word1/abcd/word1
+https://example.com/word1/abcd/word2
+https://example.com/word1/abcd/word3
+https://example.com/word2/abcd/word1
+https://example.com/word2/abcd/word2
+...
+```
+
 ### Interactive mode
 
 You can use the `--interactive` (`-i`) flag to enter interactive mode. In this mode, you can set parameters one by one and run the scan when you're ready.
@@ -283,6 +301,21 @@ Authentication is also supported with `--proxy-auth`:
 ```bash
 rwalk https://example.com path/to/wordlist.txt --proxy http://pro.xy:8080 --proxy-auth username:password
 ```
+
+### Passing parameters as environment variables
+
+You can pass parameters as environment variables. For example, to set the number of threads to `10`:
+
+```bash
+THREADS=10 rwalk https://example.com path/to/wordlist.txt
+```
+
+is equivalent to:
+
+```bash
+rwalk https://example.com path/to/wordlist.txt -t 10
+```
+The env file located at `~/.config/rwalk/.env` will be loaded automatically.
 
 ## Examples
 
