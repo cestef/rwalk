@@ -30,6 +30,7 @@ pub struct Opts {
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub wordlists: Vec<String>,
+
     /// Crawl mode
     #[clap(
         short,
@@ -41,6 +42,7 @@ pub struct Opts {
         hide_env = true
     )]
     pub mode: Option<String>,
+
     /// Permutations mode
     #[clap(short, long, env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
@@ -50,42 +52,54 @@ pub struct Opts {
     #[clap(long, env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub force: bool,
+
     /// Consider connection errors as a hit
     #[clap(long, env, hide_env = true, visible_alias = "hce")]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub hit_connection_errors: bool,
+
     /// Number of threads to use
     #[clap(short, long, env, hide_env = true)]
     pub threads: Option<usize>,
+
     /// Crawl recursively until given depth
     #[clap(short, long, env, hide_env = true, default_value = "1")]
     pub depth: Option<usize>,
+
     /// Output file
     #[clap(short, long, value_name = "FILE", env, hide_env = true)]
     pub output: Option<String>,
+
     /// Request timeout in seconds
     #[clap(long, default_value = "10", env, hide_env = true)]
     pub timeout: Option<usize>,
+
     /// User agent
     #[clap(short, long, env, hide_env = true)]
     pub user_agent: Option<String>,
+
     /// HTTP method
     #[clap(short = 'X', long, default_value = "GET", value_parser = parse_method, env, hide_env=true)]
     pub method: Option<String>,
+
     /// Data to send with the request
     #[clap(short = 'D', long, env, hide_env = true)]
     pub data: Option<String>,
+
     /// Headers to send
     #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true)]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub headers: Vec<String>,
+
     /// Cookies to send
     #[clap(short, long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true)]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub cookies: Vec<String>,
+
     /// Change the default fuzz-key
     #[clap(long, env, hide_env = true, default_value = "$")]
     pub fuzz_key: Option<String>,
+
     /// Follow redirects
     #[clap(
         short = 'R',
@@ -96,29 +110,36 @@ pub struct Opts {
         hide_env = true
     )]
     pub follow_redirects: Option<usize>,
+
     /// Request throttling (requests per second) per thread
     #[clap(long, default_value = "0", env, hide_env = true)]
     pub throttle: Option<usize>,
+
     /// Max time to run (will abort after given time) in seconds
     #[clap(short = 'M', long, env, hide_env = true)]
     pub max_time: Option<usize>,
+
     /// Don't use colors
     /// You can also set the NO_COLOR environment variable
     #[clap(long, alias = "no-colors", env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub no_color: bool,
+
     /// Quiet mode
     #[clap(short, long, env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub quiet: bool,
+
     /// Interactive mode
     #[clap(short, long, env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub interactive: bool,
+
     /// Insecure mode, disables SSL certificate validation
     #[clap(long, env, hide_env = true, visible_alias = "unsecure")]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub insecure: bool,
+
     /// Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers"
     #[clap(long, env, hide_env = true)]
     #[merge(strategy = merge::vec::overwrite_empty)]
@@ -128,13 +149,16 @@ pub struct Opts {
     #[clap(short='r', long, help_heading = Some("Resume"), env, hide_env=true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub resume: bool,
+
     /// Custom save file
     #[clap(long, default_value = Some(SAVE_FILE), help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
     pub save_file: Option<String>,
+
     /// Don't save the state in case you abort
     #[clap(long, help_heading = Some("Resume"), env, hide_env=true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub no_save: bool,
+
     /// Keep the save file after finishing when using --resume
     #[clap(long, help_heading = Some("Resume"), env, hide_env=true, visible_alias = "keep")]
     #[merge(strategy = merge::bool::overwrite_false)]
@@ -154,6 +178,7 @@ pub struct Opts {
     #[clap(short, long, help_heading = Some("Filtering"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>))]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub filter: Vec<(String, String)>,
+
     /// Treat filters as or instead of and
     #[clap(long, help_heading = Some("Filtering"), env, hide_env=true)]
     #[merge(strategy = merge::bool::overwrite_false)]
@@ -162,6 +187,7 @@ pub struct Opts {
     /// Proxy URL
     #[clap(short='P', long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
     pub proxy: Option<String>,
+
     /// Proxy username and password
     #[clap(long, help_heading = Some("Proxy"), value_name = "USER:PASS", env, hide_env=true)]
     pub proxy_auth: Option<String>,
