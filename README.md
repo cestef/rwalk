@@ -127,7 +127,7 @@ You can use the following formats:
 You can pass multiple wordlists to `rwalk`. For example:
 
 ```bash
-rwalk https://example.com path/to/wordlist1.txt path/to/wordlist2.txt
+rwalk https://example.com wordlist1.txt wordlist2.txt
 ```
 
 `rwalk` will merge the wordlists and remove duplicates. You can also apply filters and transformations to the wordlists (see below).
