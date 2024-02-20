@@ -100,11 +100,19 @@ Available filters:
 - `time`: _`<RANGE>`_
 - `hash`: _`<STRING>`_ (MD5)
 
-**Note:** Each filter can be negated by adding a `!` before the filter. For example, to exclude responses that contain `admin`:
+Each filter can be negated by adding a `!` before the filter. For example, to exclude responses that contain `admin`:
 
 ```bash
 rwalk ... --filter "!contains:admin"
 ```
+
+You can also filter only at specific depths with the `[depth]filter` format. For example, to only show responses that contain `admin` at depth `2`:
+
+```bash
+rwalk ... --filter "[2]contains:admin"
+```
+> [!NOTE]
+> Depth starts at `0`.
 
 ### Inputting ranges
 
@@ -161,7 +169,7 @@ Available filters:
 
 ### Wordlist Transformations
 
-To quickly modify the wordlist, you can use the `--transform` flag. For example, to add a suffix to all words in the wordlist:
+To quickly modify the wordlist, you can use the `--transform` (`-T`) flag. For example, to add a suffix to all words in the wordlist:
 
 ```bash
 rwalk ... --transform suffix:.php
@@ -238,7 +246,6 @@ This will generate all possible combinations of the wordlist in the URL, e.g.:
 `https://example.com/word1/abcd/word3`
 `https://example.com/word2/abcd/word1`
 `https://example.com/word2/abcd/word2`
-
 ...
 
 
