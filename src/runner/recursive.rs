@@ -49,7 +49,7 @@ pub async fn run(
                     "/{}",
                     previous_node.lock().data.path.trim_start_matches("/")
                 ))
-                .with_prefix(format!("d={}", *depth.lock() + 1))
+                .with_prefix(format!("d={}", *depth.lock()))
                 .with_position(index.iter().sum::<usize>() as u64);
             pb.enable_steady_tick(Duration::from_millis(100));
             progresses.insert(previous_node.lock().data.url.clone(), pb);
