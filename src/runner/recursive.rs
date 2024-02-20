@@ -118,7 +118,7 @@ pub async fn run(
                                     &text,
                                     status_code,
                                     t1.elapsed().as_millis(),
-                                    Some(*depth.lock() + 1),
+                                    Some(*depth.lock()),
                                 );
 
                                 if filtered {

@@ -31,17 +31,14 @@ pub fn check(
 
         // if the filter starts with [depth] then we parse the depth and remove it from the filter
         if filter.0.starts_with("[") {
-            let depth = filter.0.chars().nth(1).unwrap().to_string();
-            filter.0 = filter
-                .0
-                .trim_start_matches("[")
-                .trim_end_matches("]")
-                .to_string();
-            let parsed_depth = depth.parse();
-            if parsed_depth.is_ok() {
-                filter_depth = Some(parsed_depth.unwrap());
+            let start_index = filter.0.find('[').unwrap();
+            let end_index = filter.0.find(']').unwrap();
+            let depth = filter.0[start_index + 1..end_index].parse::<usize>();
+            filter.0 = filter.0[end_index + 1..].to_string();
+            if depth.is_ok() {
+                filter_depth = Some(depth.unwrap());
             } else {
-                warn!("Invalid depth filter: {}", depth);
+                warn!("Invalid depth filter: {}", depth.unwrap_err());
             }
         }
 
