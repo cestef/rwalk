@@ -44,8 +44,12 @@ pub fn check(
                 warn!("Invalid depth filter: {}", depth);
             }
         }
+
         // If this filter is not for the current depth, we skip it
-        if filter_depth.is_some() && filter_depth != depth {
+        if filter_depth.is_some() && !depth.is_some() {
+            warn!("You provided a depth filter but you are not scanning recursively");
+        }
+        if filter_depth.is_some() && depth.is_some() && filter_depth != depth {
             continue;
         }
         let negated = filter.0.starts_with("!");
