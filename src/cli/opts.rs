@@ -46,6 +46,10 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub permutations: bool,
 
+    /// Force scan even if the target is not responding
+    #[clap(long, env, hide_env = true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    pub force: bool,
     /// Number of threads to use
     #[clap(short, long, env, hide_env = true)]
     pub threads: Option<usize>,

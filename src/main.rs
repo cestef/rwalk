@@ -228,11 +228,12 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let res = tmp_client.get(root_url.clone()).send().await;
     if let Err(e) = res {
         error!("Error while connecting to {}: {}", root_url, e);
-        return Ok(());
+        if !opts.force {
+            return Ok(());
+        }
+    } else {
+        tree.lock().root.clone().unwrap().lock().data.status_code = res?.status().as_u16();
     }
-    let res = res.unwrap();
-
-    tree.lock().root.clone().unwrap().lock().data.status_code = res.status().as_u16();
 
     let threads = opts
         .threads
