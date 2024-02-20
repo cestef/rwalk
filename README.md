@@ -398,6 +398,10 @@ Positional arguments can also be passed.
 just bench <URL> <WORDLIST_FILE> <THREADS>
 ```
 
+## Contributing
+
+If you want to contribute to rwalk, please read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
 ## License
 
 Licensed under the [MIT License](LICENSE).
