@@ -30,7 +30,9 @@ pub async fn run(
         let root_progress = indicatif::MultiProgress::new();
         let mut progresses = HashMap::new();
         let mut handles = Vec::new();
+        let depth = depth.clone();
         for previous_node in &previous_nodes {
+            let depth = depth.clone();
             let mut indexes = current_indexes.lock();
             let index = indexes
                 .entry(previous_node.lock().data.url.clone())
@@ -64,6 +66,7 @@ pub async fn run(
                 let progress = progress.clone();
                 let indexes = current_indexes.clone();
                 let opts = opts.clone();
+                let depth = depth.clone();
                 let handle = tokio::spawn(async move {
                     while indexes
                         .lock()
@@ -115,6 +118,7 @@ pub async fn run(
                                     &text,
                                     status_code,
                                     t1.elapsed().as_millis(),
+                                    Some(*depth.lock() + 1),
                                 );
 
                                 if filtered {

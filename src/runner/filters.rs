@@ -1,3 +1,4 @@
+use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -6,9 +7,16 @@ use crate::{
 };
 
 // Returns true if the response should be kept
-pub fn check(opts: &Opts, res_text: &str, status_code: u16, time: u128) -> bool {
+pub fn check(
+    opts: &Opts,
+    res_text: &str,
+    status_code: u16,
+    time: u128,
+    depth: Option<usize>,
+) -> bool {
     let mut outs: Vec<bool> = Vec::new();
 
+    // Default status filter
     let filters = if opts.filter.iter().any(|e| e.0 == "status") {
         opts.filter.clone()
     } else {
@@ -18,8 +26,29 @@ pub fn check(opts: &Opts, res_text: &str, status_code: u16, time: u128) -> bool 
     };
 
     for filter in filters {
-        let negated = filter.0.starts_with("!");
+        let mut filter = filter;
+        let mut filter_depth: Option<usize> = None;
 
+        // if the filter starts with [depth] then we parse the depth and remove it from the filter
+        if filter.0.starts_with("[") {
+            let depth = filter.0.chars().nth(1).unwrap().to_string();
+            filter.0 = filter
+                .0
+                .trim_start_matches("[")
+                .trim_end_matches("]")
+                .to_string();
+            let parsed_depth = depth.parse();
+            if parsed_depth.is_ok() {
+                filter_depth = Some(parsed_depth.unwrap());
+            } else {
+                warn!("Invalid depth filter: {}", depth);
+            }
+        }
+        // If this filter is not for the current depth, we skip it
+        if filter_depth.is_some() && filter_depth != depth {
+            continue;
+        }
+        let negated = filter.0.starts_with("!");
         let out = match filter.0.trim_start_matches("!") {
             "time" => check_range(&parse_range_input(&filter.1).unwrap(), time as usize) ^ negated,
             "status" => {

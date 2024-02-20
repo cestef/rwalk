@@ -111,6 +111,7 @@ pub async fn run(
                             &text,
                             status_code,
                             t1.elapsed().as_millis(),
+                            None,
                         );
 
                         if filtered {
