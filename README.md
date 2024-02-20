@@ -249,6 +249,7 @@ You can use the `--interactive` (`-i`) flag to enter interactive mode. In this m
 Available commands:
 
 - `set <PARAM> <VALUE>`: Set a parameter
+- `append <PARAM> <VALUE>`: Append a value to a Vec parameter
 - `unset <PARAM>`: Unset a parameter
 - `list`: Show the current parameters
 - `run`: Run the scan
