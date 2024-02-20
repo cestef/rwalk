@@ -18,71 +18,24 @@ pub fn check(opts: &Opts, res_text: &str, status_code: u16, time: u128) -> bool 
     };
 
     for filter in filters {
-        let not = filter.0.starts_with("!");
+        let negated = filter.0.starts_with("!");
+
         let out = match filter.0.trim_start_matches("!") {
-            "time" => {
-                let parsed_filter_time = parse_range_input(&filter.1).unwrap();
-                if !check_range(&parsed_filter_time, time as usize) {
-                    not
-                } else {
-                    !not
-                }
-            }
+            "time" => check_range(&parse_range_input(&filter.1).unwrap(), time as usize) ^ negated,
             "status" => {
-                let parsed_filter_status_code = parse_range_input(&filter.1).unwrap();
-                if !check_range(&parsed_filter_status_code, status_code as usize) {
-                    not
-                } else {
-                    !not
-                }
+                check_range(&parse_range_input(&filter.1).unwrap(), status_code as usize) ^ negated
             }
-            "contains" => {
-                if !res_text.contains(&filter.1) {
-                    not
-                } else {
-                    !not
-                }
-            }
-            "starts" => {
-                if !res_text.starts_with(&filter.1) {
-                    not
-                } else {
-                    !not
-                }
-            }
-            "ends" => {
-                if !res_text.ends_with(&filter.1) {
-                    not
-                } else {
-                    !not
-                }
-            }
-            "regex" => {
-                let re = regex::Regex::new(&filter.1).unwrap();
-                if !re.is_match(res_text) {
-                    not
-                } else {
-                    !not
-                }
-            }
+            "contains" => !res_text.contains(&filter.1) ^ negated,
+            "starts" => !res_text.starts_with(&filter.1) ^ negated,
+            "ends" => !res_text.ends_with(&filter.1) ^ negated,
+            "regex" => regex::Regex::new(&filter.1).unwrap().is_match(res_text) ^ negated,
             "length" => {
-                let parsed_filter_length = parse_range_input(&filter.1).unwrap();
-                if !check_range(&parsed_filter_length, res_text.len()) {
-                    not
-                } else {
-                    !not
-                }
+                check_range(&parse_range_input(&filter.1).unwrap(), res_text.len()) ^ negated
             }
-            "hash" => {
-                let hash = md5::compute(res_text);
-                if !filter.1.contains(&format!("{:x}", hash)) {
-                    not
-                } else {
-                    !not
-                }
-            }
+            "hash" => filter.1.contains(&format!("{:x}", md5::compute(res_text))) ^ negated,
             _ => true,
         };
+
         outs.push(out);
     }
 
