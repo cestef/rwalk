@@ -29,6 +29,14 @@ A blazing fast web directory scanner
 
   Possible values: `true`, `false`
 
+* `--force` — Force scan even if the target is not responding
+
+  Possible values: `true`, `false`
+
+* `--hit-connection-errors` — Consider connection errors as a hit
+
+  Possible values: `true`, `false`
+
 * `-t`, `--threads <THREADS>` — Number of threads to use
 * `-d`, `--depth <DEPTH>` — Crawl recursively until given depth
 
