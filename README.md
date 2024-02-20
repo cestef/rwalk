@@ -147,7 +147,7 @@ cat wordlist.txt | rwalk https://example.com -
 You can filter words from the wordlist by using the `--wordlist-filter` (`-w`) flag. For example, to only use words that start with `admin`:
 
 ```bash
-rwalk https://example.com wordlist.txt --wordlist-filter starts:admin
+rwalk ... --wordlist-filter starts:admin
 ```
 
 Available filters:
@@ -164,13 +164,13 @@ Available filters:
 To quickly modify the wordlist, you can use the `--transform` flag. For example, to add a suffix to all words in the wordlist:
 
 ```bash
-rwalk https://example.com wordlist.txt --transform suffix:.php
+rwalk ... --transform suffix:.php
 ```
 
 To replace all occurrences of `admin` with `administrator`:
 
 ```bash
-rwalk https://example.com wordlist.txt --transform replace:admin=administrator
+rwalk ... --transform replace:admin=administrator
 ```
 
 Available transformations:
@@ -208,7 +208,7 @@ Available details:
 By default `rwalk` will use a recursive-like scan. You can change the depth of the scan with the `--depth` (`-d`) flag:
 
 ```bash
-rwalk https://example.com wordlist.txt  -d 3
+rwalk https://example.com wordlist.txt -d 3
 ```
 
 #### Classic scan
