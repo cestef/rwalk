@@ -246,7 +246,11 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     let watch = stopwatch::Stopwatch::start_new();
 
-    info!("Press {} to save state and exit", "Ctrl+C".bold());
+    info!(
+        "Press {} to {}exit",
+        "Ctrl+C".bold(),
+        if opts.no_save { "" } else { "save state and " }
+    );
     let main_fun = match mode {
         Mode::Recursive => runner::recursive::run(
             opts.clone(),
