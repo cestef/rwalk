@@ -50,6 +50,10 @@ pub struct Opts {
     #[clap(long, env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub force: bool,
+    /// Consider connection errors as a hit
+    #[clap(long, env, hide_env = true, visible_alias = "hce")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    pub hit_connection_errors: bool,
     /// Number of threads to use
     #[clap(short, long, env, hide_env = true)]
     pub threads: Option<usize>,

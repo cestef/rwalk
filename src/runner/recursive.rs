@@ -178,47 +178,44 @@ pub async fn run(
                                 }
                             }
                             Err(err) => {
-                                if !opts.quiet {
-                                    if err.is_timeout() {
-                                        progress.println(format!(
-                                            "{} {} {}",
-                                            ERROR.to_string().red(),
-                                            "Timeout reached".bold(),
-                                            url
-                                        ));
-                                    } else if err.is_redirect() {
-                                        progress.println(format!(
-                                            "{} {} {} {}",
-                                            WARNING.to_string().yellow(),
-                                            "Redirect limit reached".bold(),
-                                            url,
-                                            "Check --follow-redirects".dimmed()
-                                        ));
-                                    } else if err.is_connect() {
-                                        progress.println(format!(
-                                            "{} {} {} {}",
-                                            ERROR.to_string().red(),
-                                            "Connection error".bold(),
-                                            url,
-                                            format!("({})", err).dimmed()
-                                        ));
-                                    } else if err.is_request() {
-                                        progress.println(format!(
-                                            "{} {} {} {}",
-                                            ERROR.to_string().red(),
-                                            "Request error".bold(),
-                                            url,
-                                            format!("({})", err).dimmed()
-                                        ));
+                                if opts.hit_connection_errors && err.is_connect() {
+                                    progress.println(format!(
+                                        "{} {} {} {}",
+                                        SUCCESS.to_string().green(),
+                                        "Connection error".bold(),
+                                        url,
+                                        format!(
+                                            "{}ms",
+                                            t1.elapsed().as_millis().to_string().bold()
+                                        )
+                                        .dimmed()
+                                    ));
+                                    if !previous_node
+                                        .lock()
+                                        .children
+                                        .iter()
+                                        .any(|child| child.lock().data.path == *word)
+                                    {
+                                        tree.insert(
+                                            TreeData {
+                                                url: url.clone(),
+                                                depth: data.depth + 1,
+                                                path: word.clone(),
+                                                status_code: 0,
+                                                extra: json!([]),
+                                            },
+                                            Some(previous_node.clone()),
+                                        );
                                     } else {
                                         progress.println(format!(
-                                            "{} {} {} {}",
-                                            ERROR.to_string().red(),
-                                            "Unknown Error".bold(),
-                                            url,
-                                            format!("({})", err).dimmed()
+                                            "{} {} {}",
+                                            WARNING.to_string().yellow(),
+                                            "Already in tree".bold(),
+                                            url
                                         ));
                                     }
+                                } else {
+                                    super::filters::print_error(&opts, &progress, &url, err);
                                 }
                             }
                         }

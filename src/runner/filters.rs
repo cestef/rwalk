@@ -1,9 +1,14 @@
+use colored::Colorize;
 use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     cli::opts::Opts,
-    utils::{check_range, constants::STATUS_CODES, parse_range_input},
+    utils::{
+        check_range,
+        constants::{ERROR, STATUS_CODES, WARNING},
+        parse_range_input,
+    },
 };
 
 // Returns true if the response should be kept
@@ -141,4 +146,49 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
     }
 
     additions
+}
+
+pub fn print_error(opts: &Opts, progress: &indicatif::ProgressBar, url: &str, err: reqwest::Error) {
+    if !opts.quiet {
+        if err.is_timeout() {
+            progress.println(format!(
+                "{} {} {}",
+                ERROR.to_string().red(),
+                "Timeout reached".bold(),
+                url
+            ));
+        } else if err.is_redirect() {
+            progress.println(format!(
+                "{} {} {} {}",
+                WARNING.to_string().yellow(),
+                "Redirect limit reached".bold(),
+                url,
+                "Check --follow-redirects".dimmed()
+            ));
+        } else if err.is_connect() {
+            progress.println(format!(
+                "{} {} {} {}",
+                ERROR.to_string().red(),
+                "Connection error".bold(),
+                url,
+                format!("({})", err).dimmed()
+            ));
+        } else if err.is_request() {
+            progress.println(format!(
+                "{} {} {} {}",
+                ERROR.to_string().red(),
+                "Request error".bold(),
+                url,
+                format!("({})", err).dimmed()
+            ));
+        } else {
+            progress.println(format!(
+                "{} {} {} {}",
+                ERROR.to_string().red(),
+                "Unknown Error".bold(),
+                url,
+                format!("({})", err).dimmed()
+            ));
+        }
+    }
 }
