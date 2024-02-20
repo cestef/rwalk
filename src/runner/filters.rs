@@ -119,7 +119,7 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
                     ),
                 });
             }
-            "body" | "text" => {
+            "body" | "text" | "content" => {
                 additions.push(Addition {
                     key: "body".to_string(),
                     value: text.to_string(),
