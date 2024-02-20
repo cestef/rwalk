@@ -62,13 +62,13 @@ cargo install --path .
 **With [just](https://github.com/casey/just)**
 
 ```bash
-just run https://example.com path/to/wordlist.txt
+just run https://example.com wordlist.txt
 ```
 
 **With [cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)**
 
 ```bash
-cargo run --release -- https://example.com path/to/wordlist.txt
+cargo run --release -- https://example.com wordlist.txt
 ```
 
 ## Usage
@@ -80,13 +80,13 @@ You can run `rwalk --help` or [read the help file](HELP.md) for more information
 To cherry-pick the responses, you can use the `--filter` (`-f`) flags to filter specific responses. For example, to only show responses that contain `admin`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --filter contains:admin
+rwalk ... --filter contains:admin
 ```
 
 or only requests that took more than `1` second:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --filter "time:\\>1000"
+rwalk ... --filter "time:>1000"
 ```
 
 Available filters:
@@ -103,7 +103,7 @@ Available filters:
 **Note:** Each filter can be negated by adding a `!` before the filter. For example, to exclude responses that contain `admin`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --filter "!contains:admin"
+rwalk ... --filter "!contains:admin"
 ```
 
 ### Inputting ranges
@@ -135,7 +135,7 @@ rwalk https://example.com path/to/wordlist1.txt path/to/wordlist2.txt
 You can also pass wordlists from stdin:
 
 ```bash
-cat path/to/wordlist.txt | rwalk https://example.com -
+cat wordlist.txt | rwalk https://example.com -
 ```
 
 > [!NOTE]
@@ -147,7 +147,7 @@ cat path/to/wordlist.txt | rwalk https://example.com -
 You can filter words from the wordlist by using the `--wordlist-filter` (`-w`) flag. For example, to only use words that start with `admin`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --wordlist-filter starts:admin
+rwalk https://example.com wordlist.txt --wordlist-filter starts:admin
 ```
 
 Available filters:
@@ -164,13 +164,13 @@ Available filters:
 To quickly modify the wordlist, you can use the `--transform` flag. For example, to add a suffix to all words in the wordlist:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --transform suffix:.php
+rwalk https://example.com wordlist.txt --transform suffix:.php
 ```
 
 To replace all occurrences of `admin` with `administrator`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --transform replace:admin=administrator
+rwalk https://example.com wordlist.txt --transform replace:admin=administrator
 ```
 
 Available transformations:
@@ -189,7 +189,7 @@ Available transformations:
 If you need more details about the matched responses, you can use the `--show` flag. For example, to show the body hash and length:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --show hash --show length 
+rwalk ... --show hash --show length 
 ```
 
 Available details:
@@ -203,37 +203,44 @@ Available details:
 
 ### Scanning modes
 
+#### Recursive scan
+
 By default `rwalk` will use a recursive-like scan. You can change the depth of the scan with the `--depth` (`-d`) flag:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -d 3
+rwalk https://example.com wordlist.txt  -d 3
 ```
+
+#### Classic scan
 
 A more traditional scan can be done with the `--mode classic` flag:
 
 ```bash
-rwalk https://example.com/$ path/to/wordlist.txt --mode classic
+rwalk https://example.com/$ wordlist.txt --mode classic
 ```
 
 Notice that the `$` character is used to indicate the position of the wordlist in the URL.
 This character can be changed with the `--fuzz-key` flag.
 
+#### Permutations
+
 In case you want to explore more complex URL structures, you can use the `classic` mode in combination with the `--permutations` flag, which will generate all possible permutations of the wordlist:
 
 ```bash
-rwalk https://example.com/$/abcd/$ path/to/wordlist.txt --mode classic --permutations
+rwalk https://example.com/$/abcd/$ wordlist.txt --mode classic --permutations
 ```
 
 This will generate all possible combinations of the wordlist in the URL, e.g.:
 
-```
-https://example.com/word1/abcd/word1
-https://example.com/word1/abcd/word2
-https://example.com/word1/abcd/word3
-https://example.com/word2/abcd/word1
-https://example.com/word2/abcd/word2
+
+`https://example.com/word1/abcd/word1`
+`https://example.com/word1/abcd/word2`
+`https://example.com/word1/abcd/word3`
+`https://example.com/word2/abcd/word1`
+`https://example.com/word2/abcd/word2`
+
 ...
-```
+
 
 ### Interactive mode
 
@@ -254,7 +261,7 @@ Available commands:
 By default, `rwalk` will print the results to the terminal. You can also save the results to a file with the `--output` (`-o`) flag:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -o results.json
+rwalk https://example.com wordlist.txt -o results.json
 ```
 
 Available output formats:
@@ -269,7 +276,7 @@ The throttling value will be multiplied by the number of threads. For example, i
 
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --throttle 5 -t 10 
+rwalk https://example.com wordlist.txt --throttle 5 -t 10 
 ```
 
 ### Saving and resuming scans
@@ -283,7 +290,7 @@ rwalk --resume
 If you want to save the progress to a different file, you can use the `--save-file` flag:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --save-file myscan.json 
+rwalk https://example.com wordlist.txt --save-file myscan.json 
 ```
 
 The auto-saving behavior can be disabled with `--no-save`.
@@ -293,13 +300,13 @@ The auto-saving behavior can be disabled with `--no-save`.
 You can pass a proxy URL with the `--proxy` flag:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --proxy http://pro.xy:8080
+rwalk https://example.com wordlist.txt --proxy http://pro.xy:8080
 ```
 
 Authentication is also supported with `--proxy-auth`:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt --proxy http://pro.xy:8080 --proxy-auth username:password
+rwalk https://example.com wordlist.txt --proxy http://pro.xy:8080 --proxy-auth username:password
 ```
 
 ### Passing parameters as environment variables
@@ -307,13 +314,13 @@ rwalk https://example.com path/to/wordlist.txt --proxy http://pro.xy:8080 --prox
 You can pass parameters as environment variables. For example, to set the number of threads to `10`:
 
 ```bash
-THREADS=10 rwalk https://example.com path/to/wordlist.txt
+THREADS=10 rwalk https://example.com wordlist.txt
 ```
 
 is equivalent to:
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -t 10
+rwalk https://example.com wordlist.txt -t 10
 ```
 The env file located at `~/.config/rwalk/.env` will be loaded automatically.
 
@@ -322,32 +329,32 @@ The env file located at `~/.config/rwalk/.env` will be loaded automatically.
 ### Basic scan
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt
+rwalk https://example.com wordlist.txt
 ```
 
 ### Recursive scan
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -d 3
+rwalk https://example.com wordlist.txt -d 3
 ```
 > **Warning:** Recursive scans can take a long time and generate a lot of traffic. Use with caution.
 
 ### Custom headers/cookies
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -H "X-Forwarded-For: 203.0.113.195" -c "session=1234567890"
+rwalk https://example.com wordlist.txt -H "X-Forwarded-For: 203.0.113.195" -c "session=1234567890"
 ```
 
 ### Follow redirects
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -R 2
+rwalk https://example.com wordlist.txt -R 2
 ```
 
 ### Custom request body
 
 ```bash
-rwalk https://example.com path/to/wordlist.txt -m POST -D '{"username": "admin", "password": "admin"}'
+rwalk https://example.com wordlist.txt -X POST -D '{"username": "admin", "password": "admin"}'
 ```
 
 ## FAQ
