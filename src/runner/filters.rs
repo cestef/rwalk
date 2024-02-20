@@ -59,7 +59,7 @@ pub fn check(
             "starts" => !res_text.starts_with(&filter.1) ^ negated,
             "ends" => !res_text.ends_with(&filter.1) ^ negated,
             "regex" => regex::Regex::new(&filter.1).unwrap().is_match(res_text) ^ negated,
-            "length" => {
+            "length" | "size" => {
                 check_range(&parse_range_input(&filter.1).unwrap(), res_text.len()) ^ negated
             }
             "hash" => filter.1.contains(&format!("{:x}", md5::compute(res_text))) ^ negated,
@@ -87,7 +87,7 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
 
     for show in &opts.show {
         match show.as_str() {
-            "length" => {
+            "length" | "size" => {
                 additions.push(Addition {
                     key: "length".to_string(),
                     value: text.len().to_string(),
@@ -99,7 +99,7 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
                     value: format!("{:x}", md5::compute(&text)),
                 });
             }
-            "headers_length" => {
+            "headers_length" | "headers_size" => {
                 additions.push(Addition {
                     key: "headers_length".to_string(),
                     value: response.headers().len().to_string(),
@@ -119,7 +119,7 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
                     ),
                 });
             }
-            "body" => {
+            "body" | "text" | "content" => {
                 additions.push(Addition {
                     key: "body".to_string(),
                     value: text.to_string(),
