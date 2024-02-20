@@ -174,44 +174,47 @@ pub async fn run(
                                 }
                             }
                             Err(err) => {
-                                if err.is_timeout() {
-                                    progress.println(format!(
-                                        "{} {} {}",
-                                        ERROR.to_string().red(),
-                                        "Timeout reached".bold(),
-                                        url
-                                    ));
-                                } else if err.is_redirect() {
-                                    progress.println(format!(
-                                        "{} {} {} {}",
-                                        WARNING.to_string().yellow(),
-                                        "Redirect limit reached".bold(),
-                                        url,
-                                        "Check --follow-redirects".dimmed()
-                                    ));
-                                } else if err.is_connect() {
-                                    progress.println(format!(
-                                        "{} {} {}",
-                                        ERROR.to_string().red(),
-                                        "Connection error".bold(),
-                                        url
-                                    ));
-                                } else if err.is_request() {
-                                    progress.println(format!(
-                                        "{} {} {} {}",
-                                        ERROR.to_string().red(),
-                                        "Request error".bold(),
-                                        url,
-                                        format!("({})", err).dimmed()
-                                    ));
-                                } else {
-                                    progress.println(format!(
-                                        "{} {} {} {}",
-                                        ERROR.to_string().red(),
-                                        "Unknown Error".bold(),
-                                        url,
-                                        format!("({})", err).dimmed()
-                                    ));
+                                if !opts.quiet {
+                                    if err.is_timeout() {
+                                        progress.println(format!(
+                                            "{} {} {}",
+                                            ERROR.to_string().red(),
+                                            "Timeout reached".bold(),
+                                            url
+                                        ));
+                                    } else if err.is_redirect() {
+                                        progress.println(format!(
+                                            "{} {} {} {}",
+                                            WARNING.to_string().yellow(),
+                                            "Redirect limit reached".bold(),
+                                            url,
+                                            "Check --follow-redirects".dimmed()
+                                        ));
+                                    } else if err.is_connect() {
+                                        progress.println(format!(
+                                            "{} {} {} {}",
+                                            ERROR.to_string().red(),
+                                            "Connection error".bold(),
+                                            url,
+                                            format!("({})", err).dimmed()
+                                        ));
+                                    } else if err.is_request() {
+                                        progress.println(format!(
+                                            "{} {} {} {}",
+                                            ERROR.to_string().red(),
+                                            "Request error".bold(),
+                                            url,
+                                            format!("({})", err).dimmed()
+                                        ));
+                                    } else {
+                                        progress.println(format!(
+                                            "{} {} {} {}",
+                                            ERROR.to_string().red(),
+                                            "Unknown Error".bold(),
+                                            url,
+                                            format!("({})", err).dimmed()
+                                        ));
+                                    }
                                 }
                             }
                         }
