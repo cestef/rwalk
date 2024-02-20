@@ -169,7 +169,7 @@ Available filters:
 
 ### Wordlist Transformations
 
-To quickly modify the wordlist, you can use the `--transform` flag. For example, to add a suffix to all words in the wordlist:
+To quickly modify the wordlist, you can use the `--transform` (`-T`) flag. For example, to add a suffix to all words in the wordlist:
 
 ```bash
 rwalk ... --transform suffix:.php
@@ -246,7 +246,6 @@ This will generate all possible combinations of the wordlist in the URL, e.g.:
 `https://example.com/word1/abcd/word3`
 `https://example.com/word2/abcd/word1`
 `https://example.com/word2/abcd/word2`
-
 ...
 
 
