@@ -22,12 +22,12 @@ use signal_hook::consts::signal::*;
 use signal_hook_tokio::Signals;
 use std::{
     collections::HashMap,
-    io,
+    io, process,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::{io::AsyncWriteExt, time::timeout};
 
@@ -67,9 +67,11 @@ async fn main() -> Result<()> {
         utils::banner();
     }
     if opts.interactive {
-        cli::interactive::main().await
+        cli::interactive::main().await?;
+        process::exit(0);
     } else {
-        _main(opts.clone()).await
+        _main(opts.clone()).await?;
+        process::exit(0);
     }
 }
 
@@ -365,11 +367,19 @@ pub async fn _main(opts: Opts) -> Result<()> {
             }
         }
     }
+    let start = Instant::now();
+    println!("Waiting for rx");
     if aborted.load(Ordering::Relaxed) {
         rx.recv().await;
     }
+    println!(
+        "Signal stream finished in {}",
+        HumanDuration(start.elapsed()).to_string().bold()
+    );
     // Terminate the signal stream.
     ctrlc_handle.close();
+    println!("Closed ctrlc handle");
     signals_task.await?;
+    println!("Signal task finished");
     Ok(())
 }
