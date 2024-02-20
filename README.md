@@ -100,11 +100,19 @@ Available filters:
 - `time`: _`<RANGE>`_
 - `hash`: _`<STRING>`_ (MD5)
 
-**Note:** Each filter can be negated by adding a `!` before the filter. For example, to exclude responses that contain `admin`:
+Each filter can be negated by adding a `!` before the filter. For example, to exclude responses that contain `admin`:
 
 ```bash
 rwalk ... --filter "!contains:admin"
 ```
+
+You can also filter only at specific depths with the `[depth]filter` format. For example, to only show responses that contain `admin` at depth `2`:
+
+```bash
+rwalk ... --filter "[2]contains:admin"
+```
+> [!NOTE]
+> Depth starts at `0`.
 
 ### Inputting ranges
 
