@@ -27,7 +27,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    time::{Duration, Instant},
+    time::Duration,
 };
 use tokio::{io::AsyncWriteExt, time::timeout};
 
@@ -367,19 +367,12 @@ pub async fn _main(opts: Opts) -> Result<()> {
             }
         }
     }
-    let start = Instant::now();
-    println!("Waiting for rx");
     if aborted.load(Ordering::Relaxed) {
         rx.recv().await;
     }
-    println!(
-        "Signal stream finished in {}",
-        HumanDuration(start.elapsed()).to_string().bold()
-    );
+
     // Terminate the signal stream.
     ctrlc_handle.close();
-    println!("Closed ctrlc handle");
     signals_task.await?;
-    println!("Signal task finished");
     Ok(())
 }
