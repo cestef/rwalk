@@ -1,3 +1,12 @@
+use std::{collections::HashMap, sync::Arc};
+
+use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
+
+use crate::cli::opts::Opts;
+
+use super::tree::{Tree, TreeData};
+
 pub enum Mode {
     Recursive,
     Classic,
@@ -11,4 +20,13 @@ impl From<&str> for Mode {
             _ => Mode::Recursive,
         }
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Save {
+    pub tree: Arc<Mutex<Tree<TreeData>>>,
+    pub depth: Arc<Mutex<usize>>,
+    pub wordlist_checksum: String,
+    pub indexes: HashMap<String, Vec<usize>>,
+    pub opts: Opts,
 }

@@ -1,5 +1,7 @@
+use crate::_main;
+use crate::cli::opts::Opts;
 use crate::cli::opts::OptsGetterSetter;
-use crate::{cli::opts::Opts, utils::parse_range_input};
+use crate::utils::parse_range_input;
 use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
@@ -46,15 +48,13 @@ pub async fn main() -> Result<()> {
 
 struct Command {
     name: String,
-    aliases: Vec<String>,
     description: String,
 }
 
 impl Command {
-    fn new(name: &str, aliases: Vec<&str>, description: &str) -> Self {
+    fn new(name: &str, description: &str) -> Self {
         Self {
             name: name.to_string(),
-            aliases: aliases.iter().map(|s| s.to_string()).collect(),
             description: description.to_string(),
         }
     }
@@ -62,14 +62,14 @@ impl Command {
 
 lazy_static! {
     static ref COMMANDS: Vec<Command> = vec![
-        Command::new("help", vec!["h", "?"], "Show this help message"),
-        Command::new("exit", vec!["quit", "q"], "Exit the program"),
-        Command::new("clear", vec!["cls"], "Clear the screen"),
-        Command::new("set", vec!["s"], "Set a value"),
-        Command::new("unset", vec!["u"], "Unset a value"),
-        Command::new("get", vec!["g"], "Get a value"),
-        Command::new("list", vec!["ls"], "List all values"),
-        Command::new("run", vec!["r"], "Run the scanner"),
+        Command::new("help", "Show this help message"),
+        Command::new("exit", "Exit the program"),
+        Command::new("clear", "Clear the screen"),
+        Command::new("set", "Set a value"),
+        Command::new("unset", "Unset a value"),
+        Command::new("get", "Get a value"),
+        Command::new("list", "List all values"),
+        Command::new("run", "Run the scanner"),
     ];
 }
 
@@ -306,6 +306,6 @@ async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Re
 }
 
 async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
-    let _ = crate::_main(state.clone()).await;
+    let _ = _main(state.clone()).await;
     Ok(())
 }
