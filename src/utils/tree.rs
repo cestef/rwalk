@@ -77,7 +77,7 @@ impl<T> Tree<T> {
         nodes: &mut Vec<Arc<Mutex<TreeNode<T>>>>,
     ) {
         if let Some(node) = node {
-            if depth <= 0 {
+            if depth == 0 {
                 nodes.push(node.clone());
             } else {
                 for child in &node.lock().children {

@@ -101,7 +101,7 @@ pub fn filters(opts: &Opts, words: &mut Vec<String>) -> Result<()> {
     Ok(())
 }
 
-pub fn transformations(opts: &Opts, words: &mut Vec<String>) {
+pub fn transformations(opts: &Opts, words: &mut [String]) {
     for transformation in &opts.transform {
         match transformation.0.as_str() {
             "lower" => {
