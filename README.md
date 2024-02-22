@@ -246,7 +246,6 @@ This will generate all possible combinations of the wordlist in the URL, e.g.:
 `https://example.com/word1/abcd/word3`
 `https://example.com/word2/abcd/word1`
 `https://example.com/word2/abcd/word2`
-
 ...
 
 
