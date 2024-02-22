@@ -35,22 +35,24 @@ pub mod utils;
 
 pub async fn _main(opts: Opts) -> Result<()> {
     if opts.url.is_none() && !opts.resume {
-        error!("Missing URL");
-        return Ok(());
+        bail!("Missing URL");
     }
-    let mode: Mode = if opts.depth.unwrap() > 1 {
+    if opts.wordlists.is_empty() {
+        bail!("Missing wordlists");
+    }
+    let mode: Mode = if opts.depth.unwrap_or(1) > 1 {
         Mode::Recursive
     } else {
-        opts.mode.as_deref().unwrap().into()
+        opts.mode.as_deref().unwrap_or("recursive").into()
     };
     let mut url = opts.url.clone().unwrap();
     match mode {
         Mode::Recursive => {
-            if opts.depth.is_none() {
-                error!("Missing depth");
-                return Ok(());
-            }
-            if url.matches(opts.fuzz_key.clone().unwrap().as_str()).count() > 0 {
+            if url
+                .matches(opts.fuzz_key.clone().unwrap_or("$".to_string()).as_str())
+                .count()
+                > 0
+            {
                 warn!(
                     "URL contains the replace keyword: {}, this is supported with {}",
                     opts.fuzz_key.clone().unwrap().bold(),
@@ -125,8 +127,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         info!("{} words loaded", before.to_string().bold());
     }
     if words.len() == 0 {
-        error!("No words found in wordlists");
-        return Ok(());
+        bail!("No words found in wordlists");
     }
     let current_depth = Arc::new(Mutex::new(0));
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =

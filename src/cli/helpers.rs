@@ -41,8 +41,14 @@ pub fn parse_url(s: &str) -> Result<String, String> {
         s.to_string()
     };
     let url = Url::parse(&s);
+
     match url {
-        Ok(url) => Ok(url.to_string()),
+        Ok(url) => {
+            if !url.host().is_some() {
+                return Err("Invalid URL".to_string());
+            }
+            Ok(url.to_string())
+        }
         Err(_) => Err("Invalid URL".to_string()),
     }
 }

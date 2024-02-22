@@ -6,6 +6,7 @@ use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
 use lazy_static::lazy_static;
+use log::error;
 use rustyline::DefaultEditor;
 
 pub async fn main() -> Result<()> {
@@ -306,6 +307,13 @@ async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Re
 }
 
 async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
-    let _ = _main(state.clone()).await;
+    let res = _main(state.clone()).await;
+    match res {
+        Ok(_) => {}
+        Err(e) => {
+            error!("{}", e);
+            return Ok(());
+        }
+    }
     Ok(())
 }
