@@ -32,12 +32,14 @@ pub fn build(opts: &Opts) -> Result<reqwest::Client> {
                 .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
         )
         .default_headers(headers)
-        .redirect(if opts.follow_redirects.unwrap() > 0 {
-            Policy::limited(opts.follow_redirects.unwrap())
+        .redirect(if opts.follow_redirects.unwrap_or(2) > 0 {
+            Policy::limited(opts.follow_redirects.unwrap_or(2))
         } else {
             Policy::none()
         })
-        .timeout(std::time::Duration::from_secs(opts.timeout.unwrap() as u64));
+        .timeout(std::time::Duration::from_secs(
+            opts.timeout.unwrap_or(10) as u64
+        ));
     let client = if let Some(proxy) = opts.proxy.clone() {
         let proxy = Proxy::all(proxy)?;
         if let Some(auth) = opts.proxy_auth.clone() {
@@ -58,7 +60,7 @@ pub fn build(opts: &Opts) -> Result<reqwest::Client> {
 }
 
 pub fn get_sender(opts: &Opts, url: &str, client: &reqwest::Client) -> reqwest::RequestBuilder {
-    match opts.method.clone().unwrap().as_str() {
+    match opts.method.clone().unwrap_or("GET".to_string()).as_str() {
         "GET" => client.get(url),
         "POST" => client
             .post(url)

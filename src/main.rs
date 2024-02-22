@@ -4,6 +4,7 @@ use std::process;
 
 use anyhow::Result;
 use clap::Parser;
+use log::error;
 use rwalk::{
     _main,
     cli::{self, opts::Opts},
@@ -34,7 +35,11 @@ async fn main() -> Result<()> {
         cli::interactive::main().await?;
         process::exit(0);
     } else {
-        _main(opts.clone()).await?;
+        let res = _main(opts.clone()).await;
+        if let Err(e) = res {
+            error!("{}", e);
+            process::exit(1);
+        }
         process::exit(0);
     }
 }

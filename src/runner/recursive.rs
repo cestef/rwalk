@@ -25,7 +25,7 @@ pub async fn run(
     chunks: Arc<Vec<Vec<String>>>,
     words: Vec<String>,
 ) -> Result<()> {
-    while *depth.lock() < opts.depth.unwrap() {
+    while *depth.lock() < opts.depth.unwrap_or(1) {
         let previous_nodes = tree.lock().get_nodes_at_depth(depth.lock().clone());
         let root_progress = indicatif::MultiProgress::new();
         let mut progresses = HashMap::new();
