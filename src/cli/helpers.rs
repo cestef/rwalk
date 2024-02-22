@@ -72,7 +72,9 @@ pub fn parse_cookie(s: &str) -> Result<String, String> {
 }
 
 pub fn parse_method(s: &str) -> Result<String, String> {
-    let methods = ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT"];
+    let methods = [
+        "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT",
+    ];
     let s = s.to_uppercase();
     if methods.contains(&s.as_str()) {
         Ok(s.to_string())
