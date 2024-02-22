@@ -101,15 +101,15 @@ async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
     let value_type = get_value_type(value);
 
     let res = match value_type {
-        ValueType::String => state.set(&key.to_string(), Some(value.to_string())),
-        ValueType::Bool => state.set(&key.to_string(), parse_bool(value)),
-        ValueType::Usize => state.set(&key.to_string(), Some(value.parse::<usize>().unwrap())),
-        ValueType::Range => state.set(&key.to_string(), Some(value.to_string())),
+        ValueType::String => state.set(key, Some(value.to_string())),
+        ValueType::Bool => state.set(key, parse_bool(value)),
+        ValueType::Usize => state.set(key, Some(value.parse::<usize>().unwrap())),
+        ValueType::Range => state.set(key, Some(value.to_string())),
         ValueType::StringVec => {
             let re = regex::Regex::new(r#"\[(.*)\]"#).unwrap();
             let value = re.replace_all(value, "$1").to_string();
             let value = value.split(',').map(|s| s.to_string()).collect::<Vec<_>>();
-            state.set(&key.to_string(), value)
+            state.set(key, value)
         }
     };
 
@@ -117,7 +117,7 @@ async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
         Ok(_) => {}
         Err(_) => {
             // Try to set the value as a string
-            let res = state.set(&key.to_string(), Some(value.to_string()));
+            let res = state.set(key, Some(value.to_string()));
             match res {
                 Ok(_) => {}
                 Err(e) => {
@@ -139,7 +139,7 @@ async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     let value = args[1];
 
     let re = regex::Regex::new(r#"\[(.*)\]"#).unwrap();
-    let current_value = match state.getenum(&key.to_string()) {
+    let current_value = match state.getenum(key) {
         Ok(value) => {
             let s = format!("{:?}", value);
             // depth(Some(1)) or depth(None)
@@ -160,7 +160,7 @@ async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     let mut value = value.split(',').map(|s| s.to_string()).collect::<Vec<_>>();
     current_value.append(&mut value);
     let res = state.set(
-        &key.to_string(),
+        key,
         current_value
             .iter()
             .filter(|s| !s.is_empty())
@@ -218,7 +218,7 @@ async fn unset(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Re
         return Ok(());
     }
     let key = args[0];
-    let res = state.set(&key.to_string(), None as Option<String>);
+    let res = state.set(key, None as Option<String>);
     match res {
         Ok(_) => {}
         Err(e) => {
@@ -236,7 +236,7 @@ async fn get(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
         return Ok(());
     }
     let key = args[0];
-    let value = match state.getenum(&key.to_string()) {
+    let value = match state.getenum(key) {
         Ok(value) => {
             let s = format!("{:?}", value);
             // depth(Some(1)) or depth(None)
