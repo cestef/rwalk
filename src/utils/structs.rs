@@ -1,9 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
 
+use crate::cli::opts::Opts;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-
-use crate::cli::opts::Opts;
 
 use super::tree::{Tree, TreeData};
 
