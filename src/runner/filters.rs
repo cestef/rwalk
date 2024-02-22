@@ -98,7 +98,7 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
                     value: text.len().to_string(),
                 });
             }
-            "hash" => {
+            "hash" | "md5" => {
                 additions.push(Addition {
                     key: "hash".to_string(),
                     value: format!("{:x}", md5::compute(text)),
