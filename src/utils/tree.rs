@@ -65,13 +65,12 @@ impl<T> Tree<T> {
 
     pub fn get_nodes_at_depth(&self, depth: usize) -> Vec<Arc<Mutex<TreeNode<T>>>> {
         let mut nodes = Vec::new();
-        self.get_nodes_at_depth_recursive(&self.root, depth, &mut nodes);
+        Self::get_nodes_at_depth_recursive(&self.root, depth, &mut nodes);
         nodes
     }
 
     /// Recursively get all nodes at a given depth
     fn get_nodes_at_depth_recursive(
-        &self,
         node: &Option<Arc<Mutex<TreeNode<T>>>>,
         depth: usize,
         nodes: &mut Vec<Arc<Mutex<TreeNode<T>>>>,
@@ -81,7 +80,7 @@ impl<T> Tree<T> {
                 nodes.push(node.clone());
             } else {
                 for child in &node.lock().children {
-                    self.get_nodes_at_depth_recursive(&Some(child.clone()), depth - 1, nodes);
+                    Self::get_nodes_at_depth_recursive(&Some(child.clone()), depth - 1, nodes);
                 }
             }
         }
