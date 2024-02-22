@@ -141,6 +141,17 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
                         }),
                 });
             }
+            "cookie" | "cookies" => {
+                let headers = response.headers();
+                let cookies = headers.get_all(reqwest::header::SET_COOKIE);
+
+                additions.push(Addition {
+                    key: "cookies".to_string(),
+                    value: cookies.iter().fold("\n".to_string(), |acc, value| {
+                        format!("{}{}\n", acc, value.to_str().unwrap_or("Not displayable"))
+                    }),
+                });
+            }
             _ => {}
         }
     }
