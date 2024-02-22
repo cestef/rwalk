@@ -140,7 +140,7 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub insecure: bool,
 
-    /// Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers", "cookie"
+    /// Show response additional body information
     #[clap(
         long,
         env,
