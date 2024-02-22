@@ -78,7 +78,7 @@ A blazing fast web directory scanner
 
   Possible values: `true`, `false`
 
-* `--show <SHOW>` — Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers", "cookie"
+* `--show <SHOW>` — Show response additional body information
 
   Possible values: `length`, `size`, `hash`, `md5`, `headers_length`, `headers_hash`, `body`, `content`, `text`, `headers`, `cookie`, `cookies`
 
