@@ -35,7 +35,7 @@ pub fn check(
         let mut filter_depth: Option<usize> = None;
 
         // if the filter starts with [depth] then we parse the depth and remove it from the filter
-        if filter.0.starts_with("[") {
+        if filter.0.starts_with('[') {
             let start_index = filter.0.find('[').unwrap();
             let end_index = filter.0.find(']').unwrap();
             let depth = filter.0[start_index + 1..end_index].parse::<usize>();
@@ -48,14 +48,14 @@ pub fn check(
         }
 
         // If this filter is not for the current depth, we skip it
-        if filter_depth.is_some() && !depth.is_some() {
+        if filter_depth.is_some() && depth.is_none() {
             warn!("You provided a depth filter but you are not scanning recursively");
         }
         if filter_depth.is_some() && depth.is_some() && filter_depth != depth {
             continue;
         }
-        let negated = filter.0.starts_with("!");
-        let out = match filter.0.trim_start_matches("!") {
+        let negated = filter.0.starts_with('!');
+        let out = match filter.0.trim_start_matches('!') {
             "time" => check_range(&parse_range_input(&filter.1).unwrap(), time as usize) ^ negated,
             "status" => {
                 check_range(&parse_range_input(&filter.1).unwrap(), status_code as usize) ^ negated
@@ -101,7 +101,7 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
             "hash" => {
                 additions.push(Addition {
                     key: "hash".to_string(),
-                    value: format!("{:x}", md5::compute(&text)),
+                    value: format!("{:x}", md5::compute(text)),
                 });
             }
             "headers_length" | "headers_size" => {

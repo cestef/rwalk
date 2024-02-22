@@ -10,13 +10,13 @@ use crate::cli::opts::Opts;
 pub fn build(opts: &Opts) -> Result<reqwest::Client> {
     let mut headers = HeaderMap::new();
     opts.headers.clone().iter().for_each(|header| {
-        let mut header = header.splitn(2, ":");
+        let mut header = header.splitn(2, ':');
         let key = header.next().unwrap().trim();
         let value = header.next().unwrap().trim();
         headers.insert(key.parse::<HeaderName>().unwrap(), value.parse().unwrap());
     });
     opts.cookies.clone().iter().for_each(|cookie| {
-        let mut cookie = cookie.splitn(2, "=");
+        let mut cookie = cookie.splitn(2, '=');
         let key = cookie.next().unwrap().trim();
         let value = cookie.next().unwrap().trim();
         headers.extend(vec![(
@@ -43,7 +43,7 @@ pub fn build(opts: &Opts) -> Result<reqwest::Client> {
     let client = if let Some(proxy) = opts.proxy.clone() {
         let proxy = Proxy::all(proxy)?;
         if let Some(auth) = opts.proxy_auth.clone() {
-            let mut auth = auth.splitn(2, ":");
+            let mut auth = auth.splitn(2, ':');
             let username = auth.next().unwrap().trim();
             let password = auth.next().unwrap().trim();
 

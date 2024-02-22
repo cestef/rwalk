@@ -10,7 +10,7 @@ fn opts_from(s: &str) -> Result<Opts, clap::Error> {
     Opts::try_parse_from(
         vec!["rwalk"]
             .into_iter()
-            .chain(s.split(" "))
+            .chain(s.split(' '))
             .filter(|s| !s.is_empty())
             .collect::<Vec<_>>(),
     )

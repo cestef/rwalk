@@ -81,7 +81,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     let saved = if opts.resume {
         let res = tokio::fs::read_to_string(opts.save_file.clone().unwrap()).await;
-        if !res.is_ok() {
+        if res.is_err() {
             bail!("No save file: {}", opts.save_file.clone().unwrap().dimmed());
         }
         res
@@ -126,7 +126,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         info!("{} words loaded", before.to_string().bold());
     }
-    if words.len() == 0 {
+    if words.is_empty() {
         bail!("No words found in wordlists");
     }
     let current_depth = Arc::new(Mutex::new(0));
@@ -250,7 +250,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let ctrlc_opts = opts.clone();
     let ctrlc_aborted = aborted.clone();
     let ctrlc_save_file = opts.save_file.clone();
-    let mut signals = Signals::new(&[SIGINT])?;
+    let mut signals = Signals::new([SIGINT])?;
     let ctrlc_handle = signals.handle();
 
     let signals_task = tokio::spawn(async move {

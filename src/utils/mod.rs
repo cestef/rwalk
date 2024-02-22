@@ -22,7 +22,7 @@ pub fn banner() {
         env!("CARGO_PKG_VERSION").dimmed().bold()
     );
     println!("{} {}", "Author:".dimmed(), "cstef".dimmed().bold());
-    println!("");
+    println!();
 }
 
 pub fn get_emoji_for_status_code_colored(status_code: u16) -> String {
@@ -56,18 +56,18 @@ pub fn check_range(ranges: &Vec<(usize, usize)>, num: usize) -> bool {
 
 pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>> {
     let mut ranges = Vec::new();
-    let parts = s.split(",").collect::<Vec<_>>();
+    let parts = s.split(',').collect::<Vec<_>>();
     for part in parts {
         if part.is_empty() {
             continue;
         }
-        if part.starts_with(">") {
+        if part.starts_with('>') {
             let num = part[1..].parse::<usize>();
             match num {
                 Ok(num) => ranges.push((num + 1, usize::MAX)),
                 Err(_) => bail!("Invalid range"),
             }
-        } else if part.starts_with("<") {
+        } else if part.starts_with('<') {
             let num = part[1..].parse::<usize>();
             match num {
                 Ok(num) => ranges.push((0, num - 1)),
@@ -75,7 +75,7 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>> {
             }
         } else {
             let part = part.trim();
-            let parts = part.split("-").collect::<Vec<_>>();
+            let parts = part.split('-').collect::<Vec<_>>();
             if parts.len() == 1 {
                 let num = parts[0].parse::<usize>();
                 match num {
@@ -104,7 +104,7 @@ pub fn save_to_file(
     tree: Arc<Mutex<Tree<TreeData>>>,
 ) -> Result<()> {
     let output = opts.output.clone().unwrap();
-    let file_type = output.split(".").last().unwrap_or("json");
+    let file_type = output.split('.').last().unwrap_or("json");
     let mut file = std::fs::File::create(opts.output.clone().unwrap())?;
 
     match file_type {
@@ -141,7 +141,7 @@ pub fn save_to_file(
                     "{}- [{} /{} {}]({})",
                     "  ".repeat(depth),
                     emoji,
-                    path.trim_start_matches("/"),
+                    path.trim_start_matches('/'),
                     if status_code == 0 {
                         "".to_string()
                     } else {
