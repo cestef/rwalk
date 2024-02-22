@@ -4,11 +4,11 @@ on:
             - main
     workflow_dispatch:
 
-name: Tests
+name: Linting
 
 jobs:
     test:
-        name: Run tests
+        name: Run linters
         runs-on: ubuntu-latest
         steps:
             - name: Checkout sources
@@ -21,4 +21,4 @@ jobs:
                   toolchain: stable
                   override: true
             - run: cargo fmt --check
-            - run: cargo clippy -- -D warnings
+            - run: cargo clippy --no-deps -- -D warnings
