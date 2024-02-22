@@ -287,7 +287,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         }
     });
     let res = main_thread.await?;
-    if let Ok(_) = res {
+    if res.is_ok() {
         println!(
             "{} Done in {} with an average of {} req/s",
             SUCCESS.to_string().green(),
