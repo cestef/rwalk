@@ -142,7 +142,7 @@ pub struct Opts {
 
     /// Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers", "cookie"
     #[clap(
-        long, 
+        long,
         env,
         hide_env = true,
         value_parser(
