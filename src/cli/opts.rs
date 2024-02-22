@@ -140,8 +140,30 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub insecure: bool,
 
-    /// Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers"
-    #[clap(long, env, hide_env = true)]
+    /// Show response additional body information: "length", "hash", "headers_length", "headers_hash", "body", "headers", "cookie"
+    #[clap(
+        long, 
+        env,
+        hide_env = true,
+        value_parser(
+            clap::builder::PossibleValuesParser::new(
+                [
+                    "length", 
+                    "size", 
+                    "hash", 
+                    "md5", 
+                    "headers_length", 
+                    "headers_hash", 
+                    "body", 
+                    "content", 
+                    "text", 
+                    "headers", 
+                    "cookie", 
+                    "cookies"
+                ]
+            )
+        )
+    )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub show: Vec<String>,
 
