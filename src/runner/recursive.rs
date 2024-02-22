@@ -26,7 +26,7 @@ pub async fn run(
     words: Vec<String>,
 ) -> Result<()> {
     while *depth.lock() < opts.depth.unwrap_or(1) {
-        let previous_nodes = tree.lock().get_nodes_at_depth(depth.lock().clone());
+        let previous_nodes = tree.lock().get_nodes_at_depth(*depth.lock());
         let root_progress = indicatif::MultiProgress::new();
         let mut progresses = HashMap::new();
         let mut handles = Vec::new();
@@ -47,7 +47,7 @@ pub async fn run(
                 )
                 .with_message(format!(
                     "/{}",
-                    previous_node.lock().data.path.trim_start_matches("/")
+                    previous_node.lock().data.path.trim_start_matches('/')
                 ))
                 .with_prefix(format!("d={}", *depth.lock()))
                 .with_position(index.iter().sum::<usize>() as u64);

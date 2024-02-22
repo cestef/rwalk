@@ -28,7 +28,7 @@ pub async fn run(
     threads: usize,     // The number of threads to use
 ) -> Result<()> {
     let spinner = ProgressBar::new_spinner();
-    spinner.set_message(format!("Generating URLs..."));
+    spinner.set_message("Generating URLs...".to_string());
     spinner.enable_steady_tick(Duration::from_millis(100));
 
     let urls: Vec<String> = if opts.permutations {
@@ -80,7 +80,7 @@ pub async fn run(
         let tree = tree.clone();
         let handle = tokio::spawn(async move {
             for url in &chunk {
-                let sender = super::client::get_sender(&opts, &url, &client);
+                let sender = super::client::get_sender(&opts, url, &client);
 
                 let t1 = Instant::now();
 
@@ -185,7 +185,7 @@ pub async fn run(
                                 tree.root.clone(),
                             );
                         } else {
-                            super::filters::print_error(&opts, &progress, &url, err);
+                            super::filters::print_error(&opts, &progress, url, err);
                         }
                     }
                 }
