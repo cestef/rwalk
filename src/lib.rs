@@ -269,18 +269,15 @@ pub async fn _main(opts: Opts) -> Result<()> {
                             indexes: current_indexes.lock().clone(),
                             opts: ctrlc_opts.clone(),
                         });
-                        match content {
-                            Ok(content) => {
-                                let mut file =
-                                    tokio::fs::File::create(&ctrlc_save_file.clone().unwrap())
-                                        .await
-                                        .unwrap();
-                                file.write_all(content.as_bytes()).await.unwrap();
-                                file.flush().await.unwrap();
-                                print!("\x1B[2K\r");
-                                info!("Saved state to {}", ctrlc_save_file.clone().unwrap().bold());
-                            }
-                            Err(_) => {}
+                        if let Ok(content) = content {
+                            let mut file =
+                                tokio::fs::File::create(&ctrlc_save_file.clone().unwrap())
+                                    .await
+                                    .unwrap();
+                            file.write_all(content.as_bytes()).await.unwrap();
+                            file.flush().await.unwrap();
+                            print!("\x1B[2K\r");
+                            info!("Saved state to {}", ctrlc_save_file.clone().unwrap().bold());
                         }
                     }
                     tx.send(()).await.unwrap();
