@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use crate::cli::opts::Opts;
+use crate::{cli::opts::Opts, runner::Runner, utils::constants::FUZZ_KEY};
 use anyhow::bail;
 use anyhow::Result;
 use colored::Colorize;
@@ -49,7 +49,12 @@ pub async fn _main(opts: Opts) -> Result<()> {
     match mode {
         Mode::Recursive => {
             if url
-                .matches(opts.fuzz_key.clone().unwrap_or("$".to_string()).as_str())
+                .matches(
+                    opts.fuzz_key
+                        .clone()
+                        .unwrap_or(FUZZ_KEY.to_string())
+                        .as_str(),
+                )
                 .count()
                 > 0
             {
@@ -211,8 +216,9 @@ pub async fn _main(opts: Opts) -> Result<()> {
         "Ctrl+C".bold(),
         if opts.no_save { "" } else { "save state and " }
     );
+
     let main_fun = match mode {
-        Mode::Recursive => runner::recursive::run(
+        Mode::Recursive => runner::recursive::Recursive::new(
             opts.clone(),
             current_depth.clone(),
             tree.clone(),
@@ -225,14 +231,16 @@ pub async fn _main(opts: Opts) -> Result<()> {
             ),
             words.clone(),
         )
+        .run()
         .boxed(),
-        Mode::Classic => runner::classic::run(
+        Mode::Classic => runner::classic::Classic::new(
             url.clone(),
             opts.clone(),
             tree.clone(),
             words.clone(),
             threads,
         )
+        .run()
         .boxed(),
     };
     let (task, handle) = if let Some(max_time) = opts.max_time {

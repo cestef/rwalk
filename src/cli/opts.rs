@@ -1,4 +1,4 @@
-use crate::utils::constants::SAVE_FILE;
+use crate::utils::constants::{FUZZ_KEY, SAVE_FILE};
 use field_accessor_pub::FieldAccessor;
 use serde::{Deserialize, Serialize};
 
@@ -97,7 +97,7 @@ pub struct Opts {
     pub cookies: Vec<String>,
 
     /// Change the default fuzz-key
-    #[clap(long, env, hide_env = true, default_value = "$")]
+    #[clap(long, env, hide_env = true, default_value = FUZZ_KEY)]
     pub fuzz_key: Option<String>,
 
     /// Follow redirects
