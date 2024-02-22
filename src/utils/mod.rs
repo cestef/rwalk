@@ -61,14 +61,14 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>> {
         if part.is_empty() {
             continue;
         }
-        if part.starts_with('>') {
-            let num = part[1..].parse::<usize>();
+        if let Some(stripped) = part.strip_prefix('>') {
+            let num = stripped.parse::<usize>();
             match num {
                 Ok(num) => ranges.push((num + 1, usize::MAX)),
                 Err(_) => bail!("Invalid range"),
             }
-        } else if part.starts_with('<') {
-            let num = part[1..].parse::<usize>();
+        } else if let Some(stripped) = part.strip_prefix('<') {
+            let num = stripped.parse::<usize>();
             match num {
                 Ok(num) => ranges.push((0, num - 1)),
                 Err(_) => bail!("Invalid range"),
