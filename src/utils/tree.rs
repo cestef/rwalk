@@ -30,6 +30,12 @@ pub struct Tree<T> {
     pub root: Option<Arc<Mutex<TreeNode<T>>>>,
 }
 
+impl<T> Default for Tree<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> Tree<T> {
     pub fn new() -> Self {
         Tree { root: None }
@@ -109,7 +115,7 @@ impl TreeItem for TreeNode<String> {
             f,
             "/{}",
             style.paint(
-                &url::Url::parse(&self.data.trim_start_matches("/"))
+                &url::Url::parse(self.data.trim_start_matches('/'))
                     .unwrap()
                     .path_segments()
                     .unwrap()
@@ -150,7 +156,7 @@ impl TreeItem for TreeNode<TreeData> {
             } else {
                 style.paint(format!(" {}", self.data.status_code.to_string().dimmed()))
             },
-            style.paint(&self.data.path.trim_start_matches("/"))
+            style.paint(&self.data.path.trim_start_matches('/'))
         )?;
         Ok(())
     }

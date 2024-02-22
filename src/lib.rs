@@ -81,7 +81,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     let saved = if opts.resume {
         let res = tokio::fs::read_to_string(opts.save_file.clone().unwrap()).await;
-        if !res.is_ok() {
+        if res.is_err() {
             bail!("No save file: {}", opts.save_file.clone().unwrap().dimmed());
         }
         res
@@ -126,7 +126,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         info!("{} words loaded", before.to_string().bold());
     }
-    if words.len() == 0 {
+    if words.is_empty() {
         bail!("No words found in wordlists");
     }
     let current_depth = Arc::new(Mutex::new(0));
@@ -250,7 +250,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let ctrlc_opts = opts.clone();
     let ctrlc_aborted = aborted.clone();
     let ctrlc_save_file = opts.save_file.clone();
-    let mut signals = Signals::new(&[SIGINT])?;
+    let mut signals = Signals::new([SIGINT])?;
     let ctrlc_handle = signals.handle();
 
     let signals_task = tokio::spawn(async move {
@@ -269,18 +269,15 @@ pub async fn _main(opts: Opts) -> Result<()> {
                             indexes: current_indexes.lock().clone(),
                             opts: ctrlc_opts.clone(),
                         });
-                        match content {
-                            Ok(content) => {
-                                let mut file =
-                                    tokio::fs::File::create(&ctrlc_save_file.clone().unwrap())
-                                        .await
-                                        .unwrap();
-                                file.write_all(content.as_bytes()).await.unwrap();
-                                file.flush().await.unwrap();
-                                print!("\x1B[2K\r");
-                                info!("Saved state to {}", ctrlc_save_file.clone().unwrap().bold());
-                            }
-                            Err(_) => {}
+                        if let Ok(content) = content {
+                            let mut file =
+                                tokio::fs::File::create(&ctrlc_save_file.clone().unwrap())
+                                    .await
+                                    .unwrap();
+                            file.write_all(content.as_bytes()).await.unwrap();
+                            file.flush().await.unwrap();
+                            print!("\x1B[2K\r");
+                            info!("Saved state to {}", ctrlc_save_file.clone().unwrap().bold());
                         }
                     }
                     tx.send(()).await.unwrap();
@@ -290,7 +287,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         }
     });
     let res = main_thread.await?;
-    if let Ok(_) = res {
+    if res.is_ok() {
         println!(
             "{} Done in {} with an average of {} req/s",
             SUCCESS.to_string().green(),

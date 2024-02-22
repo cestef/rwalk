@@ -18,7 +18,7 @@ pub async fn main() -> Result<()> {
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())?;
-                let parts = line.split(" ").collect::<Vec<_>>();
+                let parts = line.split(' ').collect::<Vec<_>>();
                 let cmd = parts[0];
                 if cmd.is_empty() {
                     continue;
@@ -108,7 +108,7 @@ async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
         ValueType::StringVec => {
             let re = regex::Regex::new(r#"\[(.*)\]"#).unwrap();
             let value = re.replace_all(value, "$1").to_string();
-            let value = value.split(",").map(|s| s.to_string()).collect::<Vec<_>>();
+            let value = value.split(',').map(|s| s.to_string()).collect::<Vec<_>>();
             state.set(&key.to_string(), value)
         }
     };
@@ -154,10 +154,10 @@ async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     };
     let current_value = re.replace_all(&current_value, "$1").to_string();
     let mut current_value = current_value
-        .split(",")
+        .split(',')
         .map(|s| s.to_string())
         .collect::<Vec<_>>();
-    let mut value = value.split(",").map(|s| s.to_string()).collect::<Vec<_>>();
+    let mut value = value.split(',').map(|s| s.to_string()).collect::<Vec<_>>();
     current_value.append(&mut value);
     let res = state.set(
         &key.to_string(),
@@ -197,7 +197,7 @@ fn parse_bool(s: &str) -> bool {
 }
 
 fn get_value_type(s: &str) -> ValueType {
-    if s.starts_with("[") && s.ends_with("]") {
+    if s.starts_with('[') && s.ends_with(']') {
         return ValueType::StringVec;
     }
     if ["true", "false"].contains(&s.to_lowercase().as_str()) {

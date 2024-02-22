@@ -46,8 +46,8 @@ pub async fn parse(wordlists: &Vec<String>) -> Result<Vec<String>> {
 
 pub fn filters(opts: &Opts, words: &mut Vec<String>) -> Result<()> {
     for filter in &opts.wordlist_filter {
-        let not = filter.0.starts_with("!");
-        match filter.0.trim_start_matches("!") {
+        let not = filter.0.starts_with('!');
+        match filter.0.trim_start_matches('!') {
             "contains" => {
                 words.retain(|word| {
                     if not {
@@ -148,7 +148,7 @@ pub fn transformations(opts: &Opts, words: &mut Vec<String>) {
             }
             "replace" => {
                 let transform_replace = transformation.1.clone().unwrap();
-                let parts = transform_replace.split("=").collect::<Vec<_>>();
+                let parts = transform_replace.split('=').collect::<Vec<_>>();
                 if parts.len() == 2 {
                     words.iter_mut().for_each(|word| {
                         *word = word.replace(parts[0], parts[1]);
