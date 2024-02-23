@@ -15,6 +15,7 @@ use crate::{
 pub fn check(
     opts: &Opts,
     res_text: &str,
+    headers: &reqwest::header::HeaderMap,
     status_code: u16,
     time: u128,
     depth: Option<usize>,
@@ -68,7 +69,30 @@ pub fn check(
                 check_range(&parse_range_input(&filter.1).unwrap(), res_text.len()) ^ negated
             }
             "hash" => filter.1.contains(&format!("{:x}", md5::compute(res_text))) ^ negated,
-            _ => true,
+            "header" => {
+                let mut header = filter.1.split('=');
+                if let Some(key) = header.next() {
+                    if let Some(value) = header.next() {
+                        let header_value = headers.get(key);
+                        (if let Some(header_value) = header_value {
+                            header_value.to_str().unwrap() == value
+                        } else {
+                            false
+                        }) ^ negated
+                    } else {
+                        warn!("Missing value in filter: {}", filter.1);
+                        true
+                    }
+                } else {
+                    warn!("Missing header key in filter: {}", filter.1);
+                    true
+                }
+            }
+            _ => {
+                warn!("Unknown filter: {}", filter.0);
+                // We return true so that the filter is not applied
+                true
+            }
         };
 
         outs.push(out);

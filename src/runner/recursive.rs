@@ -193,6 +193,7 @@ impl Recursive {
                     let filtered = super::filters::check(
                         &opts,
                         &text,
+                        response.headers(),
                         status_code,
                         t1.elapsed().as_millis(),
                         Some(*depth.lock()),

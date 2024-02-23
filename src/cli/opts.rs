@@ -199,7 +199,7 @@ pub struct Opts {
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub wordlist_filter: Vec<(String, String)>,
 
-    /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash"
+    /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header"
     #[clap(short, long, help_heading = Some("Filtering"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>))]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub filter: Vec<(String, String)>,
