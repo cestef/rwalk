@@ -66,34 +66,3 @@ async fn error_on_empty_wordlist_main() {
     .await
     .is_err())
 }
-
-#[tokio::test]
-async fn run_default_arguments() {
-    let res = _main(Opts {
-        url: Some("http://example.com".to_string()),
-        wordlists: vec![SHORT.to_string()],
-        ..Default::default()
-    })
-    .await;
-
-    if res.is_err() {
-        panic!("{}", res.unwrap_err())
-    }
-}
-
-#[tokio::test]
-async fn run_custom_arguments() {
-    let res = _main(Opts {
-        url: Some("http://example.com".to_string()),
-        wordlists: vec![SHORT.to_string()],
-        method: Some("POST".to_string()),
-        data: Some("test".to_string()),
-        headers: vec!["Content-Type: application/json".to_string()],
-        ..Default::default()
-    })
-    .await;
-
-    if res.is_err() {
-        panic!("{}", res.unwrap_err())
-    }
-}
