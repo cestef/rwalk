@@ -6,7 +6,7 @@ use crate::{
     cli::opts::Opts,
     utils::{
         check_range,
-        constants::{ERROR, STATUS_CODES, WARNING},
+        constants::{DEFAULT_STATUS_CODES, ERROR, WARNING},
         parse_range_input,
     },
 };
@@ -26,7 +26,7 @@ pub fn check(
         opts.filter.clone()
     } else {
         let mut filters = opts.filter.clone();
-        filters.push(("status".to_string(), STATUS_CODES.to_string()));
+        filters.push(("status".to_string(), DEFAULT_STATUS_CODES.to_string()));
         filters
     };
 

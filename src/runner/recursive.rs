@@ -12,7 +12,7 @@ use parking_lot::Mutex;
 use crate::{
     cli::opts::Opts,
     utils::{
-        constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
+        constants::{DEFAULT_DEPTH, ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
         tree::{Tree, TreeData, TreeNode},
     },
 };
@@ -28,7 +28,7 @@ pub struct Recursive {
 
 impl super::Runner for Recursive {
     async fn run(self) -> Result<()> {
-        while *self.depth.lock() < self.opts.depth.unwrap_or(1) {
+        while *self.depth.lock() < self.opts.depth.unwrap_or(DEFAULT_DEPTH) {
             let previous_nodes = self.tree.lock().get_nodes_at_depth(*self.depth.lock());
             let root_progress = indicatif::MultiProgress::new();
             let mut progresses = HashMap::new();

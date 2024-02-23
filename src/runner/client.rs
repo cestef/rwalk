@@ -5,7 +5,10 @@ use reqwest::{
     Proxy,
 };
 
-use crate::cli::opts::Opts;
+use crate::{
+    cli::opts::Opts,
+    utils::constants::{DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_TIMEOUT},
+};
 
 pub fn build(opts: &Opts) -> Result<reqwest::Client> {
     let mut headers = HeaderMap::new();
@@ -32,13 +35,15 @@ pub fn build(opts: &Opts) -> Result<reqwest::Client> {
                 .unwrap_or(format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
         )
         .default_headers(headers)
-        .redirect(if opts.follow_redirects.unwrap_or(2) > 0 {
-            Policy::limited(opts.follow_redirects.unwrap_or(2))
-        } else {
-            Policy::none()
-        })
+        .redirect(
+            if opts.follow_redirects.unwrap_or(DEFAULT_FOLLOW_REDIRECTS) > 0 {
+                Policy::limited(opts.follow_redirects.unwrap_or(DEFAULT_FOLLOW_REDIRECTS))
+            } else {
+                Policy::none()
+            },
+        )
         .timeout(std::time::Duration::from_secs(
-            opts.timeout.unwrap_or(10) as u64
+            opts.timeout.unwrap_or(DEFAULT_TIMEOUT) as u64,
         ));
     let client = if let Some(proxy) = opts.proxy.clone() {
         let proxy = Proxy::all(proxy)?;
@@ -60,7 +65,12 @@ pub fn build(opts: &Opts) -> Result<reqwest::Client> {
 }
 
 pub fn get_sender(opts: &Opts, url: &str, client: &reqwest::Client) -> reqwest::RequestBuilder {
-    match opts.method.clone().unwrap_or("GET".to_string()).as_str() {
+    match opts
+        .method
+        .clone()
+        .unwrap_or(DEFAULT_METHOD.to_string())
+        .as_str()
+    {
         "GET" => client.get(url),
         "POST" => client
             .post(url)

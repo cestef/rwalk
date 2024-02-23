@@ -9,6 +9,8 @@ use crate::utils::{
     tree::{Tree, TreeData, TreeNode},
 };
 
+use self::constants::DEFAULT_FILE_TYPE;
+
 pub mod constants;
 pub mod logger;
 pub mod structs;
@@ -104,7 +106,7 @@ pub fn save_to_file(
     tree: Arc<Mutex<Tree<TreeData>>>,
 ) -> Result<()> {
     let output = opts.output.clone().unwrap();
-    let file_type = output.split('.').last().unwrap_or("json");
+    let file_type = output.split('.').last().unwrap_or(DEFAULT_FILE_TYPE);
     let mut file = std::fs::File::create(opts.output.clone().unwrap())?;
 
     match file_type {

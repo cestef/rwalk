@@ -1,4 +1,7 @@
-use crate::utils::constants::{FUZZ_KEY, SAVE_FILE};
+use crate::utils::constants::{
+    DEFAULT_DEPTH, DEFAULT_FOLLOW_REDIRECTS, DEFAULT_FUZZ_KEY, DEFAULT_METHOD, DEFAULT_MODE,
+    DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT,
+};
 use field_accessor_pub::FieldAccessor;
 use serde::{Deserialize, Serialize};
 
@@ -35,7 +38,7 @@ pub struct Opts {
     #[clap(
         short,
         long,
-        default_value = "recursive",
+        default_value = DEFAULT_MODE.to_string(),
         value_name = "MODE",
         value_parser = clap::builder::PossibleValuesParser::new(["recursive", "recursion", "r", "classic", "c"]),
         env,
@@ -63,7 +66,7 @@ pub struct Opts {
     pub threads: Option<usize>,
 
     /// Crawl recursively until given depth
-    #[clap(short, long, env, hide_env = true, default_value = "1")]
+    #[clap(short, long, env, hide_env = true, default_value = DEFAULT_DEPTH.to_string())]
     pub depth: Option<usize>,
 
     /// Output file
@@ -71,7 +74,7 @@ pub struct Opts {
     pub output: Option<String>,
 
     /// Request timeout in seconds
-    #[clap(long, default_value = "10", env, hide_env = true)]
+    #[clap(long, default_value = DEFAULT_TIMEOUT.to_string(), env, hide_env = true)]
     pub timeout: Option<usize>,
 
     /// User agent
@@ -79,7 +82,7 @@ pub struct Opts {
     pub user_agent: Option<String>,
 
     /// HTTP method
-    #[clap(short = 'X', long, default_value = "GET", value_parser = parse_method, env, hide_env=true)]
+    #[clap(short = 'X', long, default_value = DEFAULT_METHOD, value_parser = parse_method, env, hide_env=true)]
     pub method: Option<String>,
 
     /// Data to send with the request
@@ -97,14 +100,14 @@ pub struct Opts {
     pub cookies: Vec<String>,
 
     /// Change the default fuzz-key
-    #[clap(long, env, hide_env = true, default_value = FUZZ_KEY)]
+    #[clap(long, env, hide_env = true, default_value = DEFAULT_FUZZ_KEY)]
     pub fuzz_key: Option<String>,
 
     /// Follow redirects
     #[clap(
         short = 'R',
         long,
-        default_value = "2",
+        default_value = DEFAULT_FOLLOW_REDIRECTS.to_string(),
         value_name = "COUNT",
         env,
         hide_env = true
@@ -112,7 +115,7 @@ pub struct Opts {
     pub follow_redirects: Option<usize>,
 
     /// Request throttling (requests per second) per thread
-    #[clap(long, default_value = "0", env, hide_env = true)]
+    #[clap(long, env, hide_env = true)]
     pub throttle: Option<usize>,
 
     /// Max time to run (will abort after given time) in seconds
@@ -173,7 +176,7 @@ pub struct Opts {
     pub resume: bool,
 
     /// Custom save file
-    #[clap(long, default_value = Some(SAVE_FILE), help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
+    #[clap(long, default_value = Some(DEFAULT_SAVE_FILE), help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
     pub save_file: Option<String>,
 
     /// Don't save the state in case you abort
