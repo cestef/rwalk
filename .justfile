@@ -2,7 +2,7 @@ default:
     just -l
 # Run the program
 run *ARGS="":
-    cargo run --quiet --release -- {{ARGS}}
+    cargo run --quiet -- {{ARGS}}
 
 # Build the program
 build OUTPUT="./target/release":
