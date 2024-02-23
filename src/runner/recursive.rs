@@ -34,16 +34,12 @@ impl super::Runner for Recursive {
             let mut progresses = HashMap::new();
             let mut rxs = Vec::new();
             let depth = self.depth.clone();
-            println!("Processing depth: {}", *depth.lock());
             for previous_node in &previous_nodes {
-                println!("Processing node: {:?}", previous_node.lock().data);
                 let depth = depth.clone();
                 let mut indexes = self.current_indexes.lock();
-                println!("Acquired indexes lock");
                 let index = indexes
                     .entry(previous_node.lock().data.url.clone())
                     .or_insert_with(|| vec![0; self.chunks.len()]);
-                println!("Acquired index lock");
                 let pb = root_progress
                     .add(indicatif::ProgressBar::new((self.words.len()) as u64))
                     .with_style(
@@ -60,14 +56,11 @@ impl super::Runner for Recursive {
                 pb.enable_steady_tick(Duration::from_millis(100));
 
                 progresses.insert(previous_node.lock().data.url.clone(), pb);
-                println!("Inserted progress bar");
                 let progress = progresses
                     .get(&previous_node.lock().data.url)
                     .ok_or(anyhow!("Couldn't find progress bar"))?;
-                println!("Acquired progress bar");
 
                 let client = super::client::build(&self.opts)?;
-                println!("Built client");
                 for (i, chunk) in self.chunks.iter().enumerate() {
                     let tree = self.tree.clone();
                     let previous_node = previous_node.clone();
@@ -79,7 +72,6 @@ impl super::Runner for Recursive {
                     let depth = depth.clone();
                     let (tx, rx) = tokio::sync::mpsc::channel(1);
                     tokio::spawn(async move {
-                        println!("Processing chunk: {:?}", chunk);
                         let res = Self::process_chunk(
                             chunk,
                             client,
