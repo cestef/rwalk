@@ -88,6 +88,42 @@ pub fn check(
                     true
                 }
             }
+            // json:jsonpath=value1|value2
+            "json" => {
+                if let Some(split_index) = filter.1.find('=') {
+                    let (accessor, values) = filter.1.split_at(split_index);
+                    let values = values.trim_start_matches('=');
+                    let accessor = accessor.trim_end_matches('=');
+                    let json: serde_json::Value = match serde_json::from_str(res_text) {
+                        Ok(json) => json,
+                        Err(e) => {
+                            warn!("Response is not valid JSON: {}", e);
+                            return true;
+                        }
+                    };
+                    let json_value = accessor.split('.').fold(&json, |acc, x| {
+                        acc.get(x).unwrap_or(&serde_json::Value::Null)
+                    });
+                    values.split('|').any(|value| {
+                        json_value
+                            .to_string()
+                            .contains(value.trim_start_matches('!'))
+                    }) ^ negated
+                } else {
+                    warn!("Invalid JSON filter: {}", filter.1);
+                    true
+                }
+            }
+
+            "depth" => {
+                if let Some(depth) = depth {
+                    check_range(&parse_range_input(&filter.1).unwrap(), depth) ^ negated
+                } else {
+                    warn!("You provided a depth filter but you are not scanning recursively");
+                    true
+                }
+            }
+
             _ => {
                 warn!("Unknown filter: {}", filter.0);
                 // We return true so that the filter is not applied
