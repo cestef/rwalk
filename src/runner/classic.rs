@@ -6,7 +6,7 @@ use std::{
 use crate::{
     cli::opts::Opts,
     utils::{
-        constants::{ERROR, FUZZ_KEY, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
+        constants::{DEFAULT_FUZZ_KEY, ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
         tree::{Tree, TreeData},
     },
 };
@@ -54,7 +54,7 @@ impl Classic {
                     self.opts
                         .fuzz_key
                         .clone()
-                        .unwrap_or(FUZZ_KEY.to_string())
+                        .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
                         .as_str(),
                 )
                 .count();
@@ -70,7 +70,7 @@ impl Classic {
                             self.opts
                                 .fuzz_key
                                 .clone()
-                                .unwrap_or(FUZZ_KEY.to_string())
+                                .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
                                 .as_str(),
                             word,
                         );
@@ -88,7 +88,7 @@ impl Classic {
                         self.opts
                             .fuzz_key
                             .clone()
-                            .unwrap_or(FUZZ_KEY.to_string())
+                            .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
                             .as_str(),
                         c,
                     );

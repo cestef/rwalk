@@ -8,7 +8,11 @@ use std::{
     time::Duration,
 };
 
-use crate::{cli::opts::Opts, runner::Runner, utils::constants::FUZZ_KEY};
+use crate::{
+    cli::opts::Opts,
+    runner::Runner,
+    utils::constants::{DEFAULT_DEPTH, DEFAULT_FUZZ_KEY, DEFAULT_MODE},
+};
 use anyhow::bail;
 use anyhow::Result;
 use colored::Colorize;
@@ -40,10 +44,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
     if opts.wordlists.is_empty() {
         bail!("Missing wordlists");
     }
-    let mode: Mode = if opts.depth.unwrap_or(1) > 1 {
+    let mode: Mode = if opts.depth.unwrap_or(DEFAULT_DEPTH) > 1 {
         Mode::Recursive
     } else {
-        opts.mode.as_deref().unwrap_or("recursive").into()
+        opts.mode.as_deref().unwrap_or(DEFAULT_MODE).into()
     };
     let mut url = opts.url.clone().unwrap();
     match mode {
@@ -52,7 +56,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 .matches(
                     opts.fuzz_key
                         .clone()
-                        .unwrap_or(FUZZ_KEY.to_string())
+                        .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
                         .as_str(),
                 )
                 .count()
