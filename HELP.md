@@ -59,8 +59,6 @@ A blazing fast web directory scanner
 
   Default value: `2`
 * `--throttle <THROTTLE>` — Request throttling (requests per second) per thread
-
-  Default value: `0`
 * `-M`, `--max-time <MAX_TIME>` — Max time to run (will abort after given time) in seconds
 * `--no-color` — Don't use colors You can also set the NO_COLOR environment variable
 
