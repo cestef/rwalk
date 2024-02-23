@@ -66,13 +66,14 @@ impl Classic {
                 .map(|c| {
                     let mut url = self.url.clone();
                     for word in c {
-                        url = url.replace(
+                        url = url.replacen(
                             self.opts
                                 .fuzz_key
                                 .clone()
                                 .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
                                 .as_str(),
                             word,
+                            1,
                         );
                     }
                     url
