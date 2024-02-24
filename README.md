@@ -22,6 +22,7 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 - [x] Recursive directory scanning
 - [x] Save progress to resume later
 - [x] Cherry-pick responses (filter by status code, length, etc.)
+- [x] Advanced filters (regex, json, ranges, etc.)
 - [x] Custom wordlists (merge multiple wordlists, filter out words, etc.) 
 - [x] Write results to file (JSON, CSV, etc.)
 - [x] Configurable request parameters (headers, cookies, etc.)
