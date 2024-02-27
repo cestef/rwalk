@@ -57,24 +57,53 @@ cargo install --path .
     </p>
 </small>
 
-
-## Development
-
-**With [just](https://github.com/casey/just)**
-
-```bash
-just run https://example.com wordlist.txt
-```
-
-**With [cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)**
-
-```bash
-cargo run --release -- https://example.com wordlist.txt
-```
-
 ## Usage
 
 You can run `rwalk --help` or [read the help file](HELP.md) for more information.
+
+
+### Scanning modes
+
+#### Recursive scan
+
+By default `rwalk` will use a recursive-like scan. You can change the depth of the scan with the `--depth` (`-d`) flag:
+
+```bash
+rwalk https://example.com wordlist.txt -d 3
+```
+
+#### Classic scan
+
+In case you want to fuzz more precise paths, you can either use the `--mode classic` flag or provide a fuzzing placeholder in the URL. For example:
+
+```bash
+rwalk https://example.com/$ wordlist.txt
+```
+
+Notice that the `$` character is used to indicate the position of the wordlist in the URL.
+This character is the default, but it can be changed with the following format:
+
+```bash
+rwalk https://example.com/W1 wordlist.txt:W1
+```
+
+In this case, the `W1` string will be replaced by the first word in the wordlist.
+
+You can also use this to replace with multiple wordlists:
+
+```bash
+rwalk https://example.com/W1/W2 wordlist1.txt:W1 wordlist2.txt:W2
+```
+
+`W1` will be replace by the words in `wordlist1.txt` and `W2` by the words in `wordlist2.txt`.
+
+To use the same wordlist in multiple places, you can use the following format:
+
+```bash
+rwalk https://example.com/W1/W2 wordlist.txt:W1,W2
+```
+
+This will generate all possible combinations of the wordlist at `W1` and `W2`. 
 
 ### Response Filtering
 
@@ -209,46 +238,6 @@ Available details:
 - `body`
 - `headers_length`
 - `headers_hash`
-
-### Scanning modes
-
-#### Recursive scan
-
-By default `rwalk` will use a recursive-like scan. You can change the depth of the scan with the `--depth` (`-d`) flag:
-
-```bash
-rwalk https://example.com wordlist.txt -d 3
-```
-
-#### Classic scan
-
-A more traditional scan can be done with the `--mode classic` flag:
-
-```bash
-rwalk https://example.com/$ wordlist.txt --mode classic
-```
-
-Notice that the `$` character is used to indicate the position of the wordlist in the URL.
-This character can be changed with the `--fuzz-key` flag.
-
-#### Permutations
-
-In case you want to explore more complex URL structures, you can use the `classic` mode in combination with the `--permutations` flag, which will generate all possible permutations of the wordlist:
-
-```bash
-rwalk https://example.com/$/abcd/$ wordlist.txt --mode classic --permutations
-```
-
-This will generate all possible combinations of the wordlist in the URL, e.g.:
-
-
-`https://example.com/word1/abcd/word1`
-`https://example.com/word1/abcd/word2`
-`https://example.com/word1/abcd/word3`
-`https://example.com/word2/abcd/word1`
-`https://example.com/word2/abcd/word2`
-...
-
 
 ### Interactive mode
 
