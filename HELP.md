@@ -21,13 +21,7 @@ A blazing fast web directory scanner
 
 * `-m`, `--mode <MODE>` — Crawl mode
 
-  Default value: `recursive`
-
   Possible values: `recursive`, `recursion`, `r`, `classic`, `c`
-
-* `-p`, `--permutations` — Permutations mode
-
-  Possible values: `true`, `false`
 
 * `--force` — Force scan even if the target is not responding
 
@@ -39,8 +33,6 @@ A blazing fast web directory scanner
 
 * `-t`, `--threads <THREADS>` — Number of threads to use
 * `-d`, `--depth <DEPTH>` — Crawl recursively until given depth
-
-  Default value: `1`
 * `-o`, `--output <FILE>` — Output file
 * `--timeout <TIMEOUT>` — Request timeout in seconds
 
@@ -52,9 +44,6 @@ A blazing fast web directory scanner
 * `-D`, `--data <DATA>` — Data to send with the request
 * `-H`, `--headers <key:value>` — Headers to send
 * `-c`, `--cookies <key=value>` — Cookies to send
-* `--fuzz-key <FUZZ_KEY>` — Change the default fuzz-key
-
-  Default value: `$`
 * `-R`, `--follow-redirects <COUNT>` — Follow redirects
 
   Default value: `2`
