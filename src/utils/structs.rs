@@ -11,6 +11,15 @@ pub enum Mode {
     Classic,
 }
 
+impl ToString for Mode {
+    fn to_string(&self) -> String {
+        match self {
+            Mode::Recursive => "Recursive".to_string(),
+            Mode::Classic => "Classic".to_string(),
+        }
+    }
+}
+
 impl From<&str> for Mode {
     fn from(s: &str) -> Self {
         match s {

@@ -10,8 +10,8 @@ use std::{
 
 use crate::{
     cli::opts::Opts,
-    runner::Runner,
-    utils::constants::{DEFAULT_DEPTH, DEFAULT_FUZZ_KEY, DEFAULT_MODE},
+    runner::{wordlists::compute_checksum, Runner},
+    utils::constants::{DEFAULT_FUZZ_KEY, DEFAULT_MODE},
 };
 use anyhow::bail;
 use anyhow::Result;
@@ -44,49 +44,6 @@ pub async fn _main(opts: Opts) -> Result<()> {
     if opts.wordlists.is_empty() {
         bail!("Missing wordlists");
     }
-    let mode: Mode = if opts.depth.unwrap_or(DEFAULT_DEPTH) > 1 {
-        Mode::Recursive
-    } else {
-        opts.mode.as_deref().unwrap_or(DEFAULT_MODE).into()
-    };
-    let mut url = opts.url.clone().unwrap();
-    match mode {
-        Mode::Recursive => {
-            if url
-                .matches(
-                    opts.fuzz_key
-                        .clone()
-                        .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
-                        .as_str(),
-                )
-                .count()
-                > 0
-            {
-                warn!(
-                    "URL contains the replace keyword: {}, this is supported with {}",
-                    opts.fuzz_key.clone().unwrap().bold(),
-                    format!(
-                        "{} {} | {}",
-                        "--mode".dimmed(),
-                        "permutations".bold(),
-                        "classic".bold()
-                    )
-                );
-            }
-        }
-        Mode::Classic => {
-            if url.matches(opts.fuzz_key.clone().unwrap().as_str()).count() == 0 {
-                url = url.trim_end_matches('/').to_string()
-                    + "/"
-                    + opts.fuzz_key.clone().unwrap().as_str();
-                warn!(
-                    "URL does not contain the replace keyword: {}, it will be treated as: {}",
-                    opts.fuzz_key.clone().unwrap().bold(),
-                    url.bold()
-                );
-            }
-        }
-    }
 
     let saved = if opts.resume {
         let res = tokio::fs::read_to_string(opts.save_file.clone().unwrap()).await;
@@ -113,15 +70,52 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     let mut words = runner::wordlists::parse(&opts.wordlists).await?;
 
-    let before = words.len();
+    let mut url = opts.url.clone().unwrap();
+    let fuzz_matches = words
+        .keys()
+        .filter(|x| url.contains(*x))
+        .cloned()
+        .collect::<Vec<_>>();
+    let mode: Mode = if opts.mode.is_some() {
+        opts.mode.as_deref().unwrap().into()
+    } else if opts.depth.is_some() {
+        Mode::Recursive
+    } else if !fuzz_matches.is_empty() {
+        Mode::Classic
+    } else {
+        DEFAULT_MODE.into()
+    };
+    info!("Mode: {}", mode.to_string().bold());
+    match mode {
+        Mode::Recursive => {
+            if !fuzz_matches.is_empty() {
+                warn!(
+                    "URL contains the replace keyword{}: {}, this is supported with {}",
+                    if fuzz_matches.len() > 1 { "s" } else { "" },
+                    fuzz_matches.join(", ").bold(),
+                    format!("{} {}", "--mode".dimmed(), "classic".bold())
+                );
+            }
+        }
+        Mode::Classic => {
+            if fuzz_matches.is_empty() {
+                url = url.trim_end_matches('/').to_string() + "/" + DEFAULT_FUZZ_KEY;
+                warn!(
+                    "URL does not contain the replace keyword: {}, it will be treated as: {}",
+                    DEFAULT_FUZZ_KEY.bold(),
+                    url.bold()
+                );
+            }
+        }
+    }
+    let before = words.values().fold(0, |acc, x| acc + x.len());
 
     runner::wordlists::filters(&opts, &mut words)?;
     runner::wordlists::transformations(&opts, &mut words);
 
-    words.sort_unstable();
-    words.dedup();
+    runner::wordlists::deduplicate(&mut words);
 
-    let after = words.len();
+    let after = words.values().fold(0, |acc, x| acc + x.len());
     if before != after {
         info!(
             "{} words loaded, {} after deduplication and filters (-{}%)",
@@ -135,7 +129,8 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         info!("{} words loaded", before.to_string().bold());
     }
-    if words.is_empty() {
+
+    if words.values().all(|x| x.is_empty()) {
         bail!("No words found in wordlists");
     }
     let current_depth = Arc::new(Mutex::new(0));
@@ -165,10 +160,18 @@ pub async fn _main(opts: Opts) -> Result<()> {
         let t = Arc::new(Mutex::new(Tree::new()));
         let cleaned_url = match mode {
             Mode::Recursive => url.clone(),
-            Mode::Classic => url
-                .split(opts.fuzz_key.clone().unwrap().as_str())
-                .collect::<Vec<_>>()[0]
-                .to_string(),
+            Mode::Classic => {
+                // Get the first part of the url, before the first occurence of a fuzz key from fuzz_matches
+                let mut smallest_index = url.len();
+                for match_ in &fuzz_matches {
+                    if let Some(index) = url.find(match_) {
+                        if index < smallest_index {
+                            smallest_index = index;
+                        }
+                    }
+                }
+                url[..smallest_index].to_string()
+            }
         };
         t.lock().insert(
             TreeData {
@@ -207,10 +210,11 @@ pub async fn _main(opts: Opts) -> Result<()> {
         .threads
         .unwrap_or(num_cpus::get() * 10)
         .max(1)
-        .min(words.len());
+        .min(words.iter().fold(0, |acc, (_, v)| acc + v.len()));
     info!(
-        "Starting crawler with {} threads",
+        "Starting crawler with {} thread{}",
         threads.to_string().bold(),
+        if threads > 1 { "s" } else { "" }
     );
 
     let watch = stopwatch::Stopwatch::start_new();
@@ -229,11 +233,15 @@ pub async fn _main(opts: Opts) -> Result<()> {
             current_indexes.clone(),
             Arc::new(
                 words
-                    .chunks(words.len() / threads)
+                    .iter()
+                    .fold(Vec::new(), |mut acc, (_, v)| {
+                        acc.extend(v.clone());
+                        acc
+                    })
+                    .chunks(words.iter().fold(0, |acc, (_, v)| acc + v.len()) / threads)
                     .map(|x| x.to_vec())
                     .collect::<Vec<_>>(),
             ),
-            words.clone(),
         )
         .run()
         .boxed(),
@@ -273,11 +281,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
                     ctrlc_aborted.store(true, Ordering::Relaxed);
                     handle.abort();
                     if !opts.no_save {
-                        let checksum = format!("{:x}", md5::compute(ctrlc_words.join("\n")));
                         let content = serde_json::to_string(&Save {
                             tree: ctrlc_tree.clone(),
                             depth: ctrlc_depth.clone(),
-                            wordlist_checksum: checksum,
+                            wordlist_checksum: compute_checksum(&ctrlc_words),
                             indexes: current_indexes.lock().clone(),
                             opts: ctrlc_opts.clone(),
                         });
@@ -305,13 +312,11 @@ pub async fn _main(opts: Opts) -> Result<()> {
             SUCCESS.to_string().green(),
             HumanDuration(watch.elapsed()).to_string().bold(),
             ((match mode {
-                Mode::Recursive => words.len() * *current_depth.lock(),
-                Mode::Classic =>
-                    if opts.permutations {
-                        words.len().pow(url.matches(opts.fuzz_key.clone().unwrap().as_str()).count() as u32)
-                    } else {
-                        words.len()
-                    },
+                Mode::Recursive =>
+                    words.iter().fold(0, |acc, (_, v)| acc + v.len()) * *current_depth.lock(),
+                Mode::Classic => {
+                    words.iter().fold(0, |acc, (_, v)| acc + v.len())
+                }
             }) as f64
                 / watch.elapsed().as_secs_f64())
             .round()

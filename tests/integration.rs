@@ -39,7 +39,7 @@ fn error_on_invalid_url_parse() {
 #[tokio::test]
 async fn error_on_missing_url_main() {
     assert!(_main(Opts {
-        wordlists: vec![SHORT.to_string()],
+        wordlists: vec![(SHORT.to_string(), vec![])],
         ..Default::default()
     })
     .await
@@ -60,7 +60,7 @@ async fn error_on_missing_wordlist_main() {
 async fn error_on_empty_wordlist_main() {
     assert!(_main(Opts {
         url: Some("http://example.com".to_string()),
-        wordlists: vec![EMPTY.to_string()],
+        wordlists: vec![(EMPTY.to_string(), vec![])],
         ..Default::default()
     })
     .await

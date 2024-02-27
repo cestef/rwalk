@@ -1,12 +1,12 @@
 use crate::utils::constants::{
-    DEFAULT_DEPTH, DEFAULT_FOLLOW_REDIRECTS, DEFAULT_FUZZ_KEY, DEFAULT_METHOD, DEFAULT_MODE,
-    DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT,
+    DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT,
 };
 use field_accessor_pub::FieldAccessor;
 use serde::{Deserialize, Serialize};
 
 use super::helpers::{
     parse_cookie, parse_header, parse_key_or_key_val, parse_key_val, parse_method, parse_url,
+    parse_wordlist,
 };
 use anyhow::Result;
 use clap::Parser;
@@ -29,27 +29,22 @@ pub struct Opts {
         required_unless_present = "resume",
         required_unless_present = "generate_markdown",
         env,
-        hide_env = true
+        hide_env = true,
+        value_parser = parse_wordlist
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
-    pub wordlists: Vec<String>,
+    pub wordlists: Vec<(String, Vec<String>)>,
 
     /// Crawl mode
     #[clap(
         short,
         long,
-        default_value = DEFAULT_MODE.to_string(),
         value_name = "MODE",
         value_parser = clap::builder::PossibleValuesParser::new(["recursive", "recursion", "r", "classic", "c"]),
         env,
         hide_env = true
     )]
     pub mode: Option<String>,
-
-    /// Permutations mode
-    #[clap(short, long, env, hide_env = true)]
-    #[merge(strategy = merge::bool::overwrite_false)]
-    pub permutations: bool,
 
     /// Force scan even if the target is not responding
     #[clap(long, env, hide_env = true)]
@@ -66,7 +61,7 @@ pub struct Opts {
     pub threads: Option<usize>,
 
     /// Crawl recursively until given depth
-    #[clap(short, long, env, hide_env = true, default_value = DEFAULT_DEPTH.to_string())]
+    #[clap(short, long, env, hide_env = true)]
     pub depth: Option<usize>,
 
     /// Output file
@@ -98,10 +93,6 @@ pub struct Opts {
     #[clap(short, long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true)]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub cookies: Vec<String>,
-
-    /// Change the default fuzz-key
-    #[clap(long, env, hide_env = true, default_value = DEFAULT_FUZZ_KEY)]
-    pub fuzz_key: Option<String>,
 
     /// Follow redirects
     #[clap(

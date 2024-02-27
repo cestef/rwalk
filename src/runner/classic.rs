@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -6,7 +7,7 @@ use std::{
 use crate::{
     cli::opts::Opts,
     utils::{
-        constants::{DEFAULT_FUZZ_KEY, ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
+        constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
         tree::{Tree, TreeData},
     },
 };
@@ -26,7 +27,7 @@ pub struct Classic {
     url: String,
     opts: Opts,
     tree: Arc<Mutex<Tree<TreeData>>>,
-    words: Vec<String>,
+    words: HashMap<String, Vec<String>>,
     threads: usize,
 }
 
@@ -35,7 +36,7 @@ impl Classic {
         url: String,
         opts: Opts,
         tree: Arc<Mutex<Tree<TreeData>>>,
-        words: Vec<String>,
+        words: HashMap<String, Vec<String>>,
         threads: usize,
     ) -> Self {
         Self {
@@ -47,59 +48,23 @@ impl Classic {
         }
     }
     fn generate_urls(&self) -> Vec<String> {
-        if self.opts.permutations {
-            let token_count = self
-                .url
-                .matches(
-                    self.opts
-                        .fuzz_key
-                        .clone()
-                        .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
-                        .as_str(),
-                )
-                .count();
-            let combinations: Vec<_> = self.words.iter().permutations(token_count).collect();
-
-            combinations
-                .clone()
-                .iter()
-                .map(|c| {
-                    let mut url = self.url.clone();
-                    for word in c {
-                        url = url.replacen(
-                            self.opts
-                                .fuzz_key
-                                .clone()
-                                .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
-                                .as_str(),
-                            word,
-                            1,
-                        );
-                    }
-                    url
-                })
-                .collect()
-        } else {
-            self.words
-                .clone()
-                .iter()
-                .map(|c| {
-                    let mut url = self.url.clone();
-                    url = url.replace(
-                        self.opts
-                            .fuzz_key
-                            .clone()
-                            .unwrap_or(DEFAULT_FUZZ_KEY.to_string())
-                            .as_str(),
-                        c,
-                    );
-                    url
-                })
-                .collect()
+        let products = self
+            .words
+            .iter()
+            .map(|(k, v)| v.iter().map(|w| (k, w)).collect::<Vec<_>>())
+            .multi_cartesian_product()
+            .collect::<Vec<_>>();
+        let mut urls = vec![];
+        for product in &products {
+            let mut url = self.url.clone();
+            for (k, v) in product {
+                url = url.replace(*k, v);
+            }
+            urls.push(url);
         }
+        urls
     }
 
-    // And another method for processing a chunk of URLs:
     async fn process_chunk(
         chunk: Vec<String>,
         client: Client,

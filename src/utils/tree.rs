@@ -8,7 +8,10 @@ use ptree::{print_tree, TreeItem};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::{cli::opts::Opts, utils::get_emoji_for_status_code_colored, Save};
+use crate::{
+    cli::opts::Opts, runner::wordlists::compute_checksum, utils::get_emoji_for_status_code_colored,
+    Save,
+};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TreeNode<T> {
     pub data: T,
@@ -166,7 +169,7 @@ pub fn from_save(
     save: &Save,
     depth: Arc<Mutex<usize>>,
     current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
-    words: Vec<String>,
+    words: HashMap<String, Vec<String>>,
 ) -> Result<Arc<Mutex<Tree<TreeData>>>> {
     if let Some(root) = &save.tree.clone().lock().root {
         if opts.url.is_some() && root.lock().data.url != opts.url.clone().unwrap() {
@@ -180,7 +183,7 @@ pub fn from_save(
             );
             print_tree(&*root.lock())?;
             *depth.lock() = *save.depth.lock();
-            if save.wordlist_checksum == { format!("{:x}", md5::compute(words.join("\n"))) } {
+            if save.wordlist_checksum == { compute_checksum(&words) } {
                 *current_indexes.lock() = save.indexes.clone();
             } else {
                 warn!(

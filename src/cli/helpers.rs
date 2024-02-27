@@ -82,3 +82,19 @@ pub fn parse_method(s: &str) -> Result<String, String> {
         Err("Invalid HTTP method".to_string())
     }
 }
+
+pub fn parse_wordlist(s: &str) -> Result<(String, Vec<String>), String> {
+    let parts = s.split(':').collect::<Vec<_>>();
+    if parts.len() == 1 {
+        // Wordlist without a key
+        Ok((s.to_string(), vec![]))
+    } else if parts.len() == 2 {
+        // Wordlist with a key
+        Ok((
+            parts[0].to_string(),
+            parts[1].split(',').map(|x| x.to_string()).collect(),
+        ))
+    } else {
+        Err("Invalid wordlist".to_string())
+    }
+}

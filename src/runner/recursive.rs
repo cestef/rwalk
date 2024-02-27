@@ -23,7 +23,6 @@ pub struct Recursive {
     tree: Arc<Mutex<Tree<TreeData>>>,
     current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
     chunks: Arc<Vec<Vec<String>>>,
-    words: Vec<String>,
 }
 
 impl super::Runner for Recursive {
@@ -41,7 +40,9 @@ impl super::Runner for Recursive {
                     .entry(previous_node.lock().data.url.clone())
                     .or_insert_with(|| vec![0; self.chunks.len()]);
                 let pb = root_progress
-                    .add(indicatif::ProgressBar::new((self.words.len()) as u64))
+                    .add(indicatif::ProgressBar::new(
+                        (self.chunks.iter().map(|chunk| chunk.len()).sum::<usize>()) as u64,
+                    ))
                     .with_style(
                         indicatif::ProgressStyle::default_bar()
                             .template(PROGRESS_TEMPLATE)?
@@ -113,7 +114,6 @@ impl Recursive {
         tree: Arc<Mutex<Tree<TreeData>>>,
         current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
         chunks: Arc<Vec<Vec<String>>>,
-        words: Vec<String>,
     ) -> Self {
         Self {
             opts,
@@ -121,7 +121,6 @@ impl Recursive {
             tree,
             current_indexes,
             chunks,
-            words,
         }
     }
     #[allow(clippy::too_many_arguments)]
