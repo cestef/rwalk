@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use http_rest_file::Parser;
+use http_rest_file::{model::Header, Parser};
 use reqwest::{
     header::{HeaderMap, HeaderName},
     redirect::Policy,
@@ -108,7 +108,11 @@ pub fn build_request(opts: &Opts, url: &str, client: &reqwest::Client) -> Result
             url,
             client,
         );
-        Ok(sender.build()?)
+        let mut headers = HeaderMap::new();
+        request.headers.iter().for_each(|Header { key, value }| {
+            headers.insert(key.parse::<HeaderName>().unwrap(), value.parse().unwrap());
+        });
+        Ok(sender.headers(headers).build()?)
     } else {
         let sender = get_sender(opts.method.clone(), opts.data.clone(), url, client);
         Ok(sender.build()?)
