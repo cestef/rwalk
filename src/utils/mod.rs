@@ -172,3 +172,42 @@ pub fn save_to_file(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_check_range() {
+        assert!(check_range(&vec![(1, 2), (3, 4)], 1));
+        assert!(check_range(&vec![(1, 2), (3, 4)], 2));
+        assert!(check_range(&vec![(1, 2), (3, 4)], 3));
+        assert!(check_range(&vec![(1, 2), (3, 4)], 4));
+        assert!(!check_range(&vec![(1, 2), (3, 4)], 0));
+        assert!(!check_range(&vec![(1, 2), (3, 4)], 5));
+    }
+
+    #[test]
+    fn test_parse_range_input() {
+        assert_eq!(parse_range_input("1-2").unwrap(), vec![(1, 2)]);
+        assert_eq!(parse_range_input("1-2,3-4").unwrap(), vec![(1, 2), (3, 4)]);
+        assert_eq!(parse_range_input("1,2").unwrap(), vec![(1, 1), (2, 2)]);
+        assert_eq!(parse_range_input(">1").unwrap(), vec![(2, usize::MAX)]);
+        assert_eq!(parse_range_input("<1").unwrap(), vec![(0, 0)]);
+        assert_eq!(
+            parse_range_input("1-2,>3").unwrap(),
+            vec![(1, 2), (4, usize::MAX)]
+        );
+
+        assert!(parse_range_input("1-2,>3,4-").is_err());
+    }
+
+    #[test]
+    fn test_get_emoji_for_status_code() {
+        assert_eq!(get_emoji_for_status_code(200), "✓");
+        assert_eq!(get_emoji_for_status_code(300), "⇝");
+        assert_eq!(get_emoji_for_status_code(400), "✖");
+        assert_eq!(get_emoji_for_status_code(500), "⚠");
+        assert_eq!(get_emoji_for_status_code(0), "⚠");
+    }
+}
