@@ -26,6 +26,7 @@ jobs:
             - run: git config --global user.email "action@github.run"
             - run: git config --global user.name "GitHub Action"
             - run: git commit -m "Update HELP.md" || true
+            - run: git pull
             - run: git push origin HEAD:refs/heads/main
 
             - run: cargo publish --token ${CRATES_TOKEN}
