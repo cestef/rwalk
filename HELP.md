@@ -91,6 +91,7 @@ A blazing fast web directory scanner
 
   Possible values: `true`, `false`
 
+* `--request-file <FILE>` — Request file (.http, .rest)
 * `-P`, `--proxy <URL>` — Proxy URL
 * `--proxy-auth <USER:PASS>` — Proxy username and password
 * `--generate-markdown` — Generate markdown help - for developers
