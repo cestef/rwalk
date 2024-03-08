@@ -201,7 +201,7 @@ pub struct Opts {
     pub or: bool,
 
     /// Request file (.http, .rest)
-    #[clap(short, long, value_name = "FILE", env, hide_env = true)]
+    #[clap(long, value_name = "FILE", env, hide_env = true, visible_alias = "rf")]
     pub request_file: Option<String>,
 
     /// Proxy URL
