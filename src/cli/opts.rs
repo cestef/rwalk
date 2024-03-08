@@ -200,6 +200,10 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub or: bool,
 
+    /// Request file (.http, .rest)
+    #[clap(short, long, value_name = "FILE", env, hide_env = true)]
+    pub request_file: Option<String>,
+
     /// Proxy URL
     #[clap(short='P', long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
     pub proxy: Option<String>,

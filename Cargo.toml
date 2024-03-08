@@ -21,6 +21,7 @@ dotenv = "0.15.0"
 env_logger = "0.10.1"
 field_accessor_pub = "0.5.3"
 futures = "0.3.29"
+http-rest-file = "0.5.1"
 indicatif = { version = "0.17.7", features = ["improved_unicode"] }
 itertools = "0.12.1"
 lazy_static = "1.4.0"

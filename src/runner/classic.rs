@@ -73,11 +73,11 @@ impl Classic {
         opts: Opts,
     ) -> Result<()> {
         for url in &chunk {
-            let sender = super::client::get_sender(&opts, url, &client);
-
             let t1 = Instant::now();
 
-            let response = sender.send().await;
+            let request = super::client::build_request(&opts, url, &client)?;
+
+            let response = client.execute(request).await;
 
             if let Some(throttle) = opts.throttle {
                 if throttle > 0 {

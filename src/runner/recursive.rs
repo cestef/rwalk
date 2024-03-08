@@ -155,11 +155,11 @@ impl Recursive {
                 false => url.push_str(&format!("/{}", word)),
             }
 
-            let sender = super::client::get_sender(&opts, &url, &client);
+            let request = super::client::build_request(&opts, &url, &client)?;
 
             let t1 = Instant::now();
 
-            let response = sender.send().await;
+            let response = client.execute(request).await;
 
             if let Some(throttle) = opts.throttle {
                 if throttle > 0 {

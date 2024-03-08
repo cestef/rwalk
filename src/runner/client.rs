@@ -1,4 +1,7 @@
-use anyhow::Result;
+use std::path::Path;
+
+use anyhow::{Context, Result};
+use http_rest_file::Parser;
 use reqwest::{
     header::{HeaderMap, HeaderName},
     redirect::Policy,
@@ -64,25 +67,50 @@ pub fn build(opts: &Opts) -> Result<reqwest::Client> {
     Ok(client.build()?)
 }
 
-pub fn get_sender(opts: &Opts, url: &str, client: &reqwest::Client) -> reqwest::RequestBuilder {
-    match opts
-        .method
-        .clone()
-        .unwrap_or(DEFAULT_METHOD.to_string())
-        .as_str()
-    {
+pub fn get_sender(
+    method: Option<String>,
+    body: Option<String>,
+    url: &str,
+    client: &reqwest::Client,
+) -> reqwest::RequestBuilder {
+    match method.unwrap_or(DEFAULT_METHOD.to_string()).as_str() {
         "GET" => client.get(url),
-        "POST" => client
-            .post(url)
-            .body(opts.data.clone().unwrap_or("".to_string())),
-        "PUT" => client
-            .put(url)
-            .body(opts.data.clone().unwrap_or("".to_string())),
+        "POST" => client.post(url).body(body.unwrap_or("".to_string())),
+        "PUT" => client.put(url).body(body.unwrap_or("".to_string())),
         "DELETE" => client.delete(url),
         "HEAD" => client.head(url),
         "OPTIONS" => client.request(reqwest::Method::OPTIONS, url),
         "TRACE" => client.request(reqwest::Method::TRACE, url),
         "CONNECT" => client.request(reqwest::Method::CONNECT, url),
         _ => panic!("Invalid HTTP method"),
+    }
+}
+
+pub fn build_request(opts: &Opts, url: &str, client: &reqwest::Client) -> Result<reqwest::Request> {
+    if let Some(request_file) = &opts.request_file {
+        let path = Path::new(request_file);
+        let model = Parser::parse_file(path).context("Failed to parse request file")?;
+        let requests = model.requests;
+        let request = requests.first().context("No request found in file")?;
+        let sender = get_sender(
+            Some(
+                request
+                    .request_line
+                    .method
+                    .get_cloned_or_computed()
+                    .to_string(),
+            ),
+            if request.body.is_present() {
+                Some(request.body.to_string())
+            } else {
+                None
+            },
+            url,
+            client,
+        );
+        Ok(sender.build()?)
+    } else {
+        let sender = get_sender(opts.method.clone(), opts.data.clone(), url, client);
+        Ok(sender.build()?)
     }
 }
