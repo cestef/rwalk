@@ -202,14 +202,134 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>
 }
 
 pub fn compute_checksum(wordlists: &HashMap<String, Vec<String>>) -> String {
-    format!(
-        "{:x}",
-        md5::compute(
-            wordlists
-                .iter()
-                .map(|(key, words)| format!("{}:{:?}", key, words.join(",")))
-                .collect::<Vec<String>>()
-                .join("|")
+    let to_compute = wordlists
+        .iter()
+        .map(|(key, words)| format!("{}:{:?}", key, words.join(",")))
+        .collect::<Vec<String>>()
+        .join("|");
+    println!("Checksum input: {}", to_compute);
+    format!("{:x}", md5::compute(to_compute))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_parse() {
+        let wordlists = vec![
+            (
+                "tests/wordlists/micro1.txt".to_string(),
+                vec!["W1".to_string()],
+            ),
+            (
+                "tests/wordlists/micro2.txt".to_string(),
+                vec!["W1".to_string()],
+            ),
+            (
+                "tests/wordlists/micro3.txt".to_string(),
+                vec!["W2".to_string()],
+            ),
+        ];
+        let parsed = parse(&wordlists).await.unwrap();
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed.get("W1").unwrap().len(), 7);
+        assert_eq!(parsed.get("W2").unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_deduplicate() {
+        let mut wordlists = HashMap::new();
+        wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "b".to_string()]);
+        deduplicate(&mut wordlists);
+        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
+        wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "a".to_string()]);
+        deduplicate(&mut wordlists);
+        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_filters() {
+        let mut wordlists = HashMap::new();
+        wordlists.insert(
+            "FUZZ".to_string(),
+            vec!["ab".to_string(), "a".to_string(), "b".to_string()],
+        );
+        filters(
+            &Opts {
+                wordlist_filter: vec![("contains".to_string(), "a".to_string())],
+                ..Default::default()
+            },
+            &mut wordlists,
         )
-    )
+        .unwrap();
+        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
+
+        filters(
+            &Opts {
+                wordlist_filter: vec![("length".to_string(), "1".to_string())],
+                ..Default::default()
+            },
+            &mut wordlists,
+        )
+        .unwrap();
+        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_transformations() {
+        let mut wordlists = HashMap::new();
+        wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "b".to_string()]);
+        transformations(
+            &Opts {
+                transform: vec![("upper".to_string(), None)],
+                ..Default::default()
+            },
+            &mut wordlists,
+        );
+        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap()[0], "A");
+
+        transformations(
+            &Opts {
+                transform: vec![("prefix".to_string(), Some("c".to_string()))],
+                ..Default::default()
+            },
+            &mut wordlists,
+        );
+        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap()[0], "cA");
+
+        transformations(
+            &Opts {
+                transform: vec![("suffix".to_string(), Some("d".to_string()))],
+                ..Default::default()
+            },
+            &mut wordlists,
+        );
+
+        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap()[0], "cAd");
+
+        transformations(
+            &Opts {
+                transform: vec![("capitalize".to_string(), None)],
+                ..Default::default()
+            },
+            &mut wordlists,
+        );
+
+        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap()[0], "Cad");
+    }
+
+    #[test]
+    fn test_compute_checksum() {
+        let mut wordlists = HashMap::new();
+        wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(
+            compute_checksum(&wordlists),
+            "0da67572922cb261bf70d946f2ba6c03"
+        );
+    }
 }
