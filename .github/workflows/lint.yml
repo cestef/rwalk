@@ -5,9 +5,10 @@ on:
     workflow_dispatch:
 
 name: Linting
-
+env:
+    CARGO_TERM_COLOR: always
 jobs:
-    test:
+    lint:
         name: Run linters
         runs-on: ubuntu-latest
         steps:
@@ -23,3 +24,23 @@ jobs:
                   override: true
             - run: cargo fmt --check
             - run: cargo clippy --no-deps -- -D warnings
+    test:
+        name: Run tests
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v2
+            - name: Rust Cache
+              uses: Swatinem/rust-cache@v2.7.3
+            - name: Install stable toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+                  override: true
+            - uses: taiki-e/install-action@nextest
+            - name: Test with latest nextest release
+              uses: actions-rs/cargo@v1
+              with:
+                  command: nextest
+                  args: run --all-features --no-fail-fast
