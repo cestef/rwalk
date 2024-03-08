@@ -197,3 +197,89 @@ pub fn from_save(
         Err(anyhow::anyhow!("No saved state found"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tree_insert() {
+        let mut tree = Tree::new();
+        let node1 = tree.insert("node1".to_string(), None);
+        assert!(tree.root.is_some());
+        let tree_root = (tree.root.as_ref().unwrap().lock()).clone();
+        assert_eq!(tree_root.data, "node1".to_string());
+        assert_eq!(tree_root.children.len(), 0);
+        let _ = tree.insert("node2".to_string(), Some(node1.clone()));
+        let tree_root = (tree.root.as_ref().unwrap().lock()).clone();
+        assert_eq!(tree_root.children.len(), 1);
+        assert_eq!(tree_root.children[0].lock().data, "node2".to_string());
+    }
+
+    #[test]
+    fn test_tree_get_nodes_at_depth() {
+        let mut tree = Tree::new();
+        let node1 = tree.insert("node1".to_string(), None);
+        let node2 = tree.insert("node2".to_string(), Some(node1.clone()));
+        let _node3 = tree.insert("node3".to_string(), Some(node1.clone()));
+        let _node4 = tree.insert("node4".to_string(), Some(node2.clone()));
+        let _node5 = tree.insert("node5".to_string(), Some(node2.clone()));
+
+        let nodes = tree.get_nodes_at_depth(0);
+        assert_eq!(nodes.len(), 1);
+        assert_eq!(nodes[0].lock().data, "node1".to_string());
+
+        let nodes = tree.get_nodes_at_depth(1);
+        assert_eq!(nodes.len(), 2);
+        assert_eq!(nodes[0].lock().data, "node2".to_string());
+        assert_eq!(nodes[1].lock().data, "node3".to_string());
+
+        let nodes = tree.get_nodes_at_depth(2);
+        assert_eq!(nodes.len(), 2);
+        assert_eq!(nodes[0].lock().data, "node4".to_string());
+        assert_eq!(nodes[1].lock().data, "node5".to_string());
+    }
+
+    #[test]
+    fn test_tree_insert_datas() {
+        let mut tree = Tree::new();
+        tree.insert_datas(vec!["node1".to_string(), "node2".to_string()]);
+        let tree_root = (tree.root.as_ref().unwrap().lock()).clone();
+        assert_eq!(tree_root.data, "node1".to_string());
+        assert_eq!(tree_root.children.len(), 1);
+        assert_eq!(tree_root.children[0].lock().data, "node2".to_string());
+    }
+
+    #[test]
+    fn test_tree_item_write_self() {
+        let node = TreeNode {
+            data: "http://example.com/test".to_string(),
+            children: vec![],
+        };
+        let mut buffer = Vec::new();
+        node.write_self(&mut buffer, &ptree::Style::default())
+            .unwrap();
+        assert_eq!(String::from_utf8(buffer).unwrap(), "/test");
+    }
+
+    #[test]
+    fn test_tree_item_write_self_with_emoji() {
+        let node = TreeNode {
+            data: TreeData {
+                url: "http://example.com/test".to_string(),
+                depth: 0,
+                path: "/test".to_string(),
+                status_code: 200,
+                extra: Value::Null,
+            },
+            children: vec![],
+        };
+        let mut buffer = Vec::new();
+        node.write_self(&mut buffer, &ptree::Style::default())
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(buffer).unwrap(),
+            "✓ 200 /test".to_string()
+        );
+    }
+}
