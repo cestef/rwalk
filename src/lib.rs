@@ -60,6 +60,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         None
     };
 
+    // Merge saved options with the ones passed as arguments
     let opts = if let Some(ref save) = saved_json {
         let mut saved_opts = save.as_ref().unwrap().opts.clone();
         saved_opts.merge(opts.clone());
@@ -68,14 +69,19 @@ pub async fn _main(opts: Opts) -> Result<()> {
         opts.clone()
     };
 
+    // Parse wordlists into a HashMap associating each wordlist key to its contents
     let mut words = runner::wordlists::parse(&opts.wordlists).await?;
 
     let mut url = opts.url.clone().unwrap();
+
+    // Check if the URL contains any of the replace keywords
     let fuzz_matches = words
         .keys()
         .filter(|x| url.contains(*x))
         .cloned()
         .collect::<Vec<_>>();
+
+    // Set the mode based on the options and the URL
     let mode: Mode = if opts.mode.is_some() {
         opts.mode.as_deref().unwrap().into()
     } else if opts.depth.is_some() {
@@ -108,8 +114,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
             }
         }
     }
+
     let before = words.values().fold(0, |acc, x| acc + x.len());
 
+    // Apply filters and transformations to the wordlists (if any)
     runner::wordlists::filters(&opts, &mut words)?;
     runner::wordlists::transformations(&opts, &mut words);
 
@@ -133,6 +141,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     if words.values().all(|x| x.is_empty()) {
         bail!("No words found in wordlists");
     }
+    // These will be used to keep track of the current state of the tree across threads
     let current_depth = Arc::new(Mutex::new(0));
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =
         Arc::new(Mutex::new(HashMap::new()));
@@ -151,12 +160,15 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         None
     };
-
+    // We need to define this here for later use
     let has_saved = saved_tree.is_some();
 
+    // Create the tree
     let tree = if let Some(saved_tree) = saved_tree {
+        // Resume from the saved state
         saved_tree
     } else {
+        // Create the tree with the root URL
         let t = Arc::new(Mutex::new(Tree::new()));
         let cleaned_url = match mode {
             Mode::Recursive => url.clone(),
@@ -199,6 +211,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let res = tmp_client.get(root_url.clone()).send().await;
     if let Err(e) = res {
         error!("Error while connecting to {}: {}", root_url, e);
+        // Exit if the root URL is down and the user didn't specify to force the execution
         if !opts.force {
             return Ok(());
         }
@@ -206,6 +219,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         tree.lock().root.clone().unwrap().lock().data.status_code = res?.status().as_u16();
     }
 
+    // Get the number of threads to use, default to 10 times the number of cores
     let threads = opts
         .threads
         .unwrap_or(num_cpus::get() * 10)
@@ -225,12 +239,14 @@ pub async fn _main(opts: Opts) -> Result<()> {
         if opts.no_save { "" } else { "save state and " }
     );
 
+    // Define the main function to run based on the mode
     let main_fun = match mode {
         Mode::Recursive => runner::recursive::Recursive::new(
             opts.clone(),
             current_depth.clone(),
             tree.clone(),
             current_indexes.clone(),
+            // Split the words into chunks of equal size for each thread
             Arc::new(
                 words
                     .iter()
@@ -249,21 +265,28 @@ pub async fn _main(opts: Opts) -> Result<()> {
             url.clone(),
             opts.clone(),
             tree.clone(),
+            // We do not need to chunk the words here
             words.clone(),
             threads,
         )
         .run()
         .boxed(),
     };
+    // Run the main function with a timeout if specified
     let (task, handle) = if let Some(max_time) = opts.max_time {
         abortable(timeout(Duration::from_secs(max_time as u64), main_fun).into_inner())
     } else {
         abortable(main_fun)
     };
+
     let main_thread = tokio::spawn(task);
     let aborted = Arc::new(AtomicBool::new(false));
+    // Create a channel to receive the abort signal
+    // TODO: Maybe we could use a oneshot channel here
     let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(1);
 
+    // We need to clone the variables to be used in the signal handler
+    // TODO: Find a better way to do this
     let ctrlc_tree = tree.clone();
     let ctrlc_depth = current_depth.clone();
     let ctrlc_words = words.clone();
@@ -345,12 +368,16 @@ pub async fn _main(opts: Opts) -> Result<()> {
             }
         }
     }
+
+    // Wait for the abort signal if aborted has been set
     if aborted.load(Ordering::Relaxed) {
         rx.recv().await;
     }
 
     // Terminate the signal stream.
     ctrlc_handle.close();
+
+    // Wait for the signal handler to finish
     signals_task.await?;
     Ok(())
 }
