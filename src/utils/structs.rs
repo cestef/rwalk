@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::tree::{Tree, TreeData};
 
+#[derive(Eq, PartialEq, Serialize, Deserialize, Clone, Debug)]
 pub enum Mode {
     Recursive,
     Classic,
@@ -37,4 +38,25 @@ pub struct Save {
     pub wordlist_checksum: String,
     pub indexes: HashMap<String, Vec<usize>>,
     pub opts: Opts,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mode_to_string() {
+        assert_eq!(Mode::Recursive.to_string(), "Recursive");
+        assert_eq!(Mode::Classic.to_string(), "Classic");
+    }
+
+    #[test]
+    fn test_mode_from_str() {
+        assert_eq!(Mode::from("recursive"), Mode::Recursive);
+        assert_eq!(Mode::from("recursion"), Mode::Recursive);
+        assert_eq!(Mode::from("r"), Mode::Recursive);
+        assert_eq!(Mode::from("classic"), Mode::Classic);
+        assert_eq!(Mode::from("c"), Mode::Classic);
+        assert_eq!(Mode::from("invalid"), Mode::Recursive);
+    }
 }
