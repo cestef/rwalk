@@ -213,3 +213,82 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub generate_markdown: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn test_opts_env() {
+        env::set_var("URL", "http://example.com");
+        env::set_var("WORDLISTS", "wordlist1.txt:wordlist2.txt");
+        env::set_var("METHOD", "GET");
+        env::set_var("TIMEOUT", "10");
+        env::set_var("HEADERS", "key:value");
+        env::set_var("COOKIES", "key=value");
+        env::set_var("FOLLOW_REDIRECTS", "5");
+        env::set_var("THREADS", "10");
+        env::set_var("DEPTH", "5");
+        env::set_var("OUTPUT", "output.txt");
+        env::set_var("USER_AGENT", "user-agent");
+        env::set_var("DATA", "data");
+        env::set_var("THROTTLE", "100");
+        env::set_var("MAX_TIME", "100");
+        env::set_var("NO_COLOR", "true");
+        env::set_var("QUIET", "true");
+        env::set_var("INTERACTIVE", "true");
+        env::set_var("INSECURE", "true");
+        env::set_var("SHOW", "length");
+        env::set_var("RESUME", "true");
+        env::set_var("SAVE_FILE", "save_file.txt");
+        env::set_var("NO_SAVE", "true");
+        env::set_var("KEEP_SAVE", "true");
+        env::set_var("TRANSFORM", "lower");
+        env::set_var("WORDLIST_FILTER", "length:5");
+        env::set_var("FILTER", "length:5");
+        env::set_var("OR", "true");
+        env::set_var("PROXY", "http://proxy.com");
+        env::set_var("PROXY_AUTH", "user:pass");
+
+        let opts = Opts::parse_from(vec![""]);
+        assert_eq!(opts.url, Some("http://example.com/".to_string()));
+        assert_eq!(
+            opts.wordlists,
+            vec![(
+                "wordlist1.txt".to_string(),
+                vec!["wordlist2.txt".to_string()]
+            )]
+        );
+        assert_eq!(opts.method, Some("GET".to_string()));
+        assert_eq!(opts.timeout, Some(10));
+        assert_eq!(opts.headers, vec!["key:value".to_string()]);
+        assert_eq!(opts.cookies, vec!["key=value".to_string()]);
+        assert_eq!(opts.follow_redirects, Some(5));
+        assert_eq!(opts.threads, Some(10));
+        assert_eq!(opts.depth, Some(5));
+        assert_eq!(opts.output, Some("output.txt".to_string()));
+        assert_eq!(opts.user_agent, Some("user-agent".to_string()));
+        assert_eq!(opts.data, Some("data".to_string()));
+        assert_eq!(opts.throttle, Some(100));
+        assert_eq!(opts.max_time, Some(100));
+        assert!(opts.no_color);
+        assert!(opts.quiet);
+        assert!(opts.interactive);
+        assert!(opts.insecure);
+        assert_eq!(opts.show, vec!["length".to_string()]);
+        assert!(opts.resume);
+        assert_eq!(opts.save_file, Some("save_file.txt".to_string()));
+        assert!(opts.no_save);
+        assert!(opts.keep_save);
+        assert_eq!(opts.transform, vec![("lower".to_string(), None)]);
+        assert_eq!(
+            opts.wordlist_filter,
+            vec![("length".to_string(), "5".to_string())]
+        );
+        assert_eq!(opts.filter, vec![("length".to_string(), "5".to_string())]);
+        assert!(opts.or);
+        assert_eq!(opts.proxy, Some("http://proxy.com".to_string()));
+        assert_eq!(opts.proxy_auth, Some("user:pass".to_string()));
+    }
+}
