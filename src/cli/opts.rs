@@ -52,7 +52,7 @@ pub struct Opts {
     pub force: bool,
 
     /// Consider connection errors as a hit
-    #[clap(long, env, hide_env = true, visible_alias = "hce")]
+    #[clap(long, env, hide_env = true, visible_alias = "hce", help_heading = Some("Responses"))]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub hit_connection_errors: bool,
 
@@ -69,28 +69,28 @@ pub struct Opts {
     pub output: Option<String>,
 
     /// Request timeout in seconds
-    #[clap(long, default_value = DEFAULT_TIMEOUT.to_string(), env, hide_env = true)]
+    #[clap(long, default_value = DEFAULT_TIMEOUT.to_string(), env, hide_env = true, visible_alias = "to", help_heading = Some("Requests"))]
     pub timeout: Option<usize>,
 
     /// User agent
-    #[clap(short, long, env, hide_env = true)]
+    #[clap(short, long, env, hide_env = true, help_heading = Some("Requests"))]
     pub user_agent: Option<String>,
 
     /// HTTP method
-    #[clap(short = 'X', long, default_value = DEFAULT_METHOD, value_parser = parse_method, env, hide_env=true)]
+    #[clap(short = 'X', long, default_value = DEFAULT_METHOD, value_parser = parse_method, env, hide_env=true, help_heading = Some("Requests"))]
     pub method: Option<String>,
 
     /// Data to send with the request
-    #[clap(short = 'D', long, env, hide_env = true)]
+    #[clap(short = 'D', long, env, hide_env = true, help_heading = Some("Requests"),)]
     pub data: Option<String>,
 
     /// Headers to send
-    #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true)]
+    #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true, help_heading = Some("Requests"),)]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub headers: Vec<String>,
 
     /// Cookies to send
-    #[clap(short, long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true)]
+    #[clap(short, long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true, help_heading = Some("Requests"),)]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub cookies: Vec<String>,
 
@@ -139,6 +139,7 @@ pub struct Opts {
         long,
         env,
         hide_env = true,
+        help_heading = Some("Responses"),
         value_parser(
             clap::builder::PossibleValuesParser::new(
                 [
@@ -181,27 +182,27 @@ pub struct Opts {
     pub keep_save: bool,
 
     /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
-    #[clap(short='T', long, help_heading = Some("Transformations"), env, hide_env=true, value_parser(parse_key_or_key_val::<String, String>))]
+    #[clap(short='T', long, help_heading = Some("Wordlists"), env, hide_env=true, value_parser(parse_key_or_key_val::<String, String>))]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub transform: Vec<(String, Option<String>)>,
 
     /// Wordlist filtering: "contains", "starts", "ends", "regex", "length"
-    #[clap(short='w', long, help_heading = Some("Filtering"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>), visible_alias = "wf")]
+    #[clap(short='w', long, help_heading = Some("Wordlists"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>), visible_alias = "wf")]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub wordlist_filter: Vec<(String, String)>,
 
     /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"
-    #[clap(short, long, help_heading = Some("Filtering"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>))]
+    #[clap(short, long, help_heading = Some("Responses"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>))]
     #[merge(strategy = merge::vec::overwrite_empty)]
     pub filter: Vec<(String, String)>,
 
     /// Treat filters as or instead of and
-    #[clap(long, help_heading = Some("Filtering"), env, hide_env=true)]
+    #[clap(long, help_heading = Some("Responses"), env, hide_env=true)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub or: bool,
 
     /// Request file (.http, .rest)
-    #[clap(long, value_name = "FILE", env, hide_env = true, visible_alias = "rf")]
+    #[clap(long, value_name = "FILE", env, hide_env = true, visible_alias = "rf", help_heading = Some("Requests"),)]
     pub request_file: Option<String>,
 
     /// Proxy URL
