@@ -5,7 +5,8 @@ on:
     workflow_dispatch:
 
 name: Publish
-
+env:
+    CARGO_TERM_COLOR: always
 jobs:
     publish:
         name: Publish

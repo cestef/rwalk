@@ -8,7 +8,8 @@ on:
         tags:
             - v[0-9]+.*
     workflow_dispatch:
-
+env:
+    CARGO_TERM_COLOR: always
 jobs:
     create-release:
         runs-on: ubuntu-latest
