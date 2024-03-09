@@ -90,8 +90,7 @@ pub fn build_request(opts: &Opts, url: &str, client: &reqwest::Client) -> Result
     if let Some(request_file) = &opts.request_file {
         let path = Path::new(request_file);
         let model = Parser::parse_file(path).context("Failed to parse request file")?;
-        let requests = model.requests;
-        let request = requests.first().context("No request found in file")?;
+        let request = model.requests.first().context("No request found in file")?;
         let sender = get_sender(
             Some(
                 request
