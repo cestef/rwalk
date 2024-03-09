@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{Context, Result};
 use colored::Colorize;
@@ -21,12 +24,21 @@ pub async fn parse(wordlists: &Vec<(String, Vec<String>)>) -> Result<HashMap<Str
                 buf
             }
             _ => {
-                let mut file = tokio::fs::File::open(path.clone()).await.with_context(|| {
+                let mut file = tokio::fs::File::open(
+                    expand_tilde(Path::new(&path.clone()))?
+                        .canonicalize()
+                        .with_context(|| {
+                            format!("Failed to canonicalize path: {}", path.clone().bold().red())
+                        })?,
+                )
+                .await
+                .with_context(|| {
                     format!(
                         "Failed to open wordlist file: {}",
                         path.to_string().bold().red()
                     )
                 })?;
+
                 let mut bytes = Vec::new();
                 file.read_to_end(&mut bytes).await?;
 
@@ -207,8 +219,30 @@ pub fn compute_checksum(wordlists: &HashMap<String, Vec<String>>) -> String {
         .map(|(key, words)| format!("{}:{:?}", key, words.join(",")))
         .collect::<Vec<String>>()
         .join("|");
-    println!("Checksum input: {}", to_compute);
     format!("{:x}", md5::compute(to_compute))
+}
+
+fn expand_tilde<P: AsRef<Path>>(path_user_input: P) -> Result<PathBuf> {
+    let p = path_user_input.as_ref();
+    if !p.starts_with("~") {
+        return Ok(p.to_path_buf());
+    }
+    if p == Path::new("~") {
+        return dirs::home_dir()
+            .ok_or_else(|| anyhow::anyhow!("Failed to expand tilde in path: {}", p.display()));
+    }
+    dirs::home_dir()
+        .map(|mut h| {
+            if h == Path::new("/") {
+                // Corner case: `h` root directory;
+                // don't prepend extra `/`, just drop the tilde.
+                p.strip_prefix("~").unwrap().to_path_buf()
+            } else {
+                h.push(p.strip_prefix("~/").unwrap());
+                h
+            }
+        })
+        .ok_or_else(|| anyhow::anyhow!("Failed to expand tilde in path: {}", p.display()))
 }
 
 #[cfg(test)]

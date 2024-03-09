@@ -2,6 +2,7 @@
 
 use std::process;
 
+use anyhow::Result;
 use clap::Parser;
 use log::error;
 use rwalk::{
@@ -11,7 +12,7 @@ use rwalk::{
 };
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     utils::logger::init_logger();
     let config_path = dirs::home_dir()
         .unwrap()
@@ -19,7 +20,11 @@ async fn main() {
         .join("rwalk")
         .join(".env");
     dotenv::from_path(config_path).ok();
-    let opts = Opts::parse();
+    let mut opts = Opts::parse();
+    if let Some(path) = opts.config {
+        opts = Opts::from_path(path).await?;
+    }
+
     if opts.generate_markdown {
         clap_markdown::print_help_markdown::<Opts>();
         process::exit(0);

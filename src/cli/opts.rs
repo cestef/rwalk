@@ -20,7 +20,7 @@ use merge::Merge;
 )]
 pub struct Opts {
     /// Target URL
-    #[clap(required_unless_present = "interactive", required_unless_present = "resume", required_unless_present = "generate_markdown", value_parser = parse_url, env, hide_env=true)]
+    #[clap(required_unless_present = "interactive", required_unless_present = "resume", required_unless_present = "config",  required_unless_present = "generate_markdown", value_parser = parse_url, env, hide_env=true)]
     pub url: Option<String>,
 
     /// Wordlist(s)
@@ -28,6 +28,8 @@ pub struct Opts {
         required_unless_present = "interactive",
         required_unless_present = "resume",
         required_unless_present = "generate_markdown",
+        required_unless_present = "config",
+        value_name = "FILE:KEY",
         env,
         hide_env = true,
         value_parser = parse_wordlist
@@ -49,11 +51,13 @@ pub struct Opts {
     /// Force scan even if the target is not responding
     #[clap(long, env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub force: bool,
 
     /// Consider connection errors as a hit
     #[clap(long, env, hide_env = true, visible_alias = "hce", help_heading = Some("Responses"))]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub hit_connection_errors: bool,
 
     /// Number of threads to use
@@ -87,11 +91,13 @@ pub struct Opts {
     /// Headers to send
     #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true, help_heading = Some("Requests"),)]
     #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
     pub headers: Vec<String>,
 
     /// Cookies to send
-    #[clap(short, long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true, help_heading = Some("Requests"),)]
+    #[clap(short = 'C', long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true, help_heading = Some("Requests"),)]
     #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
     pub cookies: Vec<String>,
 
     /// Follow redirects
@@ -105,6 +111,10 @@ pub struct Opts {
     )]
     pub follow_redirects: Option<usize>,
 
+    /// Configuration file
+    #[clap(short, long, env, hide_env = true)]
+    pub config: Option<String>,
+
     /// Request throttling (requests per second) per thread
     #[clap(long, env, hide_env = true)]
     pub throttle: Option<usize>,
@@ -117,21 +127,25 @@ pub struct Opts {
     /// You can also set the NO_COLOR environment variable
     #[clap(long, alias = "no-colors", env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub no_color: bool,
 
     /// Quiet mode
     #[clap(short, long, env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub quiet: bool,
 
     /// Interactive mode
     #[clap(short, long, env, hide_env = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub interactive: bool,
 
     /// Insecure mode, disables SSL certificate validation
     #[clap(long, env, hide_env = true, visible_alias = "unsecure")]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub insecure: bool,
 
     /// Show response additional body information
@@ -160,11 +174,13 @@ pub struct Opts {
         )
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
     pub show: Vec<String>,
 
     /// Resume from a saved file
     #[clap(short='r', long, help_heading = Some("Resume"), env, hide_env=true)]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub resume: bool,
 
     /// Custom save file
@@ -174,31 +190,37 @@ pub struct Opts {
     /// Don't save the state in case you abort
     #[clap(long, help_heading = Some("Resume"), env, hide_env=true)]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub no_save: bool,
 
     /// Keep the save file after finishing when using --resume
     #[clap(long, help_heading = Some("Resume"), env, hide_env=true, visible_alias = "keep")]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub keep_save: bool,
 
     /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
     #[clap(short='T', long, help_heading = Some("Wordlists"), env, hide_env=true, value_parser(parse_key_or_key_val::<String, String>))]
     #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
     pub transform: Vec<(String, Option<String>)>,
 
     /// Wordlist filtering: "contains", "starts", "ends", "regex", "length"
     #[clap(short='w', long, help_heading = Some("Wordlists"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>), visible_alias = "wf")]
     #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
     pub wordlist_filter: Vec<(String, String)>,
 
     /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"
     #[clap(short, long, help_heading = Some("Responses"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>))]
     #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
     pub filter: Vec<(String, String)>,
 
     /// Treat filters as or instead of and
     #[clap(long, help_heading = Some("Responses"), env, hide_env=true)]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub or: bool,
 
     /// Request file (.http, .rest)
@@ -216,7 +238,16 @@ pub struct Opts {
     /// Generate markdown help - for developers
     #[clap(long, hide = true)]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
     pub generate_markdown: bool,
+}
+
+impl Opts {
+    pub async fn from_path(path: String) -> Result<Self> {
+        let contents = tokio::fs::read_to_string(path).await?;
+        let opts: Opts = toml::from_str(&contents)?;
+        Ok(opts)
+    }
 }
 
 #[cfg(test)]

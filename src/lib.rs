@@ -24,7 +24,7 @@ use parking_lot::Mutex;
 use ptree::print_tree;
 use signal_hook::consts::SIGINT;
 use signal_hook_tokio::Signals;
-use tokio::{io::AsyncWriteExt, time::timeout};
+use tokio::{io::AsyncWriteExt, task::JoinHandle, time::timeout};
 use url::Url;
 
 use crate::utils::{
@@ -296,7 +296,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let mut signals = Signals::new([SIGINT])?;
     let ctrlc_handle = signals.handle();
 
-    let signals_task = tokio::spawn(async move {
+    let signals_task: JoinHandle<Result<()>> = tokio::spawn(async move {
         while let Some(signal) = signals.next().await {
             match signal {
                 SIGINT => {
@@ -313,13 +313,25 @@ pub async fn _main(opts: Opts) -> Result<()> {
                         });
                         if let Ok(content) = content {
                             let mut file =
-                                tokio::fs::File::create(&ctrlc_save_file.clone().unwrap())
-                                    .await
-                                    .unwrap();
-                            file.write_all(content.as_bytes()).await.unwrap();
-                            file.flush().await.unwrap();
+                                tokio::fs::File::create(&ctrlc_save_file.clone().ok_or_else(
+                                    || io::Error::new(io::ErrorKind::NotFound, "No save file"),
+                                )?)
+                                .await?;
+
+                            file.write_all(content.as_bytes()).await?;
+                            file.flush().await?;
                             print!("\x1B[2K\r");
-                            info!("Saved state to {}", ctrlc_save_file.clone().unwrap().bold());
+                            info!(
+                                "Saved state to {}",
+                                ctrlc_save_file
+                                    .clone()
+                                    .ok_or_else(|| io::Error::new(
+                                        io::ErrorKind::NotFound,
+                                        "No save file"
+                                    ),)?
+                                    .to_string()
+                                    .bold()
+                            );
                         }
                     }
                     tx.send(()).await.unwrap();
@@ -327,6 +339,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 _ => unreachable!(),
             }
         }
+        Ok(())
     });
     let res = main_thread.await?;
     if res.is_ok() {
@@ -378,6 +391,6 @@ pub async fn _main(opts: Opts) -> Result<()> {
     ctrlc_handle.close();
 
     // Wait for the signal handler to finish
-    signals_task.await?;
+    signals_task.await??;
     Ok(())
 }
