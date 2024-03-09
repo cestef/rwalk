@@ -10,12 +10,12 @@ This document contains the help content for the `rwalk` command-line program.
 
 A blazing fast web directory scanner
 
-**Usage:** `rwalk [OPTIONS] [URL] [WORDLISTS]...`
+**Usage:** `rwalk [OPTIONS] [URL] [FILE:KEY]...`
 
 ###### **Arguments:**
 
 * `<URL>` — Target URL
-* `<WORDLISTS>` — Wordlist(s)
+* `<FILE:KEY>` — Wordlist(s)
 
 ###### **Options:**
 
@@ -43,10 +43,11 @@ A blazing fast web directory scanner
   Default value: `GET`
 * `-D`, `--data <DATA>` — Data to send with the request
 * `-H`, `--headers <key:value>` — Headers to send
-* `-c`, `--cookies <key=value>` — Cookies to send
+* `-C`, `--cookies <key=value>` — Cookies to send
 * `-R`, `--follow-redirects <COUNT>` — Follow redirects
 
   Default value: `2`
+* `-c`, `--config <CONFIG>` — Configuration file
 * `--throttle <THROTTLE>` — Request throttling (requests per second) per thread
 * `-M`, `--max-time <MAX_TIME>` — Max time to run (will abort after given time) in seconds
 * `--no-color` — Don't use colors You can also set the NO_COLOR environment variable
