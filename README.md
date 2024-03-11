@@ -383,6 +383,11 @@ Open an issue or ask in the [Discord server](https://cstef.dev/discord).
 
 rwalk is stable but it's still in the early stages of development. It should work for most use cases but there may be bugs.
 
+### Where can I test this tool?
+
+You can use the [ffuf.me](http://ffuf.me) website to test rwalk.
+I also wrote a [blog post](https://blog.cstef.dev/posts/web-scanning-efficiently) about it with a few cool examples.
+
 ## Benchmarks
 
 The following benchmarks were run on a 2023 MacBook Pro with an M3 Pro chip on a 10 Gbps connection via WiFi. The target was [http://ffuf.me/cd/basic](http://ffuf.me/cd/basic) and the wordlist was [common.txt](https://github.com/danielmiessler/SecLists/blob/master/Discovery/Web-Content/common.txt).
