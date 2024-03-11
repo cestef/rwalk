@@ -188,6 +188,12 @@ You can filter words from the wordlist by using the `--wordlist-filter` (`-w`) f
 rwalk ... --wordlist-filter starts:admin
 ```
 
+The filters are applied to all wordlists by default. This behavior can be controlled with the `[key]filter` format. For example, to only use words that start with `admin` from the second wordlist:
+
+```bash
+rwalk wordlist1.txt:W1 wordlist2.txt:W2 -w "[W2]starts:admin"
+```
+
 Available filters:
 
 - `starts`: _`<STRING>`_
@@ -209,6 +215,12 @@ To replace all occurrences of `admin` with `administrator`:
 
 ```bash
 rwalk ... --transform replace:admin=administrator
+```
+
+Just as in the wordlist filters, the transformations are applied to all wordlists by default. This behavior can be controlled with the `[key]transform` format. For example, to add a suffix to all words in the second wordlist:
+
+```bash
+rwalk wordlist1.txt:W1 wordlist2.txt:W2 -T "[W2]suffix:.php"
 ```
 
 Available transformations:
