@@ -15,7 +15,7 @@ use anyhow::{anyhow, Result};
 use colored::Colorize;
 use indicatif::ProgressBar;
 use itertools::Itertools;
-use log::info;
+use log::{debug, info};
 use parking_lot::Mutex;
 use reqwest::Client;
 use serde_json::json;
@@ -212,6 +212,7 @@ impl Runner for Classic {
         let urls: Vec<String> = self.generate_urls();
         spinner.finish_and_clear();
         info!("Generated {} URLs", urls.len().to_string().bold());
+        debug!("URLs: {:?}", urls);
 
         let progress = ProgressBar::new(urls.len() as u64).with_style(
             indicatif::ProgressStyle::default_bar()

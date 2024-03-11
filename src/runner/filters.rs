@@ -33,20 +33,21 @@ pub fn check(
 
     for filter in filters {
         let mut filter = filter;
-        let mut filter_depth: Option<usize> = None;
-
         // if the filter starts with [depth] then we parse the depth and remove it from the filter
-        if filter.0.starts_with('[') {
+        let filter_depth = if filter.0.starts_with('[') {
             let start_index = filter.0.find('[').unwrap();
             let end_index = filter.0.find(']').unwrap();
             let depth = filter.0[start_index + 1..end_index].parse::<usize>();
             filter.0 = filter.0[end_index + 1..].to_string();
-            if depth.is_ok() {
-                filter_depth = Some(depth.unwrap());
+            if let Ok(d) = depth {
+                Some(d)
             } else {
                 warn!("Invalid depth filter: {}", depth.unwrap_err());
+                None
             }
-        }
+        } else {
+            None
+        };
 
         // If this filter is not for the current depth, we skip it
         if filter_depth.is_some() && depth.is_none() {
