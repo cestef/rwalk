@@ -21,8 +21,8 @@ async fn main() -> Result<()> {
         .join(".env");
     dotenv::from_path(config_path).ok();
     let mut opts = Opts::parse();
-    if let Some(path) = opts.config {
-        opts = Opts::from_path(path).await?;
+    if let Some(p) = opts.config {
+        opts = Opts::from_path(p).await?;
     }
 
     if opts.generate_markdown {

@@ -1,5 +1,6 @@
 use colored::Colorize;
 use log::warn;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -153,6 +154,22 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
 
     for show in &opts.show {
         match show.as_str() {
+            "type" => {
+                let is_dir = is_directory(response);
+                additions.push(Addition {
+                    key: "type".to_string(),
+                    value: if is_dir {
+                        "directory".to_string()
+                    } else {
+                        let content_type = response.headers().get(reqwest::header::CONTENT_TYPE);
+                        if let Some(content_type) = content_type {
+                            content_type.to_str().unwrap().to_string()
+                        } else {
+                            "unknown".to_string()
+                        }
+                    },
+                });
+            }
             "length" | "size" => {
                 additions.push(Addition {
                     key: "length".to_string(),
@@ -263,4 +280,47 @@ pub fn print_error(opts: &Opts, progress: &indicatif::ProgressBar, url: &str, er
             ));
         }
     }
+}
+
+pub fn is_directory(response: &reqwest::Response) -> bool {
+    if response.status().is_redirection() {
+        // status code is 3xx
+        match response.headers().get("Location") {
+            // and has a Location header
+            Some(loc) => {
+                // get absolute redirect Url based on the already known base url
+                log::debug!("Location header: {:?}", loc);
+
+                if let Ok(loc_str) = loc.to_str() {
+                    if let Ok(abs_url) = response.url().join(loc_str) {
+                        if format!("{}/", response.url()) == abs_url.as_str() {
+                            // if current response's Url + / == the absolute redirection
+                            // location, we've found a directory suitable for recursion
+                            log::debug!(
+                                "found directory suitable for recursion: {}",
+                                response.url()
+                            );
+                            return true;
+                        }
+                    }
+                }
+            }
+            None => {
+                log::debug!(
+                    "expected Location header, but none was found: {:?}",
+                    response
+                );
+                return false;
+            }
+        }
+    } else if response.status().is_success() || matches!(response.status(), StatusCode::FORBIDDEN) {
+        // status code is 2xx or 403, need to check if it ends in /
+
+        if response.url().as_str().ends_with('/') {
+            log::debug!("{} is directory suitable for recursion", response.url());
+            return true;
+        }
+    }
+
+    false
 }

@@ -9,7 +9,7 @@ pub fn init_logger() {
         .format(|buf, record| {
             let mut style = buf.style();
             match record.level() {
-                log::Level::Info => style.set_color(Color::Green),
+                log::Level::Info => style.set_color(Color::Blue),
                 log::Level::Warn => style.set_color(Color::Yellow),
                 log::Level::Error => style.set_color(Color::Red),
                 log::Level::Debug => style.set_color(Color::Cyan),
