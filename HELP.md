@@ -46,7 +46,7 @@ A blazing fast web directory scanner
 * `-C`, `--cookies <key=value>` — Cookies to send
 * `-R`, `--follow-redirects <COUNT>` — Follow redirects
 
-  Default value: `2`
+  Default value: `5`
 * `-c`, `--config <CONFIG>` — Configuration file
 * `--throttle <THROTTLE>` — Request throttling (requests per second) per thread
 * `-M`, `--max-time <MAX_TIME>` — Max time to run (will abort after given time) in seconds
@@ -68,7 +68,7 @@ A blazing fast web directory scanner
 
 * `--show <SHOW>` — Show response additional body information
 
-  Possible values: `length`, `size`, `hash`, `md5`, `headers_length`, `headers_hash`, `body`, `content`, `text`, `headers`, `cookie`, `cookies`
+  Possible values: `length`, `size`, `hash`, `md5`, `headers_length`, `headers_hash`, `body`, `content`, `text`, `headers`, `cookie`, `cookies`, `type`
 
 * `-r`, `--resume` — Resume from a saved file
 
@@ -89,6 +89,10 @@ A blazing fast web directory scanner
 * `-w`, `--wordlist-filter <KEY:FILTER>` — Wordlist filtering: "contains", "starts", "ends", "regex", "length"
 * `-f`, `--filter <KEY:FILTER>` — Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"
 * `--or` — Treat filters as or instead of and
+
+  Possible values: `true`, `false`
+
+* `--force-recursion` — Force the recursion over non-directories
 
   Possible values: `true`, `false`
 
