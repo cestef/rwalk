@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::{
-    cli::opts::Opts,
+    cli::{helpers::KeyVal, opts::Opts},
     runner::{wordlists::compute_checksum, Runner},
     utils::{
         color_for_status_code,
@@ -75,7 +75,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
     // Default status filters
     if !opts.filter.iter().any(|e| e.0 == "status") {
         let mut filters = opts.filter.clone();
-        filters.push(("status".to_string(), DEFAULT_STATUS_CODES.to_string()));
+        filters.push(KeyVal(
+            "status".to_string(),
+            DEFAULT_STATUS_CODES.to_string(),
+        ));
         opts.filter = filters;
     }
 

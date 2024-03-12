@@ -1,38 +1,100 @@
-use std::error::Error;
-
+use super::opts::Wordlist;
+use clap::{
+    builder::TypedValueParser,
+    error::{ContextKind, ContextValue, ErrorKind},
+};
+use serde::{Deserialize, Serialize};
 use url::Url;
 
-use super::opts::Wordlist;
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+pub struct KeyVal<T, U>(pub T, pub U);
 
-pub fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
-where
-    T: std::str::FromStr,
-    T::Err: Error + Send + Sync + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + Send + Sync + 'static,
-{
-    let pos = s
-        .find(':')
-        .ok_or_else(|| format!("invalid KEY:value: no `:` found in `{s}`"))?;
-    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
-}
+#[derive(Clone)]
+pub struct KeyValParser;
 
-pub fn parse_key_or_key_val<T, U>(
-    s: &str,
-) -> Result<(T, Option<U>), Box<dyn Error + Send + Sync + 'static>>
-where
-    T: std::str::FromStr,
-    T::Err: Error + Send + Sync + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + Send + Sync + 'static,
-{
-    if s.contains(':') {
+impl TypedValueParser for KeyValParser {
+    type Value = KeyVal<String, String>;
+
+    fn parse_ref(
+        &self,
+        cmd: &clap::Command,
+        arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
+        let s = value.to_string_lossy();
         let pos = s
             .find(':')
-            .ok_or_else(|| format!("invalid KEY:value: no `:` found in `{s}`"))?;
-        Ok((s[..pos].parse()?, Some(s[pos + 1..].parse()?)))
-    } else {
-        Ok((s.parse()?, None))
+            .ok_or_else(|| format!("invalid KEY:value: no `:` found in `{s}`"))
+            .map_err(|_| {
+                let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+                if let Some(arg) = arg {
+                    err.insert(
+                        ContextKind::InvalidArg,
+                        ContextValue::String(arg.to_string()),
+                    );
+                }
+                err.insert(
+                    ContextKind::InvalidValue,
+                    ContextValue::String(s.to_string()),
+                );
+
+                Err(err)
+            });
+        if let Err(e) = pos {
+            e
+        } else {
+            let pos = pos.unwrap();
+            Ok(KeyVal(s[..pos].to_string(), s[pos + 1..].to_string()))
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+pub struct KeyOrKeyVal<T, U>(pub T, pub Option<U>);
+#[derive(Clone)]
+pub struct KeyOrKeyValParser;
+
+impl TypedValueParser for KeyOrKeyValParser {
+    type Value = KeyOrKeyVal<String, String>;
+
+    fn parse_ref(
+        &self,
+        cmd: &clap::Command,
+        arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
+        let s = value.to_string_lossy();
+        if s.contains(':') {
+            let pos = s
+                .find(':')
+                .ok_or_else(|| format!("invalid KEY:value: no `:` found in `{s}`"))
+                .map_err(|_| {
+                    let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+                    if let Some(arg) = arg {
+                        err.insert(
+                            ContextKind::InvalidArg,
+                            ContextValue::String(arg.to_string()),
+                        );
+                    }
+                    err.insert(
+                        ContextKind::InvalidValue,
+                        ContextValue::String(s.to_string()),
+                    );
+
+                    Err(err)
+                });
+            if let Err(e) = pos {
+                e
+            } else {
+                let pos = pos.unwrap();
+                Ok(KeyOrKeyVal(
+                    s[..pos].to_string(),
+                    Some(s[pos + 1..].to_string()),
+                ))
+            }
+        } else {
+            Ok(KeyOrKeyVal(s.to_string(), None))
+        }
     }
 }
 
@@ -104,57 +166,6 @@ pub fn parse_wordlist(s: &str) -> Result<Wordlist, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_parse_key_val() {
-        assert_eq!(
-            parse_key_val::<String, String>("key:value").unwrap(),
-            ("key".to_string(), "value".to_string())
-        );
-        assert!(parse_key_val::<String, u32>("key:value").is_err());
-        assert!(parse_key_val::<u32, String>("key:value").is_err());
-        assert_eq!(
-            parse_key_val::<u32, String>("123:value").unwrap(),
-            (123, "value".to_string())
-        );
-        assert_eq!(
-            parse_key_val::<String, u32>("key:123").unwrap(),
-            ("key".to_string(), 123)
-        );
-        assert_eq!(parse_key_val::<u32, u32>("123:456").unwrap(), (123, 456));
-        assert_eq!(
-            parse_key_val::<String, String>("key:").unwrap(),
-            ("key".to_string(), "".to_string())
-        );
-        assert_eq!(
-            parse_key_val::<String, String>(":value").unwrap(),
-            ("".to_string(), "value".to_string())
-        );
-        assert_eq!(
-            parse_key_val::<String, String>("key:value:").unwrap(),
-            ("key".to_string(), "value:".to_string())
-        );
-    }
-
-    #[test]
-    fn test_parse_key_or_key_val() {
-        assert_eq!(
-            parse_key_or_key_val::<String, String>("key:value").unwrap(),
-            ("key".to_string(), Some("value".to_string()))
-        );
-        assert_eq!(
-            parse_key_or_key_val::<String, String>("key").unwrap(),
-            ("key".to_string(), None)
-        );
-        assert_eq!(
-            parse_key_or_key_val::<u32, String>("123:value").unwrap(),
-            (123, Some("value".to_string()))
-        );
-        assert_eq!(
-            parse_key_or_key_val::<u32, String>("123").unwrap(),
-            (123, None)
-        );
-    }
 
     #[test]
     fn test_parse_url() {

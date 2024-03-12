@@ -7,8 +7,7 @@ use field_accessor_pub::FieldAccessor;
 use serde::{Deserialize, Serialize};
 
 use super::helpers::{
-    parse_cookie, parse_header, parse_key_or_key_val, parse_key_val, parse_method, parse_url,
-    parse_wordlist,
+    parse_cookie, parse_header, parse_method, parse_url, parse_wordlist, KeyOrKeyVal, KeyOrKeyValParser, KeyVal, KeyValParser
 };
 use anyhow::Result;
 use clap::Parser;
@@ -213,16 +212,16 @@ pub struct Opts {
     pub keep_save: bool,
 
     /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
-    #[clap(short='T', long, help_heading = Some("Wordlists"), env, hide_env=true, value_parser(parse_key_or_key_val::<String, String>))]
+    #[clap(short='T', long, help_heading = Some("Wordlists"), env, hide_env=true, value_parser(KeyOrKeyValParser))]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
-    pub transform: Vec<(String, Option<String>)>,
+    pub transform: Vec<KeyOrKeyVal<String, String>>,
 
     /// Wordlist filtering: "contains", "starts", "ends", "regex", "length"
-    #[clap(short='w', long, help_heading = Some("Wordlists"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>), visible_alias = "wf")]
+    #[clap(short='w', long, help_heading = Some("Wordlists"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(KeyValParser), visible_alias = "wf")]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
-    pub wordlist_filter: Vec<(String, String)>,
+    pub wordlist_filter: Vec<KeyVal<String, String>>,
 
     /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"
     #[clap(
@@ -232,11 +231,11 @@ pub struct Opts {
         value_name = "KEY:FILTER",
         env, 
         hide_env=true, 
-        value_parser(parse_key_val::<String, String>)
+        value_parser(KeyValParser)
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
-    pub filter: Vec<(String, String)>,
+    pub filter: Vec<KeyVal<String, String>>,
 
     /// Treat filters as or instead of and
     #[clap(long, help_heading = Some("Responses"), env, hide_env=true)]
@@ -375,12 +374,12 @@ mod tests {
         assert_eq!(opts.save_file, Some("save_file.txt".to_string()));
         assert!(opts.no_save);
         assert!(opts.keep_save);
-        assert_eq!(opts.transform, vec![("lower".to_string(), None)]);
+        assert_eq!(opts.transform, vec![KeyOrKeyVal("lower".to_string(), None)]);
         assert_eq!(
             opts.wordlist_filter,
-            vec![("length".to_string(), "5".to_string())]
+            vec![KeyVal("length".to_string(), "5".to_string())]
         );
-        assert_eq!(opts.filter, vec![("length".to_string(), "5".to_string())]);
+        assert_eq!(opts.filter, vec![KeyVal("length".to_string(), "5".to_string())]);
         assert!(opts.or);
         assert_eq!(opts.proxy, Some("http://proxy.com".to_string()));
         assert_eq!(opts.proxy_auth, Some("user:pass".to_string()));

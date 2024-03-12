@@ -399,6 +399,8 @@ fn expand_tilde<P: AsRef<Path>>(path_user_input: P) -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
+    use crate::cli::helpers::{KeyOrKeyVal, KeyVal};
+
     use super::*;
 
     #[tokio::test]
@@ -443,7 +445,7 @@ mod tests {
         );
         filters(
             &Opts {
-                wordlist_filter: vec![("contains".to_string(), "a".to_string())],
+                wordlist_filter: vec![KeyVal("contains".to_string(), "a".to_string())],
                 ..Default::default()
             },
             &mut wordlists,
@@ -453,7 +455,7 @@ mod tests {
 
         filters(
             &Opts {
-                wordlist_filter: vec![("length".to_string(), "1".to_string())],
+                wordlist_filter: vec![KeyVal("length".to_string(), "1".to_string())],
                 ..Default::default()
             },
             &mut wordlists,
@@ -468,7 +470,7 @@ mod tests {
         wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "b".to_string()]);
         transformations(
             &Opts {
-                transform: vec![("upper".to_string(), None)],
+                transform: vec![KeyOrKeyVal("upper".to_string(), None)],
                 ..Default::default()
             },
             &mut wordlists,
@@ -478,7 +480,7 @@ mod tests {
 
         transformations(
             &Opts {
-                transform: vec![("prefix".to_string(), Some("c".to_string()))],
+                transform: vec![KeyOrKeyVal("prefix".to_string(), Some("c".to_string()))],
                 ..Default::default()
             },
             &mut wordlists,
@@ -488,7 +490,7 @@ mod tests {
 
         transformations(
             &Opts {
-                transform: vec![("suffix".to_string(), Some("d".to_string()))],
+                transform: vec![KeyOrKeyVal("suffix".to_string(), Some("d".to_string()))],
                 ..Default::default()
             },
             &mut wordlists,
@@ -499,7 +501,7 @@ mod tests {
 
         transformations(
             &Opts {
-                transform: vec![("capitalize".to_string(), None)],
+                transform: vec![KeyOrKeyVal("capitalize".to_string(), None)],
                 ..Default::default()
             },
             &mut wordlists,
