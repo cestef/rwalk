@@ -22,7 +22,16 @@ use merge::Merge;
 )]
 pub struct Opts {
     /// Target URL
-    #[clap(required_unless_present = "interactive", required_unless_present = "resume", required_unless_present = "config",  required_unless_present = "generate_markdown", value_parser = parse_url, env, hide_env=true)]
+    #[clap(
+        required_unless_present = "interactive", 
+        required_unless_present = "resume", 
+        required_unless_present = "config", 
+        required_unless_present = "generate_markdown", 
+        required_unless_present = "generate_completions",
+        value_parser = parse_url, 
+        env, 
+        hide_env=true
+    )]
     pub url: Option<String>,
 
     /// Wordlist(s)
@@ -30,6 +39,7 @@ pub struct Opts {
         required_unless_present = "interactive",
         required_unless_present = "resume",
         required_unless_present = "generate_markdown",
+        required_unless_present = "generate_completions",
         required_unless_present = "config",
         value_name = "FILE:KEY",
         env,
@@ -215,7 +225,15 @@ pub struct Opts {
     pub wordlist_filter: Vec<(String, String)>,
 
     /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"
-    #[clap(short, long, help_heading = Some("Responses"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(parse_key_val::<String, String>))]
+    #[clap(
+        short, 
+        long, 
+        help_heading = Some("Responses"), 
+        value_name = "KEY:FILTER",
+        env, 
+        hide_env=true, 
+        value_parser(parse_key_val::<String, String>)
+    )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
     pub filter: Vec<(String, String)>,
@@ -249,6 +267,12 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     #[serde(default)]
     pub generate_markdown: bool,
+
+    /// Generate shell completions - for developers
+    #[clap(long, hide = true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub generate_completions: bool,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq, Ord, PartialOrd)]

@@ -48,8 +48,10 @@ tokio = { version = "1.34.0", features = [
     "macros",
     "rt-multi-thread",
 ] }
-toml = "0.8.10"
+toml = "0.8.11"
 url = "2.4.1"
+clap_complete = "4.5.1"
+clap_complete_nushell = "4.5.1"
 
 # Strip the debug symbols from the binary
 [profile.release]
