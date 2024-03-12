@@ -25,6 +25,7 @@ pub struct TreeData {
     pub path: String,
     pub status_code: u16,
     pub extra: Value,
+    pub is_dir: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -271,6 +272,7 @@ mod tests {
                 path: "/test".to_string(),
                 status_code: 200,
                 extra: Value::Null,
+                is_dir: false,
             },
             children: vec![],
         };

@@ -168,7 +168,8 @@ pub struct Opts {
                     "text", 
                     "headers", 
                     "cookie", 
-                    "cookies"
+                    "cookies",
+                    "type"
                 ]
             )
         )
@@ -222,6 +223,12 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     #[serde(default)]
     pub or: bool,
+
+    /// Force the recursion over non-directories
+    #[clap(long, help_heading = Some("Responses"), env, hide_env=true, visible_alias = "fr")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub force_recursion: bool,
 
     /// Request file (.http, .rest)
     #[clap(long, value_name = "FILE", env, hide_env = true, visible_alias = "rf", help_heading = Some("Requests"),)]

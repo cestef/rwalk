@@ -8,6 +8,7 @@ use crate::{
     cli::opts::Opts,
     utils::{
         constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
+        progress::PROGRESS,
         tree::{Tree, TreeData},
     },
 };
@@ -153,6 +154,8 @@ impl Classic {
                                 ),
                                 status_code,
                                 extra: json!(additions),
+                                // TODO: is_dir
+                                is_dir: false,
                             },
                             tree.root.clone(),
                         );
@@ -188,6 +191,8 @@ impl Classic {
                                 ),
                                 status_code: 0,
                                 extra: json!([]),
+                                //TODO: is_dir
+                                is_dir: false,
                             },
                             tree.root.clone(),
                         );
@@ -214,13 +219,16 @@ impl Runner for Classic {
         info!("Generated {} URLs", urls.len().to_string().bold());
         debug!("URLs: {:?}", urls);
 
-        let progress = ProgressBar::new(urls.len() as u64).with_style(
-            indicatif::ProgressStyle::default_bar()
-                .template(PROGRESS_TEMPLATE)?
-                .progress_chars(PROGRESS_CHARS),
+        let progress = PROGRESS.add(
+            ProgressBar::new(urls.len() as u64).with_style(
+                indicatif::ProgressStyle::default_bar()
+                    .template(PROGRESS_TEMPLATE)?
+                    .progress_chars(PROGRESS_CHARS),
+            ),
         );
+        progress.enable_steady_tick(Duration::from_millis(100));
         let chunks = urls.chunks(urls.len() / self.threads).collect::<Vec<_>>();
-        let mut rxs = Vec::with_capacity(chunks.len());
+        let mut handles = Vec::with_capacity(chunks.len());
 
         let client = super::client::build(&self.opts)?;
 
@@ -230,19 +238,16 @@ impl Runner for Classic {
             let progress = progress.clone();
             let tree = self.tree.clone();
             let opts = self.opts.clone();
-            let (tx, rx) = tokio::sync::mpsc::channel(1);
-            tokio::spawn(async move {
-                let res = Self::process_chunk(chunk, client, progress, tree, opts).await;
-                tx.send(res).await.unwrap();
+            let res = tokio::spawn(async move {
+                Self::process_chunk(chunk, client, progress, tree, opts).await
             });
-            rxs.push(rx);
+            handles.push(res);
         }
 
-        for mut rx in rxs {
-            let res = rx
-                .recv()
+        for handle in handles {
+            let res = handle
                 .await
-                .ok_or_else(|| anyhow!("Failed to receive result from worker thread"))?;
+                .map_err(|err| anyhow!("Failed to receive result from worker thread: {}", err))?;
             if res.is_err() {
                 return Err(res.err().unwrap());
             }

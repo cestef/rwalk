@@ -13,6 +13,7 @@ use self::constants::DEFAULT_FILE_TYPE;
 
 pub mod constants;
 pub mod logger;
+pub mod progress;
 pub mod structs;
 pub mod tree;
 

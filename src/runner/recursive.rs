@@ -5,6 +5,7 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
+use tokio::task::JoinHandle;
 
 use anyhow::{anyhow, Result};
 use parking_lot::Mutex;
@@ -13,9 +14,12 @@ use crate::{
     cli::opts::Opts,
     utils::{
         constants::{DEFAULT_DEPTH, ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
+        progress::{PROGRESS, PROGRESSES},
         tree::{Tree, TreeData, TreeNode},
     },
 };
+
+use super::filters::is_directory;
 
 pub struct Recursive {
     opts: Opts,
@@ -29,17 +33,20 @@ impl super::Runner for Recursive {
     async fn run(self) -> Result<()> {
         while *self.depth.lock() < self.opts.depth.unwrap_or(DEFAULT_DEPTH) {
             let previous_nodes = self.tree.lock().get_nodes_at_depth(*self.depth.lock());
-            let root_progress = indicatif::MultiProgress::new();
-            let mut progresses = HashMap::new();
-            let mut rxs = Vec::new();
+
+            let mut handles = Vec::new();
             let depth = self.depth.clone();
             for previous_node in &previous_nodes {
+                if !previous_node.lock().data.is_dir && !self.opts.force_recursion {
+                    log::info!("Skipping not-directory {}", previous_node.lock().data.url);
+                    continue;
+                }
                 let depth = depth.clone();
                 let mut indexes = self.current_indexes.lock();
                 let index = indexes
                     .entry(previous_node.lock().data.url.clone())
                     .or_insert_with(|| vec![0; self.chunks.len()]);
-                let pb = root_progress
+                let pb = PROGRESS
                     .add(indicatif::ProgressBar::new(
                         (self.chunks.iter().map(|chunk| chunk.len()).sum::<usize>()) as u64,
                     ))
@@ -56,10 +63,15 @@ impl super::Runner for Recursive {
                     .with_position(index.iter().sum::<usize>() as u64);
                 pb.enable_steady_tick(Duration::from_millis(100));
 
-                progresses.insert(previous_node.lock().data.url.clone(), pb);
-                let progress = progresses
+                PROGRESSES
+                    .lock()
+                    .insert(previous_node.lock().data.url.clone(), pb);
+
+                let progress = PROGRESSES
+                    .lock()
                     .get(&previous_node.lock().data.url)
-                    .ok_or(anyhow!("Couldn't find progress bar"))?;
+                    .ok_or(anyhow!("Failed to get progress bar"))?
+                    .clone();
 
                 let client = super::client::build(&self.opts)?;
                 for (i, chunk) in self.chunks.iter().enumerate() {
@@ -71,29 +83,31 @@ impl super::Runner for Recursive {
                     let indexes = self.current_indexes.clone();
                     let opts = self.opts.clone();
                     let depth = depth.clone();
-                    let (tx, rx) = tokio::sync::mpsc::channel(1);
-                    tokio::spawn(async move {
-                        let res = Self::process_chunk(
+                    if progress.is_finished() {
+                        break;
+                    }
+                    let chunk_handle: JoinHandle<Result<()>> = tokio::spawn(async move {
+                        let previous_node = previous_node.clone();
+                        Self::process_chunk(
                             chunk,
                             client,
                             progress,
                             tree,
                             opts,
                             depth,
-                            previous_node,
+                            previous_node.clone(),
                             indexes,
                             i,
                         )
-                        .await;
-                        tx.send(res).await.unwrap();
+                        .await
                     });
-                    rxs.push(rx);
+                    handles.push(chunk_handle);
                 }
             }
 
-            for mut rx in rxs {
-                let res = rx.recv().await.ok_or_else(|| {
-                    anyhow::anyhow!("Failed to receive result from worker thread")
+            for handle in handles {
+                let res = handle.await.map_err(|err| {
+                    anyhow!("Failed to receive result from worker thread: {}", err)
                 })?;
                 if res.is_err() {
                     return Err(res.err().unwrap());
@@ -141,6 +155,9 @@ impl Recursive {
             .ok_or(anyhow!("Couldn't find indexes for the previous node"))?[i]
             < chunk.len()
         {
+            if progress.is_finished() {
+                break;
+            }
             let index = indexes
                 .lock()
                 .get_mut(&previous_node.lock().data.url)
@@ -181,6 +198,7 @@ impl Recursive {
                             break;
                         }
                     }
+                    let is_dir = is_directory(&response);
                     let filtered = super::filters::check(
                         &opts,
                         &text,
@@ -228,6 +246,7 @@ impl Recursive {
                                     path: word.clone(),
                                     status_code,
                                     extra: json!(additions),
+                                    is_dir,
                                 },
                                 Some(previous_node.clone()),
                             );
@@ -263,6 +282,7 @@ impl Recursive {
                                     path: word.clone(),
                                     status_code: 0,
                                     extra: json!([]),
+                                    is_dir: false,
                                 },
                                 Some(previous_node.clone()),
                             );

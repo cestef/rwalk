@@ -11,7 +11,10 @@ use std::{
 use crate::{
     cli::opts::Opts,
     runner::{wordlists::compute_checksum, Runner},
-    utils::constants::{DEFAULT_FUZZ_KEY, DEFAULT_MODE},
+    utils::{
+        constants::{DEFAULT_FUZZ_KEY, DEFAULT_MODE},
+        progress::{PROGRESS, PROGRESSES},
+    },
 };
 use anyhow::bail;
 use anyhow::Result;
@@ -196,6 +199,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                     .to_string(),
                 status_code: 0,
                 extra: serde_json::Value::Null,
+                is_dir: true,
             },
             None,
         );
@@ -302,6 +306,11 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 SIGINT => {
                     info!("Aborting...");
                     ctrlc_aborted.store(true, Ordering::Relaxed);
+                    PROGRESS.clear()?;
+                    for progress in PROGRESSES.lock().values() {
+                        progress.finish_and_clear();
+                    }
+
                     handle.abort();
                     if !opts.no_save {
                         let content = serde_json::to_string(&Save {
@@ -334,49 +343,59 @@ pub async fn _main(opts: Opts) -> Result<()> {
                             );
                         }
                     }
-                    tx.send(()).await.unwrap();
+                    tx.send(()).await?;
                 }
                 _ => unreachable!(),
             }
         }
         Ok(())
     });
-    let res = main_thread.await?;
-    if res.is_ok() {
-        println!(
-            "{} Done in {} with an average of {} req/s",
-            SUCCESS.to_string().green(),
-            HumanDuration(watch.elapsed()).to_string().bold(),
-            ((match mode {
-                Mode::Recursive =>
-                    words.iter().fold(0, |acc, (_, v)| acc + v.len()) * *current_depth.lock(),
-                Mode::Classic => {
-                    words.iter().fold(0, |acc, (_, v)| acc + v.len())
-                }
-            }) as f64
-                / watch.elapsed().as_secs_f64())
-            .round()
-            .to_string()
-            .bold()
-        );
+    let abort_res = main_thread.await?;
 
-        let root = tree.lock().root.clone().unwrap().clone();
+    let thread_res = match abort_res {
+        Ok(res) => Some(res),
+        Err(_) => None,
+    };
 
-        if !opts.quiet {
-            print_tree(&*root.lock())?;
-        }
+    if thread_res.is_some() {
+        if let Err(e) = thread_res.unwrap() {
+            error!("{}", e);
+        } else {
+            println!(
+                "{} Done in {} with an average of {} req/s",
+                SUCCESS.to_string().green(),
+                HumanDuration(watch.elapsed()).to_string().bold(),
+                ((match mode {
+                    Mode::Recursive =>
+                        words.iter().fold(0, |acc, (_, v)| acc + v.len()) * *current_depth.lock(),
+                    Mode::Classic => {
+                        words.iter().fold(0, |acc, (_, v)| acc + v.len())
+                    }
+                }) as f64
+                    / watch.elapsed().as_secs_f64())
+                .round()
+                .to_string()
+                .bold()
+            );
 
-        // Remove save file after finishing resuming
-        if has_saved && !opts.keep_save {
-            tokio::fs::remove_file(opts.save_file.clone().unwrap()).await?;
-        }
-        if opts.output.is_some() {
-            let res = utils::save_to_file(&opts, root, current_depth, tree);
+            let root = tree.lock().root.clone().unwrap().clone();
 
-            match res {
-                Ok(_) => info!("Saved to {}", opts.output.unwrap().bold()),
-                Err(e) => {
-                    error!("{}", e);
+            if !opts.quiet {
+                print_tree(&*root.lock())?;
+            }
+
+            // Remove save file after finishing resuming
+            if has_saved && !opts.keep_save {
+                tokio::fs::remove_file(opts.save_file.clone().unwrap()).await?;
+            }
+            if opts.output.is_some() {
+                let res = utils::save_to_file(&opts, root, current_depth, tree);
+
+                match res {
+                    Ok(_) => info!("Saved to {}", opts.output.unwrap().bold()),
+                    Err(e) => {
+                        error!("{}", e);
+                    }
                 }
             }
         }
