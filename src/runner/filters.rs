@@ -7,7 +7,7 @@ use crate::{
     cli::opts::Opts,
     utils::{
         check_range,
-        constants::{DEFAULT_STATUS_CODES, ERROR, WARNING},
+        constants::{ERROR, WARNING},
         parse_range_input,
     },
 };
@@ -23,17 +23,7 @@ pub fn check(
 ) -> bool {
     let mut outs: Vec<bool> = Vec::new();
 
-    // Default status filter
-    let filters = if opts.filter.iter().any(|e| e.0 == "status") {
-        opts.filter.clone()
-    } else {
-        let mut filters = opts.filter.clone();
-        filters.push(("status".to_string(), DEFAULT_STATUS_CODES.to_string()));
-        filters
-    };
-
-    for filter in filters {
-        let mut filter = filter;
+    for filter in opts.filter.clone().iter_mut() {
         // if the filter starts with [depth] then we parse the depth and remove it from the filter
         let filter_depth = if filter.0.starts_with('[') {
             let start_index = filter.0.find('[').unwrap();

@@ -12,8 +12,8 @@ use crate::{
     cli::opts::Opts,
     runner::{wordlists::compute_checksum, Runner},
     utils::{
-        constants::{DEFAULT_FUZZ_KEY, DEFAULT_MODE},
-        progress::{PROGRESS, PROGRESSES},
+        color_for_status_code,
+        constants::{DEFAULT_FUZZ_KEY, DEFAULT_MODE, DEFAULT_STATUS_CODES},
     },
 };
 use anyhow::bail;
@@ -64,13 +64,20 @@ pub async fn _main(opts: Opts) -> Result<()> {
     };
 
     // Merge saved options with the ones passed as arguments
-    let opts = if let Some(ref save) = saved_json {
+    let mut opts = if let Some(ref save) = saved_json {
         let mut saved_opts = save.as_ref().unwrap().opts.clone();
         saved_opts.merge(opts.clone());
         saved_opts
     } else {
         opts.clone()
     };
+
+    // Default status filters
+    if !opts.filter.iter().any(|e| e.0 == "status") {
+        let mut filters = opts.filter.clone();
+        filters.push(("status".to_string(), DEFAULT_STATUS_CODES.to_string()));
+        opts.filter = filters;
+    }
 
     // Parse wordlists into a HashMap associating each wordlist key to its contents
     let mut words = runner::wordlists::parse(&opts.wordlists).await?;
@@ -94,14 +101,57 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         DEFAULT_MODE.into()
     };
-    info!("Mode: {}", mode.to_string().bold());
+    info!("Mode: {}", mode.to_string().bold().blue());
+    info!("URL: {}", url.bold().blue());
+    info!(
+        "Status codes: {}",
+        opts.filter
+            .iter()
+            .find(|x| x.0 == "status")
+            .unwrap()
+            .1
+            .split(',')
+            .map(|x| {
+                // can be 200-300, 200, >300, <300
+                // Split and bold only the numbers
+                let mut x = x.to_string();
+                if x.contains('-') {
+                    x = x
+                        .split('-')
+                        .map(|x| match x.parse::<u16>() {
+                            Ok(x) => color_for_status_code(x.to_string(), x),
+                            Err(_) => x.to_string(),
+                        })
+                        .collect::<Vec<_>>()
+                        .join("-")
+                        .to_string();
+                } else if let Some(stripped) = x.strip_prefix('>') {
+                    x = ">".to_string()
+                        + &color_for_status_code(
+                            stripped.to_string(),
+                            stripped.parse().unwrap_or_default(),
+                        );
+                } else if let Some(stripped) = x.strip_prefix('<') {
+                    x = "<".to_string()
+                        + &color_for_status_code(
+                            stripped.to_string(),
+                            stripped.parse().unwrap_or_default(),
+                        );
+                } else {
+                    x = color_for_status_code(x.to_string(), x.parse().unwrap_or_default());
+                }
+                x
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
     match mode {
         Mode::Recursive => {
             if !fuzz_matches.is_empty() {
                 warn!(
                     "URL contains the replace keyword{}: {}, this is supported with {}",
                     if fuzz_matches.len() > 1 { "s" } else { "" },
-                    fuzz_matches.join(", ").bold(),
+                    fuzz_matches.join(", ").bold().blue(),
                     format!("{} {}", "--mode".dimmed(), "classic".bold())
                 );
             }
@@ -130,15 +180,16 @@ pub async fn _main(opts: Opts) -> Result<()> {
     if before != after {
         info!(
             "{} words loaded, {} after deduplication and filters (-{}%)",
-            before.to_string().bold(),
-            after.to_string().bold(),
+            before.to_string().bold().blue(),
+            after.to_string().bold().blue(),
             ((before - after) as f64 / before as f64 * 100.0)
                 .round()
                 .to_string()
                 .bold()
+                .green()
         );
     } else {
-        info!("{} words loaded", before.to_string().bold());
+        info!("{} words loaded", before.to_string().bold().blue());
     }
 
     if words.values().all(|x| x.is_empty()) {
@@ -231,7 +282,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         .min(words.iter().fold(0, |acc, (_, v)| acc + v.len()));
     info!(
         "Starting crawler with {} thread{}",
-        threads.to_string().bold(),
+        threads.to_string().bold().blue(),
         if threads > 1 { "s" } else { "" }
     );
 
@@ -306,10 +357,6 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 SIGINT => {
                     info!("Aborting...");
                     ctrlc_aborted.store(true, Ordering::Relaxed);
-                    PROGRESS.clear()?;
-                    for progress in PROGRESSES.lock().values() {
-                        progress.finish_and_clear();
-                    }
 
                     handle.abort();
                     if !opts.no_save {

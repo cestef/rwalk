@@ -36,9 +36,11 @@ impl super::Runner for Recursive {
 
             let mut handles = Vec::new();
             let depth = self.depth.clone();
+
+            // Spawn a thread for each previous node
             for previous_node in &previous_nodes {
                 if !previous_node.lock().data.is_dir && !self.opts.force_recursion {
-                    log::info!("Skipping not-directory {}", previous_node.lock().data.url);
+                    log::debug!("Skipping not-directory {}", previous_node.lock().data.url);
                     continue;
                 }
                 let depth = depth.clone();
@@ -83,9 +85,6 @@ impl super::Runner for Recursive {
                     let indexes = self.current_indexes.clone();
                     let opts = self.opts.clone();
                     let depth = depth.clone();
-                    if progress.is_finished() {
-                        break;
-                    }
                     let chunk_handle: JoinHandle<Result<()>> = tokio::spawn(async move {
                         let previous_node = previous_node.clone();
                         Self::process_chunk(
@@ -155,9 +154,6 @@ impl Recursive {
             .ok_or(anyhow!("Couldn't find indexes for the previous node"))?[i]
             < chunk.len()
         {
-            if progress.is_finished() {
-                break;
-            }
             let index = indexes
                 .lock()
                 .get_mut(&previous_node.lock().data.url)
