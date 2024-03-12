@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::process;
+use std::{path::Path, process};
 
 use anyhow::Result;
 use clap::Parser;
@@ -17,7 +17,14 @@ async fn main() -> Result<()> {
 
     let mut opts = Opts::parse();
     if let Some(p) = opts.config {
-        opts = Opts::from_path(p).await?;
+        opts = Opts::from_path(p.clone()).await?;
+        log::info!("Using config file: {}", p);
+    } else if let Some(home) = dirs::home_dir() {
+        let p = home.join(Path::new(".config/rwalk/config.toml"));
+        if p.exists() {
+            opts = Opts::from_path(p.clone()).await?;
+            log::info!("Using config file: {}", p.display());
+        }
     }
 
     if opts.generate_markdown {

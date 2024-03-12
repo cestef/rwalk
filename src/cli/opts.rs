@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::utils::constants::{
     DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT,
 };
@@ -252,6 +254,12 @@ pub struct Opts {
 #[derive(Clone, Debug, Serialize, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Wordlist(pub String, pub Vec<String>);
 
+impl Wordlist {
+    pub fn new(file: String, keys: Vec<String>) -> Self {
+        Self(file, keys)
+    }
+}
+
 impl<'de> Deserialize<'de> for Wordlist {
     fn deserialize<D>(deserializer: D) -> Result<Wordlist, D::Error>
     where
@@ -266,7 +274,10 @@ impl<'de> Deserialize<'de> for Wordlist {
 }
 
 impl Opts {
-    pub async fn from_path(path: String) -> Result<Self> {
+    pub async fn from_path<T>(path: T) -> Result<Self>
+    where
+        T: AsRef<Path>,
+    {
         let contents = tokio::fs::read_to_string(path).await?;
         let opts: Opts = toml::from_str(&contents)?;
         Ok(opts)
@@ -281,7 +292,7 @@ mod tests {
     #[test]
     fn test_opts_env() {
         env::set_var("URL", "http://example.com");
-        env::set_var("WORDLISTS", "wordlist1.txt:wordlist2.txt");
+        env::set_var("WORDLISTS", "wordlist1.txt:w1");
         env::set_var("METHOD", "GET");
         env::set_var("TIMEOUT", "10");
         env::set_var("HEADERS", "key:value");
@@ -316,7 +327,7 @@ mod tests {
             opts.wordlists,
             vec![Wordlist(
                 "wordlist1.txt".to_string(),
-                vec!["wordlist2.txt".to_string()]
+                vec!["w1".to_string()]
             )]
         );
         assert_eq!(opts.method, Some("GET".to_string()));

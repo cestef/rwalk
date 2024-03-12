@@ -2,6 +2,8 @@ use std::error::Error;
 
 use url::Url;
 
+use super::opts::Wordlist;
+
 pub fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
 where
     T: std::str::FromStr,
@@ -83,14 +85,14 @@ pub fn parse_method(s: &str) -> Result<String, String> {
     }
 }
 
-pub fn parse_wordlist(s: &str) -> Result<(String, Vec<String>), String> {
+pub fn parse_wordlist(s: &str) -> Result<Wordlist, String> {
     let parts = s.split(':').collect::<Vec<_>>();
     if parts.len() == 1 {
         // Wordlist without a key
-        Ok((s.to_string(), vec![]))
+        Ok(Wordlist(s.to_string(), vec![]))
     } else if parts.len() == 2 {
         // Wordlist with a key
-        Ok((
+        Ok(Wordlist(
             parts[0].to_string(),
             parts[1].split(',').map(|x| x.to_string()).collect(),
         ))
@@ -233,22 +235,22 @@ mod tests {
     fn test_parse_wordlist() {
         assert_eq!(
             parse_wordlist("wordlist").unwrap(),
-            ("wordlist".to_string(), vec![])
+            Wordlist("wordlist".to_string(), vec![])
         );
         assert_eq!(
             parse_wordlist("key:wordlist").unwrap(),
-            ("key".to_string(), vec!["wordlist".to_string()])
+            Wordlist("key".to_string(), vec!["wordlist".to_string()])
         );
         assert_eq!(
             parse_wordlist("key:wordlist1,wordlist2").unwrap(),
-            (
+            Wordlist(
                 "key".to_string(),
                 vec!["wordlist1".to_string(), "wordlist2".to_string()]
             )
         );
         assert_eq!(
             parse_wordlist("key:").unwrap(),
-            ("key".to_string(), vec!["".to_string()])
+            Wordlist("key".to_string(), vec!["".to_string()])
         );
         assert!(parse_wordlist("key:wordlist1,wordlist2:").is_err());
     }
