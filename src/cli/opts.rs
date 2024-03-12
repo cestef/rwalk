@@ -7,7 +7,8 @@ use field_accessor_pub::FieldAccessor;
 use serde::{Deserialize, Serialize};
 
 use super::helpers::{
-    parse_cookie, parse_header, parse_method, parse_url, parse_wordlist, KeyOrKeyVal, KeyOrKeyValParser, KeyVal, KeyValParser
+    parse_cookie, parse_header, parse_method, parse_url, parse_wordlist, KeyOrKeyVal,
+    KeyOrKeyValParser, KeyVal, KeyValParser,
 };
 use anyhow::Result;
 use clap::Parser;
@@ -22,13 +23,13 @@ use merge::Merge;
 pub struct Opts {
     /// Target URL
     #[clap(
-        required_unless_present = "interactive", 
-        required_unless_present = "resume", 
-        required_unless_present = "config", 
-        required_unless_present = "generate_markdown", 
+        required_unless_present = "interactive",
+        required_unless_present = "resume",
+        required_unless_present = "config",
+        required_unless_present = "generate_markdown",
         required_unless_present = "generate_completions",
-        value_parser = parse_url, 
-        env, 
+        value_parser = parse_url,
+        env,
         hide_env=true
     )]
     pub url: Option<String>,
@@ -225,12 +226,12 @@ pub struct Opts {
 
     /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"
     #[clap(
-        short, 
-        long, 
-        help_heading = Some("Responses"), 
+        short,
+        long,
+        help_heading = Some("Responses"),
         value_name = "KEY:FILTER",
-        env, 
-        hide_env=true, 
+        env,
+        hide_env=true,
         value_parser(KeyValParser)
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
@@ -379,7 +380,10 @@ mod tests {
             opts.wordlist_filter,
             vec![KeyVal("length".to_string(), "5".to_string())]
         );
-        assert_eq!(opts.filter, vec![KeyVal("length".to_string(), "5".to_string())]);
+        assert_eq!(
+            opts.filter,
+            vec![KeyVal("length".to_string(), "5".to_string())]
+        );
         assert!(opts.or);
         assert_eq!(opts.proxy, Some("http://proxy.com".to_string()));
         assert_eq!(opts.proxy_auth, Some("user:pass".to_string()));
