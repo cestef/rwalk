@@ -44,7 +44,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     if opts.url.is_none() && !opts.resume {
         bail!("Missing URL");
     }
-    if opts.wordlists.is_empty() {
+    if opts.wordlists.is_empty() && !opts.resume {
         bail!("Missing wordlists");
     }
 
