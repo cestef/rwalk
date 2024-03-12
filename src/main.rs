@@ -14,12 +14,7 @@ use rwalk::{
 #[tokio::main]
 async fn main() -> Result<()> {
     utils::logger::init_logger();
-    let config_path = dirs::home_dir()
-        .unwrap()
-        .join(".config")
-        .join("rwalk")
-        .join(".env");
-    dotenv::from_path(config_path).ok();
+
     let mut opts = Opts::parse();
     if let Some(p) = opts.config {
         opts = Opts::from_path(p).await?;

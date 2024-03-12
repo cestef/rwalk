@@ -35,7 +35,7 @@ pub struct Opts {
         value_parser = parse_wordlist
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
-    pub wordlists: Vec<(String, Vec<String>)>,
+    pub wordlists: Vec<Wordlist>,
 
     /// Crawl mode
     #[clap(
@@ -249,6 +249,22 @@ pub struct Opts {
     pub generate_markdown: bool,
 }
 
+#[derive(Clone, Debug, Serialize, PartialEq, Eq, Ord, PartialOrd)]
+pub struct Wordlist(pub String, pub Vec<String>);
+
+impl<'de> Deserialize<'de> for Wordlist {
+    fn deserialize<D>(deserializer: D) -> Result<Wordlist, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let parts = s.split(':').collect::<Vec<_>>();
+        let file = parts[0].to_string();
+        let keys = parts[1..].iter().map(|s| s.to_string()).collect();
+        Ok(Wordlist(file, keys))
+    }
+}
+
 impl Opts {
     pub async fn from_path(path: String) -> Result<Self> {
         let contents = tokio::fs::read_to_string(path).await?;
@@ -298,7 +314,7 @@ mod tests {
         assert_eq!(opts.url, Some("http://example.com/".to_string()));
         assert_eq!(
             opts.wordlists,
-            vec![(
+            vec![Wordlist(
                 "wordlist1.txt".to_string(),
                 vec!["wordlist2.txt".to_string()]
             )]

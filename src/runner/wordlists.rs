@@ -8,13 +8,13 @@ use colored::Colorize;
 use tokio::io::AsyncReadExt;
 
 use crate::{
-    cli::opts::Opts,
+    cli::opts::{Opts, Wordlist},
     utils::{check_range, constants::DEFAULT_FUZZ_KEY, parse_range_input},
 };
 
-pub async fn parse(wordlists: &Vec<(String, Vec<String>)>) -> Result<HashMap<String, Vec<String>>> {
+pub async fn parse(wordlists: &Vec<Wordlist>) -> Result<HashMap<String, Vec<String>>> {
     let mut out: HashMap<String, Vec<String>> = HashMap::new();
-    for (path, keys) in wordlists {
+    for Wordlist(path, keys) in wordlists {
         let words: String = match path.as_str() {
             "-" => {
                 let mut stdin = tokio::io::stdin();
@@ -404,15 +404,15 @@ mod tests {
     #[tokio::test]
     async fn test_parse() {
         let wordlists = vec![
-            (
+            Wordlist(
                 "tests/wordlists/micro1.txt".to_string(),
                 vec!["W1".to_string()],
             ),
-            (
+            Wordlist(
                 "tests/wordlists/micro2.txt".to_string(),
                 vec!["W1".to_string()],
             ),
-            (
+            Wordlist(
                 "tests/wordlists/micro3.txt".to_string(),
                 vec!["W2".to_string()],
             ),
