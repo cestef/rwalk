@@ -1,4 +1,5 @@
 use colored::Colorize;
+use indicatif::MultiProgress;
 use serde_json::json;
 use std::{
     collections::HashMap,
@@ -14,7 +15,6 @@ use crate::{
     cli::opts::Opts,
     utils::{
         constants::{DEFAULT_DEPTH, ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
-        progress::{PROGRESS, PROGRESSES},
         tree::{Tree, TreeData, TreeNode},
     },
 };
@@ -35,8 +35,9 @@ impl super::Runner for Recursive {
             let previous_nodes = self.tree.lock().get_nodes_at_depth(*self.depth.lock());
 
             let mut handles = Vec::new();
+            let mut progresses = HashMap::new();
             let depth = self.depth.clone();
-
+            let root_progress = MultiProgress::new();
             // Spawn a thread for each previous node
             for previous_node in &previous_nodes {
                 if !previous_node.lock().data.is_dir && !self.opts.force_recursion {
@@ -48,7 +49,7 @@ impl super::Runner for Recursive {
                 let index = indexes
                     .entry(previous_node.lock().data.url.clone())
                     .or_insert_with(|| vec![0; self.chunks.len()]);
-                let pb = PROGRESS
+                let pb = root_progress
                     .add(indicatif::ProgressBar::new(
                         (self.chunks.iter().map(|chunk| chunk.len()).sum::<usize>()) as u64,
                     ))
@@ -65,12 +66,9 @@ impl super::Runner for Recursive {
                     .with_position(index.iter().sum::<usize>() as u64);
                 pb.enable_steady_tick(Duration::from_millis(100));
 
-                PROGRESSES
-                    .lock()
-                    .insert(previous_node.lock().data.url.clone(), pb);
+                progresses.insert(previous_node.lock().data.url.clone(), pb);
 
-                let progress = PROGRESSES
-                    .lock()
+                let progress = progresses
                     .get(&previous_node.lock().data.url)
                     .ok_or(anyhow!("Failed to get progress bar"))?
                     .clone();

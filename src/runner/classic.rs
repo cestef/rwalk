@@ -8,7 +8,6 @@ use crate::{
     cli::opts::Opts,
     utils::{
         constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
-        progress::PROGRESS,
         tree::{Tree, TreeData},
     },
 };
@@ -219,13 +218,12 @@ impl Runner for Classic {
         info!("Generated {} URLs", urls.len().to_string().bold());
         debug!("URLs: {:?}", urls);
 
-        let progress = PROGRESS.add(
-            ProgressBar::new(urls.len() as u64).with_style(
-                indicatif::ProgressStyle::default_bar()
-                    .template(PROGRESS_TEMPLATE)?
-                    .progress_chars(PROGRESS_CHARS),
-            ),
+        let progress = ProgressBar::new(urls.len() as u64).with_style(
+            indicatif::ProgressStyle::default_bar()
+                .template(PROGRESS_TEMPLATE)?
+                .progress_chars(PROGRESS_CHARS),
         );
+
         progress.enable_steady_tick(Duration::from_millis(100));
         let chunks = urls.chunks(urls.len() / self.threads).collect::<Vec<_>>();
         let mut handles = Vec::with_capacity(chunks.len());
