@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use colored::Colorize;
+use colored::{Colorize, CustomColor};
 use parking_lot::Mutex;
 use std::{io::Write, sync::Arc};
 
@@ -28,27 +28,24 @@ pub fn banner() {
 }
 
 pub fn get_emoji_for_status_code_colored(status_code: u16) -> String {
-    match status_code {
-        200..=299 => "✓".green().to_string(),
-        300..=399 => "⇝".blue().to_string(),
-        400..=403 => "✖".red().to_string(),
-        500..=599 => "⚠".yellow().to_string(),
-        _ => "⚠".yellow().to_string(),
-    }
+    let emoji = get_emoji_for_status_code(status_code);
+    color_for_status_code(emoji, status_code)
 }
 
 pub fn color_for_status_code(s: String, status_code: u16) -> String {
     match status_code {
+        100..=199 => s.blue().to_string(),
         200..=299 => s.green().to_string(),
-        300..=399 => s.blue().to_string(),
-        400..=403 => s.red().to_string(),
-        500..=599 => s.yellow().to_string(),
-        _ => s.yellow().to_string(),
+        300..=399 => s.yellow().to_string(),
+        400..=499 => s.custom_color(CustomColor::new(255, 165, 0)).to_string(),
+        500..=599 => s.red().to_string(),
+        _ => s.to_string(),
     }
 }
 
 pub fn get_emoji_for_status_code(status_code: u16) -> String {
     match status_code {
+        100..=199 => "ℹ".to_string(),
         200..=299 => "✓".to_string(),
         300..=399 => "⇝".to_string(),
         400..=403 => "✖".to_string(),
