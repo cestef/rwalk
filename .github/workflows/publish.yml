@@ -23,10 +23,11 @@ jobs:
                   toolchain: stable
                   override: true
             - run: cargo run -- --generate-markdown > HELP.md
-            - run: git add HELP.md
+            - run: cargo run -- --generate-completions
+            - run: git add HELP.md completions/*
             - run: git config --global user.email "action@github.run"
             - run: git config --global user.name "GitHub Action"
-            - run: git commit -m "Update HELP.md" || true
+            - run: git commit -m "Update HELP.md and completions"
             - run: git pull origin main --rebase
             - run: git push origin HEAD:refs/heads/main
 
