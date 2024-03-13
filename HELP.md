@@ -103,6 +103,10 @@ A blazing fast web directory scanner
 
   Possible values: `true`, `false`
 
+* `--generate-completions` — Generate shell completions - for developers
+
+  Possible values: `true`, `false`
+
 
 
 
