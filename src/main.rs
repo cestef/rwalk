@@ -20,14 +20,16 @@ async fn main() -> Result<()> {
     let mut opts = Opts::parse();
     if let Some(p) = opts.config {
         opts = Opts::from_path(p.clone()).await?;
-        log::info!("Using config file: {}", p);
+        log::debug!("Using config file: {}", p);
     } else if let Some(home) = dirs::home_dir() {
         let p = home.join(Path::new(".config/rwalk/config.toml"));
         if p.exists() {
             let path_opts = Opts::from_path(p.clone()).await?;
             opts.merge(path_opts);
-            log::info!("Using config file: {}", p.display());
+            log::debug!("Using config file: {}", p.display());
         }
+    } else {
+        log::debug!("No home directory found");
     }
 
     if opts.generate_markdown {

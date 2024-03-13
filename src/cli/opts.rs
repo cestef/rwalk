@@ -23,30 +23,22 @@ use merge::Merge;
 pub struct Opts {
     /// Target URL
     #[clap(
-        required_unless_present = "interactive",
-        required_unless_present = "resume",
-        required_unless_present = "config",
-        required_unless_present = "generate_markdown",
-        required_unless_present = "generate_completions",
         value_parser = parse_url,
         env,
         hide_env=true
     )]
+    #[serde(default)]
     pub url: Option<String>,
 
     /// Wordlist(s)
     #[clap(
-        required_unless_present = "interactive",
-        required_unless_present = "resume",
-        required_unless_present = "generate_markdown",
-        required_unless_present = "generate_completions",
-        required_unless_present = "config",
         value_name = "FILE:KEY",
         env,
         hide_env = true,
         value_parser = parse_wordlist
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
     pub wordlists: Vec<Wordlist>,
 
     /// Crawl mode
@@ -58,6 +50,7 @@ pub struct Opts {
         env,
         hide_env = true
     )]
+    #[serde(default)]
     pub mode: Option<String>,
 
     /// Force scan even if the target is not responding
