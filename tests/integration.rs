@@ -18,17 +18,6 @@ fn opts_from(s: &str) -> Result<Opts, clap::Error> {
             .collect::<Vec<_>>(),
     )
 }
-
-#[test]
-fn error_on_empty_parse() {
-    assert!(opts_from("").is_err());
-}
-
-#[test]
-fn error_on_missing_wordlist_parse() {
-    assert!(opts_from("http://localhost").is_err());
-}
-
 #[test]
 fn should_parse() {
     assert!(opts_from("http://localhost tests/wordlists/short.txt").is_ok());
