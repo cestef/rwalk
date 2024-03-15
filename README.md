@@ -16,6 +16,7 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
     <img src="assets/rwalk.gif">
 </p>
 
+<!-- omit in toc -->
 ## Features
 
 - [x] Multi-threaded
@@ -29,20 +30,38 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 - [x] Request throttling
 - [x] Proxy support
 
-## Installation
+## Table of Contents
 
+- [Table of Contents](#table-of-contents)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Scanning modes](#scanning-modes)
+  - [Response Filtering](#response-filtering)
+  - [Additional response details](#additional-response-details)
+  - [Ranges](#ranges)
+  - [Wordlists](#wordlists)
+  - [Miscellaneous](#miscellaneous)
+- [Examples](#examples)
+- [FAQ](#faq)
+- [Benchmarks](#benchmarks)
+- [Contributing](#contributing)
+- [License](#license)
+
+
+## Installation
+<!-- omit in toc -->
 ### From [homebrew](https://brew.sh)
 
 ```bash
 brew install cestef/tap/rwalk
 ```
-
+<!-- omit in toc -->
 ### From [crates.io](https://crates.io/crates/rwalk)
 
 ```bash
 cargo install rwalk
 ```
-
+<!-- omit in toc -->
 ### From source
 
 ```bash
@@ -63,7 +82,7 @@ You can run `rwalk --help` or [read the help file](HELP.md) for more information
 
 
 ### Scanning modes
-
+<!-- omit in toc -->
 #### Recursive scan
 
 By default `rwalk` will use a recursive-like scan. You can change the depth of the scan with the `--depth` (`-d`) flag:
@@ -71,7 +90,7 @@ By default `rwalk` will use a recursive-like scan. You can change the depth of t
 ```bash
 rwalk https://example.com wordlist.txt -d 3
 ```
-
+<!-- omit in toc -->
 #### Classic scan
 
 In case you want to fuzz more precise paths, you can either use the `--mode classic` flag or provide a fuzzing placeholder in the URL. For example:
@@ -144,7 +163,25 @@ rwalk ... --filter "[2]contains:admin"
 > [!NOTE]
 > Depth starts at `0`.
 
-### Inputting ranges
+### Additional response details
+
+If you need more details about the matched responses, you can use the `--show` flag. For example, to show the body hash and length:
+
+```bash
+rwalk ... --show hash --show length 
+```
+
+Available details:
+
+- `length`
+- `hash`
+- `headers`
+- `body`
+- `headers_length`
+- `headers_hash`
+- `type`
+
+### Ranges
 
 In some cases , you may want to input a `<RANGE>` of values. 
 You can use the following formats:
@@ -179,8 +216,8 @@ cat wordlist.txt | rwalk https://example.com -
 > [!NOTE]
 > A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, `rwalk` will only load the wordlists if the checksums match. See [Saving and Resuming scans](#saving-and-resuming-scans) for more information.
 
-
-### Wordlist Filters
+<!-- omit in toc -->
+#### Filters
 
 You can filter words from the wordlist by using the `--wordlist-filter` (`-w`) flag. For example, to only use words that start with `admin`:
 
@@ -202,8 +239,8 @@ Available filters:
 - `regex`: _`<REGEX>`_
 - `length`: _`<RANGE>`_
 
-
-### Wordlist Transformations
+<!-- omit in toc -->
+#### Transformations
 
 To quickly modify the wordlist, you can use the `--transform` (`-T`) flag. For example, to add a suffix to all words in the wordlist:
 
@@ -234,24 +271,11 @@ Available transformations:
 - `capitalize`
 - `reverse`
 
-### Additional response details
 
-If you need more details about the matched responses, you can use the `--show` flag. For example, to show the body hash and length:
 
-```bash
-rwalk ... --show hash --show length 
-```
-
-Available details:
-
-- `length`
-- `hash`
-- `headers`
-- `body`
-- `headers_length`
-- `headers_hash`
-
-### Interactive mode
+### Miscellaneous
+<!-- omit in toc -->
+#### Interactive mode
 
 You can use the `--interactive` (`-i`) flag to enter interactive mode. In this mode, you can set parameters one by one and run the scan when you're ready.
 
@@ -265,8 +289,8 @@ Available commands:
 - `exit`: Exit interactive mode
 - `help`: Show help
 - `clear`: Clear the screen
-
-### Output
+<!-- omit in toc -->
+#### Output
 
 By default, `rwalk` will print the results to the terminal. You can also save the results to a file with the `--output` (`-o`) flag:
 
@@ -279,8 +303,8 @@ Available output formats:
 - `*.csv`
 - `*.md`
 - `*.txt`
-
-### Throttling
+<!-- omit in toc -->
+#### Throttling
 
 The throttling value will be multiplied by the number of threads. For example, if you have `10` threads and a throttling value of `5`, the total number of requests per second will be `50`.
 
@@ -288,8 +312,8 @@ The throttling value will be multiplied by the number of threads. For example, i
 ```bash
 rwalk https://example.com wordlist.txt --throttle 5 -t 10 
 ```
-
-### Saving and resuming scans
+<!-- omit in toc -->
+#### Saving and resuming scans
 
 By default, if you abort the scan with <kbd>Ctrl</kbd> + <kbd>C</kbd>, rwalk will save the progress to a file called `.rwalk.json`. You can resume the scan by running with `--resume`:
 
@@ -304,8 +328,8 @@ rwalk https://example.com wordlist.txt --save-file myscan.json
 ```
 
 The auto-saving behavior can be disabled with `--no-save`.
-
-### Proxy support
+<!-- omit in toc -->
+#### Proxy support
 
 You can pass a proxy URL with the `--proxy` flag:
 
@@ -318,49 +342,42 @@ Authentication is also supported with `--proxy-auth`:
 ```bash
 rwalk https://example.com wordlist.txt --proxy http://pro.xy:8080 --proxy-auth username:password
 ```
+<!-- omit in toc -->
+#### Passing parameters from a config
 
-### Passing parameters as environment variables
-
-You can pass parameters as environment variables. For example, to set the number of threads to `10`:
-
-```bash
-THREADS=10 rwalk https://example.com wordlist.txt
-```
-
-is equivalent to:
+The configuration file located at `~/.config/rwalk/config.toml` will be loaded by default. You can also pass a custom configuration file with the `--config` flag:
 
 ```bash
-rwalk https://example.com wordlist.txt -t 10
+rwalk https://example.com wordlist.txt --config myconfig.toml
 ```
-The env file located at `~/.config/rwalk/.env` will be loaded automatically.
 
 ## Examples
-
+<!-- omit in toc -->
 ### Basic scan
 
 ```bash
 rwalk https://example.com wordlist.txt
 ```
-
+<!-- omit in toc -->
 ### Recursive scan
 
 ```bash
 rwalk https://example.com wordlist.txt -d 3
 ```
 > **Warning:** Recursive scans can take a long time and generate a lot of traffic. Use with caution.
-
+<!-- omit in toc -->
 ### Custom headers/cookies
 
 ```bash
 rwalk https://example.com wordlist.txt -H "X-Forwarded-For: 203.0.113.195" -c "session=1234567890"
 ```
-
+<!-- omit in toc -->
 ### Follow redirects
 
 ```bash
 rwalk https://example.com wordlist.txt -R 2
 ```
-
+<!-- omit in toc -->
 ### Custom request body
 
 ```bash
@@ -368,21 +385,21 @@ rwalk https://example.com wordlist.txt -X POST -D '{"username": "admin", "passwo
 ```
 
 ## FAQ
-
+<!-- omit in toc -->
 ### Where can I find wordlists?
 
 - [SecLists](https://github.com/danielmiessler/SecLists)
 - [DirBuster](https://gitlab.com/kalilinux/packages/dirbuster)
 - [OneListForAll](https://github.com/six2dez/OneListForAll)
-
+<!-- omit in toc -->
 ### How do I get support?
 
 Open an issue or ask in the [Discord server](https://cstef.dev/discord). 
-
+<!-- omit in toc -->
 ### Is rwalk stable?
 
 rwalk is stable but it's still in the early stages of development. It should work for most use cases but there may be bugs.
-
+<!-- omit in toc -->
 ### Where can I test this tool?
 
 You can use the [ffuf.me](http://ffuf.me) website to test rwalk.
