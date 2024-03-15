@@ -44,7 +44,7 @@ module completions {
     --transform(-T): string   # Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
     --wordlist-filter(-w): string # Wordlist filtering: "contains", "starts", "ends", "regex", "length"
     --wf: string              # Wordlist filtering: "contains", "starts", "ends", "regex", "length"
-    --filter(-f): string      # Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"
+    --filter(-f): string      # Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth", "type"
     --or                      # Treat filters as or instead of and
     --force-recursion         # Force the recursion over non-directories
     --fr                      # Force the recursion over non-directories

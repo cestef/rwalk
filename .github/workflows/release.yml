@@ -47,8 +47,6 @@ jobs:
               id: tag
               # Get the latest tag without the v prefix
               run: echo "tag=$(git describe --tags --abbrev=0 | sed 's/v//')" >> $GITHUB_OUTPUT
-            - name: Rust Cache
-              uses: Swatinem/rust-cache@v2.7.3
             - uses: taiki-e/upload-rust-binary-action@v1
               with:
                   bin: rwalk
@@ -60,8 +58,12 @@ jobs:
         runs-on: ubuntu-latest
         name: homebrew-releaser
         steps:
+            - uses: actions/checkout@v4
+            - name: Get latest tag
+              id: tag
+              run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
             - name: Release my project to my Homebrew tap
-              uses: Justintime50/homebrew-releaser@v1
+              uses: Justintime50/homebrew-releaser@392a2426758dfdcc91f302d55cf5061346af2219
               with:
                   homebrew_owner: cestef
                   homebrew_tap: homebrew-tap
@@ -78,7 +80,7 @@ jobs:
                   target_linux_arm64: true
 
                   update_readme_table: true
-
+                  version: ${{ steps.tag.outputs.tag }}
                   # Skips committing the generated formula to a homebrew tap (useful for local testing).
                   skip_commit: false
                   # Logs debugging info to console.

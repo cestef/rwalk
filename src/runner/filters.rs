@@ -20,6 +20,7 @@ pub fn check(
     status_code: u16,
     time: u128,
     depth: Option<usize>,
+    response: &reqwest::Response,
 ) -> bool {
     let mut outs: Vec<bool> = Vec::new();
 
@@ -113,6 +114,20 @@ pub fn check(
                 } else {
                     warn!("You provided a depth filter but you are not scanning recursively");
                     true
+                }
+            }
+
+            "type" => {
+                let is_dir = is_directory(response);
+                if filter.1 == "directory" {
+                    is_dir ^ negated
+                } else {
+                    let content_type = headers.get(reqwest::header::CONTENT_TYPE);
+                    if let Some(content_type) = content_type {
+                        (content_type.to_str().unwrap() == filter.1) ^ negated
+                    } else {
+                        false ^ negated
+                    }
                 }
             }
 
