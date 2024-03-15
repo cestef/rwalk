@@ -65,9 +65,14 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     // Merge saved options with the ones passed as arguments
     let mut opts = if let Some(ref save) = saved_json {
-        let mut saved_opts = save.as_ref().unwrap().opts.clone();
-        saved_opts.merge(opts.clone());
-        saved_opts
+        if let Ok(mut saved_opts) = save.as_ref().map(|x| x.opts.clone()) {
+            saved_opts.merge(opts.clone());
+            saved_opts
+        } else {
+            let err = save.as_ref().unwrap_err();
+            error!("Error while parsing save file: {}", err);
+            opts.clone()
+        }
     } else {
         opts.clone()
     };
@@ -205,14 +210,14 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     let saved_tree = if opts.resume {
         match saved_json {
-            Some(json) => Some(utils::tree::from_save(
+            Some(json) if json.is_ok() => Some(utils::tree::from_save(
                 &opts,
                 &json.unwrap(),
                 current_depth.clone(),
                 current_indexes.clone(),
                 words.clone(),
             )?),
-            None => None,
+            _ => None,
         }
     } else {
         None

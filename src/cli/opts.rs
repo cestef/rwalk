@@ -268,7 +268,7 @@ pub struct Opts {
     pub generate_completions: bool,
 }
 
-#[derive(Clone, Debug, Serialize, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Wordlist(pub String, pub Vec<String>);
 
 impl Wordlist {
@@ -285,8 +285,26 @@ impl<'de> Deserialize<'de> for Wordlist {
         let s = String::deserialize(deserializer)?;
         let parts = s.split(':').collect::<Vec<_>>();
         let file = parts[0].to_string();
-        let keys = parts[1..].iter().map(|s| s.to_string()).collect();
+        let keys = parts[1..]
+            .iter()
+            .filter_map(|s| {
+                if s.is_empty() {
+                    None
+                } else {
+                    Some(s.to_string())
+                }
+            })
+            .collect();
         Ok(Wordlist(file, keys))
+    }
+}
+
+impl Serialize for Wordlist {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        format!("{}:{}", self.0, self.1.join(",")).serialize(serializer)
     }
 }
 

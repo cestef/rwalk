@@ -31,7 +31,7 @@ impl From<&str> for Mode {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Save {
     pub tree: Arc<Mutex<Tree<TreeData>>>,
     pub depth: Arc<Mutex<usize>>,
