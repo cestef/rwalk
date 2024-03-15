@@ -217,7 +217,7 @@ pub struct Opts {
     #[serde(default)]
     pub wordlist_filter: Vec<KeyVal<String, String>>,
 
-    /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"
+    /// Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth", "type"
     #[clap(
         short,
         long,

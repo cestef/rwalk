@@ -106,6 +106,7 @@ impl Classic {
                         status_code,
                         t1.elapsed().as_millis(),
                         None,
+                        &response,
                     );
 
                     if filtered {

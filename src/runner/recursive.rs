@@ -200,6 +200,7 @@ impl Recursive {
                         status_code,
                         t1.elapsed().as_millis(),
                         Some(*depth.lock()),
+                        &response,
                     );
 
                     if filtered {
