@@ -30,9 +30,9 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 - [x] Request throttling
 - [x] Proxy support
 
+<!-- omit in toc -->
 ## Table of Contents
 
-- [Table of Contents](#table-of-contents)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Scanning modes](#scanning-modes)
