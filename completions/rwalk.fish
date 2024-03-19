@@ -16,7 +16,7 @@ complete -c rwalk -l show -d 'Show response additional body information' -r -f -
 complete -c rwalk -l save-file -d 'Custom save file' -r
 complete -c rwalk -s T -l transform -d 'Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"' -r
 complete -c rwalk -s w -l wordlist-filter -l wf -d 'Wordlist filtering: "contains", "starts", "ends", "regex", "length"' -r
-complete -c rwalk -s f -l filter -d 'Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"' -r
+complete -c rwalk -s f -l filter -d 'Response filtering: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth", "type"' -r
 complete -c rwalk -l request-file -l rf -d 'Request file (.http, .rest)' -r
 complete -c rwalk -s P -l proxy -d 'Proxy URL' -r
 complete -c rwalk -l proxy-auth -d 'Proxy username and password' -r

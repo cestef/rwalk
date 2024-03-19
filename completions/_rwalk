@@ -49,8 +49,8 @@ _rwalk() {
 '*-w+[Wordlist filtering\: "contains", "starts", "ends", "regex", "length"]:KEY:FILTER: ' \
 '*--wordlist-filter=[Wordlist filtering\: "contains", "starts", "ends", "regex", "length"]:KEY:FILTER: ' \
 '*--wf=[Wordlist filtering\: "contains", "starts", "ends", "regex", "length"]:KEY:FILTER: ' \
-'*-f+[Response filtering\: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"]:KEY:FILTER: ' \
-'*--filter=[Response filtering\: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth"]:KEY:FILTER: ' \
+'*-f+[Response filtering\: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth", "type"]:KEY:FILTER: ' \
+'*--filter=[Response filtering\: "time", "status", "contains", "starts", "end", "regex", "length", "hash", "header", "json", "depth", "type"]:KEY:FILTER: ' \
 '--request-file=[Request file (.http, .rest)]:FILE: ' \
 '--rf=[Request file (.http, .rest)]:FILE: ' \
 '-P+[Proxy URL]:URL: ' \
