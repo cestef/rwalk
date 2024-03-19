@@ -59,10 +59,6 @@ jobs:
         name: homebrew-releaser
         steps:
             - uses: actions/checkout@v4
-            - name: Generate tag
-              id: tag
-              # Get the latest tag without the v prefix
-              run: echo "tag=$(git describe --tags --abbrev=0 | sed 's/v//')" >> $GITHUB_OUTPUT
             - name: Release my project to my Homebrew tap
               uses: Justintime50/homebrew-releaser@392a2426758dfdcc91f302d55cf5061346af2219
               with:
@@ -81,7 +77,7 @@ jobs:
                   target_linux_arm64: true
 
                   update_readme_table: true
-                  version: ${{ steps.tag.outputs.tag }}
+                  version: ${GITHUB_REF#refs/tags/v}
                   # Skips committing the generated formula to a homebrew tap (useful for local testing).
                   skip_commit: false
                   # Logs debugging info to console.
