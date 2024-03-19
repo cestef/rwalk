@@ -47,8 +47,6 @@ jobs:
               id: tag
               # Get the latest tag without the v prefix
               run: echo "tag=$(git describe --tags --abbrev=0 | sed 's/v//')" >> $GITHUB_OUTPUT
-            - name: Rust Cache
-              uses: Swatinem/rust-cache@v2.7.3
             - uses: taiki-e/upload-rust-binary-action@v1
               with:
                   bin: rwalk
@@ -61,7 +59,7 @@ jobs:
         name: homebrew-releaser
         steps:
             - name: Release my project to my Homebrew tap
-              uses: Justintime50/homebrew-releaser@392a242
+              uses: Justintime50/homebrew-releaser@392a2426758dfdcc91f302d55cf5061346af2219
               with:
                   homebrew_owner: cestef
                   homebrew_tap: homebrew-tap
