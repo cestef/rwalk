@@ -70,7 +70,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
             saved_opts
         } else {
             let err = save.as_ref().unwrap_err();
-            error!("Error while parsing save file: {}", err);
+            error!(
+                "Error while parsing save file: {}, using passed options",
+                err.to_string().bold().red()
+            );
             opts.clone()
         }
     } else {
