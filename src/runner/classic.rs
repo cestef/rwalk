@@ -218,7 +218,9 @@ impl Runner for Classic {
 
         let urls: Vec<String> = self.generate_urls();
         spinner.finish_and_clear();
-        info!("Generated {} URLs", urls.len().to_string().bold());
+        if !self.opts.quiet {
+            info!("Generated {} URLs", urls.len().to_string().bold());
+        }
         debug!("URLs: {:?}", urls);
 
         let progress = ProgressBar::new(urls.len() as u64).with_style(

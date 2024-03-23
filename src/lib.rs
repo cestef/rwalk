@@ -173,7 +173,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     }
 
     let after = words.values().fold(0, |acc, x| acc + x.words.len());
-    if before != after {
+    if before != after && !opts.quiet {
         info!(
             "{} words loaded, {} after deduplication and filters (-{}%)",
             before.to_string().bold().blue(),
@@ -271,11 +271,13 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     let watch = stopwatch::Stopwatch::start_new();
 
-    info!(
-        "Press {} to {}exit",
-        "Ctrl+C".bold(),
-        if opts.no_save { "" } else { "save state and " }
-    );
+    if !opts.quiet {
+        info!(
+            "Press {} to {}exit",
+            "Ctrl+C".bold(),
+            if opts.no_save { "" } else { "save state and " }
+        );
+    }
 
     // Define the main function to run based on the mode
     let main_fun = match mode {
