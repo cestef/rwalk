@@ -165,10 +165,12 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     runner::wordlists::deduplicate(&mut words);
 
-    println!(
-        "{}",
-        build_opts_table(&opts, &words, &mode, threads, url.clone())
-    );
+    if !opts.quiet {
+        println!(
+            "{}",
+            build_opts_table(&opts, &words, &mode, threads, url.clone())
+        );
+    }
 
     let after = words.values().fold(0, |acc, x| acc + x.words.len());
     if before != after {
