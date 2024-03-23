@@ -9,7 +9,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{
-    cli::opts::Opts, runner::wordlists::compute_checksum, utils::get_emoji_for_status_code_colored,
+    cli::opts::Opts,
+    runner::wordlists::{compute_checksum, ParsedWordlist},
+    utils::get_emoji_for_status_code_colored,
     Save,
 };
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -170,7 +172,7 @@ pub fn from_save(
     save: &Save,
     depth: Arc<Mutex<usize>>,
     current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
-    words: HashMap<String, Vec<String>>,
+    words: HashMap<String, ParsedWordlist>,
 ) -> Result<Arc<Mutex<Tree<TreeData>>>> {
     if let Some(root) = &save.tree.clone().lock().root {
         if opts.url.is_some() && root.lock().data.url != opts.url.clone().unwrap() {

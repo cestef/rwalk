@@ -52,6 +52,7 @@ toml = "0.8.11"
 url = "2.4.1"
 clap_complete = "4.5.1"
 clap_complete_nushell = "4.5.1"
+tabled = { version = "0.15.0", features = ["ansi"] }
 
 # Strip the debug symbols from the binary
 [profile.release]

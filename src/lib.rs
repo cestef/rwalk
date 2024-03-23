@@ -10,10 +10,13 @@ use std::{
 
 use crate::{
     cli::{helpers::KeyVal, opts::Opts},
-    runner::{wordlists::compute_checksum, Runner},
+    runner::{
+        wordlists::{compute_checksum, ParsedWordlist},
+        Runner,
+    },
     utils::{
-        color_for_status_code,
         constants::{DEFAULT_FUZZ_KEY, DEFAULT_MODE, DEFAULT_STATUS_CODES},
+        table::build_opts_table,
     },
 };
 use anyhow::bail;
@@ -93,10 +96,17 @@ pub async fn _main(opts: Opts) -> Result<()> {
     // Parse wordlists into a HashMap associating each wordlist key to its contents
     let mut words = runner::wordlists::parse(&opts.wordlists).await?;
 
+    // Get the number of threads to use, default to 10 times the number of cores
+    let threads = opts
+        .threads
+        .unwrap_or(num_cpus::get() * 10)
+        .max(1)
+        .min(words.iter().fold(0, |acc, (_, v)| acc + v.words.len()));
+
     let mut url = opts.url.clone().unwrap();
 
     // Check if the URL contains any of the replace keywords
-    let fuzz_matches = words
+    let mut fuzz_matches = words
         .keys()
         .filter(|x| url.contains(*x))
         .cloned()
@@ -112,50 +122,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     } else {
         DEFAULT_MODE.into()
     };
-    info!("Mode: {}", mode.to_string().bold().blue());
-    info!("URL: {}", url.bold().blue());
-    info!(
-        "Status codes: {}",
-        opts.filter
-            .iter()
-            .find(|x| x.0 == "status")
-            .unwrap()
-            .1
-            .split(',')
-            .map(|x| {
-                // can be 200-300, 200, >300, <300
-                // Split and bold only the numbers
-                let mut x = x.to_string();
-                if x.contains('-') {
-                    x = x
-                        .split('-')
-                        .map(|x| match x.parse::<u16>() {
-                            Ok(x) => color_for_status_code(x.to_string(), x),
-                            Err(_) => x.to_string(),
-                        })
-                        .collect::<Vec<_>>()
-                        .join("-")
-                        .to_string();
-                } else if let Some(stripped) = x.strip_prefix('>') {
-                    x = ">".to_string()
-                        + &color_for_status_code(
-                            stripped.to_string(),
-                            stripped.parse().unwrap_or_default(),
-                        );
-                } else if let Some(stripped) = x.strip_prefix('<') {
-                    x = "<".to_string()
-                        + &color_for_status_code(
-                            stripped.to_string(),
-                            stripped.parse().unwrap_or_default(),
-                        );
-                } else {
-                    x = color_for_status_code(x.to_string(), x.parse().unwrap_or_default());
-                }
-                x
-            })
-            .collect::<Vec<_>>()
-            .join(", ")
-    );
+
     match mode {
         Mode::Recursive => {
             if !fuzz_matches.is_empty() {
@@ -170,16 +137,27 @@ pub async fn _main(opts: Opts) -> Result<()> {
         Mode::Classic => {
             if fuzz_matches.is_empty() {
                 url = url.trim_end_matches('/').to_string() + "/" + DEFAULT_FUZZ_KEY;
+                fuzz_matches.push(DEFAULT_FUZZ_KEY.to_string());
                 warn!(
                     "URL does not contain the replace keyword: {}, it will be treated as: {}",
                     DEFAULT_FUZZ_KEY.bold(),
                     url.bold()
                 );
             }
+            // Remove unused wordlists keys
+            for k in words.keys().cloned().collect::<Vec<_>>() {
+                if !fuzz_matches.contains(&k) {
+                    warn!(
+                        "Wordlist {} is not used in the URL, removing it",
+                        k.bold().blue()
+                    );
+                    words.remove(&k);
+                }
+            }
         }
     }
 
-    let before = words.values().fold(0, |acc, x| acc + x.len());
+    let before = words.values().fold(0, |acc, x| acc + x.words.len());
 
     // Apply filters and transformations to the wordlists (if any)
     runner::wordlists::filters(&opts, &mut words)?;
@@ -187,7 +165,12 @@ pub async fn _main(opts: Opts) -> Result<()> {
 
     runner::wordlists::deduplicate(&mut words);
 
-    let after = words.values().fold(0, |acc, x| acc + x.len());
+    println!(
+        "{}",
+        build_opts_table(&opts, &words, &mode, threads, url.clone())
+    );
+
+    let after = words.values().fold(0, |acc, x| acc + x.words.len());
     if before != after {
         info!(
             "{} words loaded, {} after deduplication and filters (-{}%)",
@@ -199,13 +182,12 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 .bold()
                 .green()
         );
-    } else {
-        info!("{} words loaded", before.to_string().bold().blue());
     }
 
-    if words.values().all(|x| x.is_empty()) {
+    if words.values().all(|x| x.words.is_empty()) {
         bail!("No words found in wordlists");
     }
+
     // These will be used to keep track of the current state of the tree across threads
     let current_depth = Arc::new(Mutex::new(0));
     let current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>> =
@@ -285,18 +267,6 @@ pub async fn _main(opts: Opts) -> Result<()> {
         tree.lock().root.clone().unwrap().lock().data.status_code = res?.status().as_u16();
     }
 
-    // Get the number of threads to use, default to 10 times the number of cores
-    let threads = opts
-        .threads
-        .unwrap_or(num_cpus::get() * 10)
-        .max(1)
-        .min(words.iter().fold(0, |acc, (_, v)| acc + v.len()));
-    info!(
-        "Starting crawler with {} thread{}",
-        threads.to_string().bold().blue(),
-        if threads > 1 { "s" } else { "" }
-    );
-
     let watch = stopwatch::Stopwatch::start_new();
 
     info!(
@@ -316,11 +286,14 @@ pub async fn _main(opts: Opts) -> Result<()> {
             Arc::new(
                 words
                     .iter()
-                    .fold(Vec::new(), |mut acc, (_, v)| {
-                        acc.extend(v.clone());
-                        acc
-                    })
-                    .chunks(words.iter().fold(0, |acc, (_, v)| acc + v.len()) / threads)
+                    .fold(
+                        Vec::new(),
+                        |mut acc, (_, ParsedWordlist { words: w, .. })| {
+                            acc.extend(w.clone());
+                            acc
+                        },
+                    )
+                    .chunks(words.iter().fold(0, |acc, (_, v)| acc + v.words.len()) / threads)
                     .map(|x| x.to_vec())
                     .collect::<Vec<_>>(),
             ),
@@ -425,9 +398,10 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 HumanDuration(watch.elapsed()).to_string().bold(),
                 ((match mode {
                     Mode::Recursive =>
-                        words.iter().fold(0, |acc, (_, v)| acc + v.len()) * *current_depth.lock(),
+                        words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
+                            * *current_depth.lock(),
                     Mode::Classic => {
-                        words.iter().fold(0, |acc, (_, v)| acc + v.len())
+                        words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
                     }
                 }) as f64
                     / watch.elapsed().as_secs_f64())

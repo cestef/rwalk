@@ -14,6 +14,7 @@ use self::constants::DEFAULT_FILE_TYPE;
 pub mod constants;
 pub mod logger;
 pub mod structs;
+pub mod table;
 pub mod tree;
 
 pub fn banner() {

@@ -21,13 +21,13 @@ use reqwest::Client;
 use serde_json::json;
 use url::Url;
 
-use super::Runner;
+use super::{wordlists::ParsedWordlist, Runner};
 
 pub struct Classic {
     url: String,
     opts: Opts,
     tree: Arc<Mutex<Tree<TreeData>>>,
-    words: HashMap<String, Vec<String>>,
+    words: HashMap<String, ParsedWordlist>,
     threads: usize,
 }
 
@@ -36,7 +36,7 @@ impl Classic {
         url: String,
         opts: Opts,
         tree: Arc<Mutex<Tree<TreeData>>>,
-        words: HashMap<String, Vec<String>>,
+        words: HashMap<String, ParsedWordlist>,
         threads: usize,
     ) -> Self {
         Self {
@@ -51,7 +51,9 @@ impl Classic {
         let products = self
             .words
             .iter()
-            .map(|(k, v)| v.iter().map(|w| (k, w)).collect::<Vec<_>>())
+            .map(|(k, ParsedWordlist { words: v, .. })| {
+                v.iter().map(|w| (k, w)).collect::<Vec<_>>()
+            })
             .multi_cartesian_product()
             .collect::<Vec<_>>();
         let mut urls = vec![];

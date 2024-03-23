@@ -1,13 +1,25 @@
+use std::fmt::Display;
+
 use super::opts::Wordlist;
 use clap::{
     builder::TypedValueParser,
     error::{ContextKind, ContextValue, ErrorKind},
 };
 use serde::{Deserialize, Serialize};
+use tabled::Tabled;
 use url::Url;
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
-pub struct KeyVal<T, U>(pub T, pub U);
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize, Tabled)]
+pub struct KeyVal<T: Display, U: Display>(
+    #[tabled(rename = "Key")] pub T,
+    #[tabled(rename = "Value")] pub U,
+);
+
+impl<T: Display, U: Display> Display for KeyVal<T, U> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.0, self.1)
+    }
+}
 
 #[derive(Clone)]
 pub struct KeyValParser;
@@ -50,7 +62,16 @@ impl TypedValueParser for KeyValParser {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
-pub struct KeyOrKeyVal<T, U>(pub T, pub Option<U>);
+pub struct KeyOrKeyVal<T: Display, U: Display>(pub T, pub Option<U>);
+
+impl Display for KeyOrKeyVal<String, String> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.1 {
+            Some(v) => write!(f, "{}:{}", self.0, v),
+            None => write!(f, "{}", self.0),
+        }
+    }
+}
 #[derive(Clone)]
 pub struct KeyOrKeyValParser;
 

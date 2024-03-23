@@ -12,8 +12,20 @@ use crate::{
     utils::{check_range, constants::DEFAULT_FUZZ_KEY, parse_range_input},
 };
 
-pub async fn parse(wordlists: &Vec<Wordlist>) -> Result<HashMap<String, Vec<String>>> {
-    let mut out: HashMap<String, Vec<String>> = HashMap::new();
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ParsedWordlist {
+    pub path: String,
+    pub words: Vec<String>,
+}
+
+impl ParsedWordlist {
+    pub fn new(path: String, words: Vec<String>) -> Self {
+        Self { path, words }
+    }
+}
+
+pub async fn parse(wordlists: &Vec<Wordlist>) -> Result<HashMap<String, ParsedWordlist>> {
+    let mut out: HashMap<String, ParsedWordlist> = HashMap::new();
     for Wordlist(path, keys) in wordlists {
         let words: String = match path.as_str() {
             "-" => {
@@ -52,7 +64,11 @@ pub async fn parse(wordlists: &Vec<Wordlist>) -> Result<HashMap<String, Vec<Stri
                 keys.clone()
             }
         } {
-            out.entry(key.clone()).or_default().extend(
+            let entry = out.entry(key.clone()).or_insert(ParsedWordlist {
+                path: path.clone(),
+                words: Vec::new(),
+            });
+            entry.words.extend(
                 words
                     .split('\n')
                     .map(|x| x.to_string())
@@ -64,14 +80,14 @@ pub async fn parse(wordlists: &Vec<Wordlist>) -> Result<HashMap<String, Vec<Stri
     Ok(out)
 }
 
-pub fn deduplicate(wordlists: &mut HashMap<String, Vec<String>>) {
-    for words in (*wordlists).values_mut() {
+pub fn deduplicate(wordlists: &mut HashMap<String, ParsedWordlist>) {
+    for ParsedWordlist { words, .. } in (*wordlists).values_mut() {
         words.sort();
         words.dedup();
     }
 }
 
-pub fn filters(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>) -> Result<()> {
+pub fn filters(opts: &Opts, wordlists: &mut HashMap<String, ParsedWordlist>) -> Result<()> {
     for filter in opts.wordlist_filter.iter().cloned() {
         let mut filter = filter;
         // if the filter starts with [specifier] then we parse the specifier and remove it from the filter
@@ -87,17 +103,19 @@ pub fn filters(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>) -> Res
         let not = filter.0.starts_with('!');
         match filter.0.trim_start_matches('!') {
             "contains" => {
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.retain(|word| {
                         if not {
                             !word.contains(&filter.1)
@@ -108,17 +126,19 @@ pub fn filters(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>) -> Res
                 }
             }
             "starts" => {
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.retain(|word| {
                         if not {
                             !word.starts_with(&filter.1)
@@ -129,17 +149,19 @@ pub fn filters(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>) -> Res
                 }
             }
             "ends" => {
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.retain(|word| {
                         if not {
                             !word.ends_with(&filter.1)
@@ -151,17 +173,19 @@ pub fn filters(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>) -> Res
             }
             "regex" => {
                 let re = regex::Regex::new(&filter.1)?;
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.retain(|word| {
                         if not {
                             !re.is_match(word)
@@ -173,17 +197,19 @@ pub fn filters(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>) -> Res
             }
             "length" => {
                 let parsed_filter_length = parse_range_input(&filter.1)?;
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.retain(|word| {
                         if not {
                             !check_range(&parsed_filter_length, word.len())
@@ -199,7 +225,7 @@ pub fn filters(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>) -> Res
     Ok(())
 }
 
-pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>) {
+pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, ParsedWordlist>) {
     for transformation in opts.transform.clone() {
         let mut transformation = transformation;
 
@@ -214,34 +240,38 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>
         };
         match transformation.0.as_str() {
             "lower" => {
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.iter_mut().for_each(|word| {
                         *word = word.to_lowercase();
                     });
                 }
             }
             "upper" => {
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.iter_mut().for_each(|word| {
                         *word = word.to_uppercase();
                     });
@@ -249,17 +279,19 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>
             }
             "prefix" => {
                 let transform_prefix = transformation.1.clone().unwrap();
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.iter_mut().for_each(|word| {
                         *word = format!("{}{}", transform_prefix, word);
                     });
@@ -267,34 +299,38 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>
             }
             "suffix" => {
                 let transform_suffix = transformation.1.clone().unwrap();
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.iter_mut().for_each(|word| {
                         *word = format!("{}{}", word, transform_suffix);
                     });
                 }
             }
             "capitalize" => {
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
                         } else {
-                            None
+                            Some(value)
                         }
-                    } else {
-                        Some(value)
-                    }
-                }) {
+                    })
+                {
                     words.iter_mut().for_each(|word| {
                         *word = word.to_lowercase();
                         let mut chars = word.chars();
@@ -305,45 +341,8 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>
                 }
             }
             "reverse" => {
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
-                        } else {
-                            None
-                        }
-                    } else {
-                        Some(value)
-                    }
-                }) {
-                    words.iter_mut().for_each(|word| {
-                        *word = word.chars().rev().collect::<String>();
-                    });
-                }
-            }
-            "remove" => {
-                let transform_remove = transformation.1.clone().unwrap();
-                for words in wordlists.iter_mut().filter_map(|(key, value)| {
-                    if let Some(ref specifier) = wordlist_specifier {
-                        if specifier == key {
-                            Some(value)
-                        } else {
-                            None
-                        }
-                    } else {
-                        Some(value)
-                    }
-                }) {
-                    words.iter_mut().for_each(|word| {
-                        *word = word.replace(&transform_remove, "");
-                    });
-                }
-            }
-            "replace" => {
-                let transform_replace = transformation.1.clone().unwrap();
-                let parts = transform_replace.split('=').collect::<Vec<_>>();
-                if parts.len() == 2 {
-                    for words in wordlists.iter_mut().filter_map(|(key, value)| {
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
                         if let Some(ref specifier) = wordlist_specifier {
                             if specifier == key {
                                 Some(value)
@@ -353,7 +352,50 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>
                         } else {
                             Some(value)
                         }
-                    }) {
+                    })
+                {
+                    words.iter_mut().for_each(|word| {
+                        *word = word.chars().rev().collect::<String>();
+                    });
+                }
+            }
+            "remove" => {
+                let transform_remove = transformation.1.clone().unwrap();
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
+                        } else {
+                            Some(value)
+                        }
+                    })
+                {
+                    words.iter_mut().for_each(|word| {
+                        *word = word.replace(&transform_remove, "");
+                    });
+                }
+            }
+            "replace" => {
+                let transform_replace = transformation.1.clone().unwrap();
+                let parts = transform_replace.split('=').collect::<Vec<_>>();
+                if parts.len() == 2 {
+                    for ParsedWordlist { words, .. } in
+                        wordlists.iter_mut().filter_map(|(key, value)| {
+                            if let Some(ref specifier) = wordlist_specifier {
+                                if specifier == key {
+                                    Some(value)
+                                } else {
+                                    None
+                                }
+                            } else {
+                                Some(value)
+                            }
+                        })
+                    {
                         words.iter_mut().for_each(|word| {
                             *word = word.replace(parts[0], parts[1]);
                         });
@@ -365,10 +407,10 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, Vec<String>>
     }
 }
 
-pub fn compute_checksum(wordlists: &HashMap<String, Vec<String>>) -> String {
+pub fn compute_checksum(wordlists: &HashMap<String, ParsedWordlist>) -> String {
     let to_compute = wordlists
         .iter()
-        .map(|(key, words)| format!("{}:{:?}", key, words.join(",")))
+        .map(|(key, ParsedWordlist { words, .. })| format!("{}:{:?}", key, words.join(",")))
         .collect::<Vec<String>>()
         .join("|");
     format!("{:x}", md5::compute(to_compute))
@@ -421,19 +463,25 @@ mod tests {
         ];
         let parsed = parse(&wordlists).await.unwrap();
         assert_eq!(parsed.len(), 2);
-        assert_eq!(parsed.get("W1").unwrap().len(), 7);
-        assert_eq!(parsed.get("W2").unwrap().len(), 2);
+        assert_eq!(parsed.get("W1").unwrap().words.len(), 7);
+        assert_eq!(parsed.get("W2").unwrap().words.len(), 2);
     }
 
     #[test]
     fn test_deduplicate() {
         let mut wordlists = HashMap::new();
-        wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "b".to_string()]);
+        wordlists.insert(
+            "FUZZ".to_string(),
+            ParsedWordlist::new("".to_string(), vec!["a".to_string(), "b".to_string()]),
+        );
         deduplicate(&mut wordlists);
-        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
-        wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "a".to_string()]);
+        assert_eq!(wordlists.get("FUZZ").unwrap().words.len(), 2);
+        wordlists.insert(
+            "FUZZ".to_string(),
+            ParsedWordlist::new("".to_string(), vec!["a".to_string(), "a".to_string()]),
+        );
         deduplicate(&mut wordlists);
-        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 1);
+        assert_eq!(wordlists.get("FUZZ").unwrap().words.len(), 1);
     }
 
     #[test]
@@ -441,7 +489,10 @@ mod tests {
         let mut wordlists = HashMap::new();
         wordlists.insert(
             "FUZZ".to_string(),
-            vec!["ab".to_string(), "a".to_string(), "b".to_string()],
+            ParsedWordlist::new(
+                "".to_string(),
+                vec!["ab".to_string(), "a".to_string(), "b".to_string()],
+            ),
         );
         filters(
             &Opts {
@@ -451,7 +502,7 @@ mod tests {
             &mut wordlists,
         )
         .unwrap();
-        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap().words.len(), 2);
 
         filters(
             &Opts {
@@ -461,13 +512,16 @@ mod tests {
             &mut wordlists,
         )
         .unwrap();
-        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 1);
+        assert_eq!(wordlists.get("FUZZ").unwrap().words.len(), 1);
     }
 
     #[test]
     fn test_transformations() {
         let mut wordlists = HashMap::new();
-        wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "b".to_string()]);
+        wordlists.insert(
+            "FUZZ".to_string(),
+            ParsedWordlist::new("".to_string(), vec!["a".to_string(), "b".to_string()]),
+        );
         transformations(
             &Opts {
                 transform: vec![KeyOrKeyVal("upper".to_string(), None)],
@@ -475,8 +529,8 @@ mod tests {
             },
             &mut wordlists,
         );
-        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
-        assert_eq!(wordlists.get("FUZZ").unwrap()[0], "A");
+        assert_eq!(wordlists.get("FUZZ").unwrap().words.len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap().words[0], "A");
 
         transformations(
             &Opts {
@@ -485,8 +539,8 @@ mod tests {
             },
             &mut wordlists,
         );
-        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
-        assert_eq!(wordlists.get("FUZZ").unwrap()[0], "cA");
+        assert_eq!(wordlists.get("FUZZ").unwrap().words.len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap().words[0], "cA");
 
         transformations(
             &Opts {
@@ -496,8 +550,8 @@ mod tests {
             &mut wordlists,
         );
 
-        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
-        assert_eq!(wordlists.get("FUZZ").unwrap()[0], "cAd");
+        assert_eq!(wordlists.get("FUZZ").unwrap().words.len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap().words[0], "cAd");
 
         transformations(
             &Opts {
@@ -507,14 +561,17 @@ mod tests {
             &mut wordlists,
         );
 
-        assert_eq!(wordlists.get("FUZZ").unwrap().len(), 2);
-        assert_eq!(wordlists.get("FUZZ").unwrap()[0], "Cad");
+        assert_eq!(wordlists.get("FUZZ").unwrap().words.len(), 2);
+        assert_eq!(wordlists.get("FUZZ").unwrap().words[0], "Cad");
     }
 
     #[test]
     fn test_compute_checksum() {
         let mut wordlists = HashMap::new();
-        wordlists.insert("FUZZ".to_string(), vec!["a".to_string(), "b".to_string()]);
+        wordlists.insert(
+            "FUZZ".to_string(),
+            ParsedWordlist::new("".to_string(), vec!["a".to_string(), "b".to_string()]),
+        );
         assert_eq!(
             compute_checksum(&wordlists),
             "0da67572922cb261bf70d946f2ba6c03"
