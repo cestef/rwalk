@@ -13,7 +13,10 @@ use tabled::{
     settings::{Alignment, Style},
 };
 
-use super::{color_for_status_code, structs::Mode};
+use super::{
+    color_for_status_code,
+    structs::{FuzzMatch, Mode},
+};
 
 pub fn build_opts_table(
     opts: &Opts,
@@ -21,6 +24,7 @@ pub fn build_opts_table(
     mode: &Mode,
     threads: usize,
     url: String,
+    fuzz_matches: &[FuzzMatch],
 ) -> String {
     let mut builder = Builder::default();
 
@@ -146,14 +150,39 @@ pub fn build_opts_table(
         ]);
     }
 
-    builder.push_record(vec![
-        "URL",
-        &url.trim_end_matches('/')
-            .to_string()
-            .bold()
-            .blue()
-            .to_string(),
-    ]);
+    let mut url = url.trim_end_matches('/').to_string();
+
+    // Only color the url parts that have been matched with fuzz_matches
+
+    fn color_n(s: String, n: usize) -> String {
+        match n % 5 {
+            0 => s.bold().green().to_string(),
+            1 => s.bold().yellow().to_string(),
+            2 => s.bold().red().to_string(),
+            3 => s.bold().cyan().to_string(),
+            _ => s.bold().magenta().to_string(),
+        }
+    }
+
+    let grouped_matches = fuzz_matches
+        .iter()
+        .fold(HashMap::<String, Vec<&FuzzMatch>>::new(), |mut acc, x| {
+            acc.entry(x.content.clone()).or_default().push(x);
+            acc
+        })
+        .into_iter()
+        .collect::<Vec<_>>();
+
+    for (i, matches) in grouped_matches.iter().enumerate() {
+        for fuzz_match in &matches.1 {
+            url = url.replace(
+                &fuzz_match.content,
+                &color_n(fuzz_match.content.to_string(), i),
+            );
+        }
+    }
+
+    builder.push_record(vec!["URL", &url]);
 
     let mut wordlists_builder = Builder::default();
     wordlists_builder.push_record(vec!["Path", "Key", "Size"]);

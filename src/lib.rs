@@ -24,6 +24,7 @@ use anyhow::Result;
 use colored::Colorize;
 use futures::{future::abortable, FutureExt, StreamExt};
 use indicatif::HumanDuration;
+use itertools::Itertools;
 use log::{error, info, warn};
 use merge::Merge;
 use parking_lot::Mutex;
@@ -32,6 +33,7 @@ use signal_hook::consts::SIGINT;
 use signal_hook_tokio::Signals;
 use tokio::{io::AsyncWriteExt, task::JoinHandle, time::timeout};
 use url::Url;
+use utils::structs::FuzzMatch;
 
 use crate::utils::{
     constants::SUCCESS,
@@ -108,10 +110,14 @@ pub async fn _main(opts: Opts) -> Result<()> {
     // Check if the URL contains any of the replace keywords
     let mut fuzz_matches = words
         .keys()
-        .filter(|x| url.contains(*x))
-        .cloned()
+        .flat_map(|x| {
+            url.match_indices(x).map(|(i, e)| FuzzMatch {
+                content: e.to_string(),
+                start: i,
+                end: i + e.len(),
+            })
+        })
         .collect::<Vec<_>>();
-
     // Set the mode based on the options and the URL
     let mode: Mode = if opts.mode.is_some() {
         opts.mode.as_deref().unwrap().into()
@@ -129,7 +135,12 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 warn!(
                     "URL contains the replace keyword{}: {}, this is supported with {}",
                     if fuzz_matches.len() > 1 { "s" } else { "" },
-                    fuzz_matches.join(", ").bold().blue(),
+                    fuzz_matches
+                        .iter()
+                        .map(|e| e.content.clone())
+                        .join(", ")
+                        .bold()
+                        .blue(),
                     format!("{} {}", "--mode".dimmed(), "classic".bold())
                 );
             }
@@ -137,7 +148,11 @@ pub async fn _main(opts: Opts) -> Result<()> {
         Mode::Classic => {
             if fuzz_matches.is_empty() {
                 url = url.trim_end_matches('/').to_string() + "/" + DEFAULT_FUZZ_KEY;
-                fuzz_matches.push(DEFAULT_FUZZ_KEY.to_string());
+                fuzz_matches.push(FuzzMatch {
+                    content: DEFAULT_FUZZ_KEY.to_string(),
+                    start: url.len() - 1,
+                    end: url.len() - 1 + DEFAULT_FUZZ_KEY.len(),
+                });
                 warn!(
                     "URL does not contain the replace keyword: {}, it will be treated as: {}",
                     DEFAULT_FUZZ_KEY.bold(),
@@ -146,7 +161,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
             }
             // Remove unused wordlists keys
             for k in words.keys().cloned().collect::<Vec<_>>() {
-                if !fuzz_matches.contains(&k) {
+                if !fuzz_matches.iter().any(|e| e.content == k) {
                     warn!(
                         "Wordlist {} is not used in the URL, removing it",
                         k.bold().blue()
@@ -168,7 +183,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
     if !opts.quiet {
         println!(
             "{}",
-            build_opts_table(&opts, &words, &mode, threads, url.clone())
+            build_opts_table(&opts, &words, &mode, threads, url.clone(), &fuzz_matches)
         );
     }
 
@@ -225,7 +240,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 // Get the first part of the url, before the first occurence of a fuzz key from fuzz_matches
                 let mut smallest_index = url.len();
                 for match_ in &fuzz_matches {
-                    if let Some(index) = url.find(match_) {
+                    if let Some(index) = url.find(&match_.content) {
                         if index < smallest_index {
                             smallest_index = index;
                         }

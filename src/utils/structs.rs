@@ -12,6 +12,13 @@ pub enum Mode {
     Classic,
 }
 
+#[derive(Clone, Debug)]
+pub struct FuzzMatch {
+    pub content: String,
+    pub start: usize,
+    pub end: usize,
+}
+
 impl ToString for Mode {
     fn to_string(&self) -> String {
         match self {
