@@ -429,6 +429,11 @@ Positional arguments can also be passed.
 just bench <URL> <WORDLIST_FILE> <THREADS>
 ```
 
+
+Please take these results with a grain of salt.
+
+> <i> "There are three types of lies: lies, damn lies and benchmarks"</i>
+
 ## Contributing
 
 If you want to contribute to rwalk, please read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
