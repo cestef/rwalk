@@ -18,6 +18,7 @@ use super::{
     structs::{FuzzMatch, Mode},
 };
 
+/// Builds the options table printed in the CLI
 pub fn build_opts_table(
     opts: &Opts,
     words: &HashMap<String, ParsedWordlist>,

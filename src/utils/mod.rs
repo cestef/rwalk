@@ -71,12 +71,14 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>> {
         if part.is_empty() {
             continue;
         }
+        // Greater than
         if let Some(stripped) = part.strip_prefix('>') {
             let num = stripped.parse::<usize>();
             match num {
                 Ok(num) => ranges.push((num + 1, usize::MAX)),
                 Err(_) => bail!("Invalid range"),
             }
+        // Less than
         } else if let Some(stripped) = part.strip_prefix('<') {
             let num = stripped.parse::<usize>();
             match num {
@@ -86,12 +88,14 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>> {
         } else {
             let part = part.trim();
             let parts = part.split('-').collect::<Vec<_>>();
+            // Single number
             if parts.len() == 1 {
                 let num = parts[0].parse::<usize>();
                 match num {
                     Ok(num) => ranges.push((num, num)),
                     Err(_) => bail!("Invalid range"),
                 }
+            // Range
             } else if parts.len() == 2 {
                 let num1 = parts[0].parse::<usize>();
                 let num2 = parts[1].parse::<usize>();
@@ -107,6 +111,7 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>> {
     Ok(ranges)
 }
 
+// Write the tree to a file (json, csv, md)
 pub fn save_to_file(
     opts: &Opts,
     root: Arc<Mutex<TreeNode<TreeData>>>,

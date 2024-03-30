@@ -46,7 +46,16 @@ impl<T> Tree<T> {
     pub fn new() -> Self {
         Tree { root: None }
     }
-
+    /// Insert a new data into the tree, at the root if no parent provided.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The data to insert
+    /// * `parent` - The parent node, or `None` to insert at the root
+    ///
+    /// # Returns
+    ///
+    /// A new `Arc<Mutex<TreeNode<T>>>` containing the newly inserted node.
     pub fn insert(
         &mut self,
         data: T,
@@ -69,6 +78,16 @@ impl<T> Tree<T> {
         new_node
     }
 
+    /// Recursively get all nodes at a given depth
+    ///
+    /// # Arguments
+    ///
+    /// * `depth` - The depth to get nodes at
+    ///
+    /// # Returns
+    ///
+    /// A vector of all nodes at the given depth
+    ///
     pub fn get_nodes_at_depth(&self, depth: usize) -> Vec<Arc<Mutex<TreeNode<T>>>> {
         let mut nodes = Vec::new();
         Self::get_nodes_at_depth_recursive(&self.root, depth, &mut nodes);
@@ -76,6 +95,18 @@ impl<T> Tree<T> {
     }
 
     /// Recursively get all nodes at a given depth
+    ///
+    /// # Arguments
+    ///
+    /// * `depth` - The depth to get nodes at
+    ///
+    /// # Returns
+    ///
+    /// A vector of all nodes at the given depth
+    ///
+    /// # Notes
+    ///
+    /// This function is a helper function for `get_nodes_at_depth`
     fn get_nodes_at_depth_recursive(
         node: &Option<Arc<Mutex<TreeNode<T>>>>,
         depth: usize,
@@ -92,6 +123,16 @@ impl<T> Tree<T> {
         }
     }
 
+    /// Insert a vector of data into the tree
+    ///
+    /// # Arguments
+    ///
+    /// * `datas` - The data to insert
+    ///
+    /// # Notes
+    ///
+    /// This function will insert the data at the root of the tree
+    ///
     pub fn insert_datas(&mut self, datas: Vec<T>) {
         // Insert nodes into the root
         let mut previous_node: Option<Arc<Mutex<TreeNode<T>>>> = self.root.clone();
@@ -167,6 +208,7 @@ impl TreeItem for TreeNode<TreeData> {
     }
 }
 
+/// Create a new tree from a save
 pub fn from_save(
     opts: &Opts,
     save: &Save,

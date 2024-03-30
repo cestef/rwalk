@@ -47,6 +47,8 @@ impl Classic {
             threads,
         }
     }
+
+    /// Generate all possible URLs using a cartesian product of the wordlists
     fn generate_urls(&self) -> Vec<String> {
         let products = self
             .words
@@ -94,6 +96,8 @@ impl Classic {
                 Ok(mut response) => {
                     let status_code = response.status().as_u16();
                     let mut text = String::new();
+
+                    // Read the response body into `text`
                     while let Ok(chunk) = response.chunk().await {
                         if let Some(chunk) = chunk {
                             text.push_str(&String::from_utf8_lossy(&chunk));
@@ -101,6 +105,8 @@ impl Classic {
                             break;
                         }
                     }
+
+                    // Check if the response is filtered (`true` means we keep it)
                     let filtered = super::filters::check(
                         &opts,
                         &text,
@@ -112,6 +118,7 @@ impl Classic {
                     );
 
                     if filtered {
+                        // Parse what additional information should be shown
                         let additions = super::filters::parse_show(&opts, &text, &response);
 
                         progress.println(format!(
@@ -156,7 +163,6 @@ impl Classic {
                                 ),
                                 status_code,
                                 extra: json!(additions),
-                                // TODO: is_dir
                                 is_dir: false,
                             },
                             tree.root.clone(),
@@ -164,6 +170,7 @@ impl Classic {
                     }
                 }
                 Err(err) => {
+                    // Check if the error is a connection error and the user specified to consider it as a hit
                     if opts.hit_connection_errors && err.is_connect() {
                         progress.println(format!(
                             "{} {} {} {}",

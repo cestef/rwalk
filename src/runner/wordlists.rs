@@ -24,6 +24,16 @@ impl ParsedWordlist {
     }
 }
 
+/// Parse wordlists
+///
+/// # Arguments
+///
+/// * `wordlists` - The paths to wordlists to parse
+///
+/// # Returns
+///
+/// A hashmap of parsed wordlists (key = path, value = ParsedWordlist)
+/// Where ParsedWordlist contains the path to the wordlist and the words in the wordlist
 pub async fn parse(wordlists: &Vec<Wordlist>) -> Result<HashMap<String, ParsedWordlist>> {
     let mut out: HashMap<String, ParsedWordlist> = HashMap::new();
     for Wordlist(path, keys) in wordlists {
