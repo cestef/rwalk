@@ -82,7 +82,7 @@ pub async fn parse(wordlists: &Vec<Wordlist>) -> Result<HashMap<String, ParsedWo
 
 pub fn deduplicate(wordlists: &mut HashMap<String, ParsedWordlist>) {
     for ParsedWordlist { words, .. } in (*wordlists).values_mut() {
-        words.sort();
+        words.sort_unstable();
         words.dedup();
     }
 }
