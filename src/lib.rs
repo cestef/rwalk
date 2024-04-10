@@ -22,15 +22,13 @@ use crate::{
 use anyhow::bail;
 use anyhow::Result;
 use colored::Colorize;
-use futures::{future::abortable, FutureExt, StreamExt};
+use futures::{future::abortable, FutureExt};
 use indicatif::HumanDuration;
 use itertools::Itertools;
 use log::{error, info, warn};
 use merge::Merge;
 use parking_lot::Mutex;
 use ptree::print_tree;
-use signal_hook::consts::SIGINT;
-use signal_hook_tokio::Signals;
 use tokio::{io::AsyncWriteExt, task::JoinHandle, time::timeout};
 use url::Url;
 use utils::structs::FuzzMatch;
@@ -351,55 +349,52 @@ pub async fn _main(opts: Opts) -> Result<()> {
     let ctrlc_opts = opts.clone();
     let ctrlc_aborted = aborted.clone();
     let ctrlc_save_file = opts.save_file.clone();
-    let mut signals = Signals::new([SIGINT])?;
-    let ctrlc_handle = signals.handle();
 
-    let signals_task: JoinHandle<Result<()>> = tokio::spawn(async move {
-        while let Some(signal) = signals.next().await {
-            match signal {
-                SIGINT => {
-                    info!("Aborting...");
-                    ctrlc_aborted.store(true, Ordering::Relaxed);
+    let (ctrlc_task, ctrlc_handle) = abortable(async move {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Failed to listen to Ctrl-C");
 
-                    handle.abort();
-                    if !opts.no_save {
-                        let content = serde_json::to_string(&Save {
-                            tree: ctrlc_tree.clone(),
-                            depth: ctrlc_depth.clone(),
-                            wordlist_checksum: compute_checksum(&ctrlc_words),
-                            indexes: current_indexes.lock().clone(),
-                            opts: ctrlc_opts.clone(),
-                        });
-                        if let Ok(content) = content {
-                            let mut file =
-                                tokio::fs::File::create(&ctrlc_save_file.clone().ok_or_else(
-                                    || io::Error::new(io::ErrorKind::NotFound, "No save file"),
-                                )?)
-                                .await?;
+        info!("Aborting...");
 
-                            file.write_all(content.as_bytes()).await?;
-                            file.flush().await?;
-                            print!("\x1B[2K\r");
-                            info!(
-                                "Saved state to {}",
-                                ctrlc_save_file
-                                    .clone()
-                                    .ok_or_else(|| io::Error::new(
-                                        io::ErrorKind::NotFound,
-                                        "No save file"
-                                    ),)?
-                                    .to_string()
-                                    .bold()
-                            );
-                        }
-                    }
-                    tx.send(()).await?;
-                }
-                _ => unreachable!(),
+        ctrlc_aborted.store(true, Ordering::Relaxed);
+
+        handle.abort();
+        if !opts.no_save {
+            let content = serde_json::to_string(&Save {
+                tree: ctrlc_tree.clone(),
+                depth: ctrlc_depth.clone(),
+                wordlist_checksum: compute_checksum(&ctrlc_words),
+                indexes: current_indexes.lock().clone(),
+                opts: ctrlc_opts.clone(),
+            });
+            if let Ok(content) = content {
+                let mut file = tokio::fs::File::create(
+                    &ctrlc_save_file
+                        .clone()
+                        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No save file"))?,
+                )
+                .await?;
+
+                file.write_all(content.as_bytes()).await?;
+                file.flush().await?;
+                print!("\x1B[2K\r");
+                info!(
+                    "Saved state to {}",
+                    ctrlc_save_file
+                        .clone()
+                        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No save file"),)?
+                        .to_string()
+                        .bold()
+                );
             }
         }
+        tx.send(()).await?;
         Ok(())
     });
+
+    let signals_task: JoinHandle<Result<Result<()>, futures::future::Aborted>> =
+        tokio::spawn(ctrlc_task);
     let abort_res = main_thread.await?;
 
     let thread_res = match abort_res {
@@ -458,9 +453,16 @@ pub async fn _main(opts: Opts) -> Result<()> {
     }
 
     // Terminate the signal stream.
-    ctrlc_handle.close();
+    ctrlc_handle.abort();
 
     // Wait for the signal handler to finish
-    signals_task.await??;
+    let signals_res = signals_task.await?;
+    // If we didn't abort and the signal handler returns an error, this is unexpected
+    // Because the signal handler should only error when aborted
+    if aborted.load(Ordering::Relaxed) {
+        if let Err(e) = signals_res {
+            error!("{}", e);
+        }
+    }
     Ok(())
 }
