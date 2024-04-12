@@ -40,6 +40,10 @@ jobs:
                       os: macos-latest
                       tar_os: darwin
                       tar_arch: amd64
+                    - target: x86_64-pc-windows-msvc
+                      os: windows-latest
+                      tar_os: windows
+                      tar_arch: amd64
         runs-on: ${{ matrix.os }}
         steps:
             - uses: actions/checkout@v4
