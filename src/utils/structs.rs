@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, fmt::Display, sync::Arc};
 
 use crate::cli::opts::Opts;
 use parking_lot::Mutex;
@@ -19,11 +19,11 @@ pub struct FuzzMatch {
     pub end: usize,
 }
 
-impl ToString for Mode {
-    fn to_string(&self) -> String {
+impl Display for Mode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Mode::Recursive => "Recursive".to_string(),
-            Mode::Classic => "Classic".to_string(),
+            Mode::Recursive => write!(f, "Recursive"),
+            Mode::Classic => write!(f, "Classic"),
         }
     }
 }
