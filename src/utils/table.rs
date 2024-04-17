@@ -220,13 +220,14 @@ pub fn build_opts_table(
     builder.push_record(vec![
         "Threads",
         &format!(
-            "{} for {} CPUs",
+            "{} for {} core{}",
             match threads / num_cpus::get() {
                 0..=10 => threads.to_string().bold().green(),
                 11..=20 => threads.to_string().bold().yellow(),
                 _ => threads.to_string().bold().red(),
             },
-            num_cpus::get().to_string().bold()
+            num_cpus::get().to_string().bold(),
+            if num_cpus::get() > 1 { "s" } else { "" }
         ),
     ]);
 
