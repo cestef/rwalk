@@ -15,7 +15,7 @@ use crate::{
     cli::opts::Opts,
     utils::{
         constants::{DEFAULT_DEPTH, ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
-        tree::{Tree, TreeData, TreeNode},
+        tree::{Tree, TreeData, TreeNode, UrlType},
     },
 };
 
@@ -40,7 +40,8 @@ impl super::Runner for Recursive {
             let root_progress = MultiProgress::new();
             // Spawn a thread for each previous node
             for previous_node in &previous_nodes {
-                if !previous_node.lock().data.is_dir && !self.opts.force_recursion {
+                if previous_node.lock().data.url_type != UrlType::Dir && !self.opts.force_recursion
+                {
                     log::debug!("Skipping not-directory {}", previous_node.lock().data.url);
                     continue;
                 }
@@ -234,6 +235,15 @@ impl Recursive {
                             .iter()
                             .any(|child| child.lock().data.path == *word)
                         {
+                            let maybe_content_type =
+                                response.headers().get("content-type").map(|x| {
+                                    x.to_str()
+                                        .unwrap_or_default()
+                                        .split(';')
+                                        .next()
+                                        .unwrap_or_default()
+                                        .to_string()
+                                });
                             tree.lock().insert(
                                 TreeData {
                                     url: url.clone(),
@@ -241,7 +251,13 @@ impl Recursive {
                                     path: word.clone(),
                                     status_code,
                                     extra: json!(additions),
-                                    is_dir,
+                                    url_type: if is_dir {
+                                        UrlType::Dir
+                                    } else if let Some(content_type) = maybe_content_type {
+                                        UrlType::File(content_type)
+                                    } else {
+                                        UrlType::Unknown
+                                    },
                                 },
                                 Some(previous_node.clone()),
                             );
@@ -277,7 +293,7 @@ impl Recursive {
                                     path: word.clone(),
                                     status_code: 0,
                                     extra: json!([]),
-                                    is_dir: false,
+                                    url_type: UrlType::Unknown,
                                 },
                                 Some(previous_node.clone()),
                             );

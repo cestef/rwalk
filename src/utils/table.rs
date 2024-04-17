@@ -97,6 +97,13 @@ pub fn build_opts_table(
         ]);
     }
 
+    if opts.depth.is_some() {
+        builder.push_record(vec![
+            "Depth",
+            &opts.depth.as_ref().unwrap().to_string().bold(),
+        ]);
+    }
+
     if !opts.transform.is_empty() {
         let mut wordlist_filters_builder = Builder::default();
         wordlist_filters_builder.push_record(vec!["Wordlist", "Filter", "Value"]);

@@ -8,7 +8,7 @@ use crate::{
     cli::opts::Opts,
     utils::{
         constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
-        tree::{Tree, TreeData},
+        tree::{Tree, TreeData, UrlType},
     },
 };
 use anyhow::{anyhow, Result};
@@ -21,7 +21,7 @@ use reqwest::Client;
 use serde_json::json;
 use url::Url;
 
-use super::{wordlists::ParsedWordlist, Runner};
+use super::{filters::is_directory, wordlists::ParsedWordlist, Runner};
 
 pub struct Classic {
     url: String,
@@ -153,6 +153,15 @@ impl Classic {
                             .data
                             .url
                             .clone();
+                        let maybe_content_type = response.headers().get("content-type").map(|x| {
+                            x.to_str()
+                                .unwrap_or_default()
+                                .split(';')
+                                .next()
+                                .unwrap_or_default()
+                                .to_string()
+                        });
+                        let is_dir = is_directory(&response);
                         tree.insert(
                             TreeData {
                                 url: url.clone(),
@@ -163,7 +172,13 @@ impl Classic {
                                 ),
                                 status_code,
                                 extra: json!(additions),
-                                is_dir: false,
+                                url_type: if is_dir {
+                                    UrlType::Dir
+                                } else if let Some(content_type) = maybe_content_type {
+                                    UrlType::File(content_type)
+                                } else {
+                                    UrlType::Unknown
+                                },
                             },
                             tree.root.clone(),
                         );
@@ -200,8 +215,7 @@ impl Classic {
                                 ),
                                 status_code: 0,
                                 extra: json!([]),
-                                //TODO: is_dir
-                                is_dir: false,
+                                url_type: UrlType::Unknown,
                             },
                             tree.root.clone(),
                         );

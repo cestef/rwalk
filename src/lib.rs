@@ -31,7 +31,7 @@ use parking_lot::Mutex;
 use ptree::print_tree;
 use tokio::{io::AsyncWriteExt, task::JoinHandle, time::timeout};
 use url::Url;
-use utils::structs::FuzzMatch;
+use utils::{structs::FuzzMatch, tree::UrlType};
 
 use crate::utils::{
     constants::SUCCESS,
@@ -258,7 +258,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                     .to_string(),
                 status_code: 0,
                 extra: serde_json::Value::Null,
-                is_dir: true,
+                url_type: UrlType::Dir,
             },
             None,
         );

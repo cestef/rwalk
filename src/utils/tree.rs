@@ -27,7 +27,14 @@ pub struct TreeData {
     pub path: String,
     pub status_code: u16,
     pub extra: Value,
-    pub is_dir: bool,
+    pub url_type: UrlType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum UrlType {
+    Dir,
+    File(String),
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -191,7 +198,7 @@ impl TreeItem for TreeNode<TreeData> {
         let emoji = get_emoji_for_status_code_colored(self.data.status_code);
         write!(
             f,
-            "{}{} /{}",
+            "{}{} /{} ({})",
             if self.data.status_code == 0 {
                 style.paint("🔍".to_string())
             } else {
@@ -202,7 +209,19 @@ impl TreeItem for TreeNode<TreeData> {
             } else {
                 style.paint(format!(" {}", self.data.status_code.to_string().dimmed()))
             },
-            style.paint(&self.data.path.trim_start_matches('/'))
+            style.paint(&self.data.path.trim_start_matches('/')),
+            style.paint(
+                (if self.data.url_type == UrlType::Dir {
+                    "dir".to_string()
+                } else {
+                    match &self.data.url_type {
+                        UrlType::File(ext) => format!("file.{}", ext),
+                        UrlType::Unknown => "unknown".to_string(),
+                        _ => "unknown".to_string(),
+                    }
+                })
+                .dimmed()
+            )
         )?;
         Ok(())
     }
@@ -316,7 +335,7 @@ mod tests {
                 path: "/test".to_string(),
                 status_code: 200,
                 extra: Value::Null,
-                is_dir: false,
+                url_type: UrlType::Dir,
             },
             children: vec![],
         };
