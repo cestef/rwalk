@@ -318,7 +318,12 @@ pub fn is_directory(response: &reqwest::Response) -> bool {
                 return false;
             }
         }
-    } else if response.status().is_success() || matches!(response.status(), StatusCode::FORBIDDEN) {
+    } else if response.status().is_success()
+        || matches!(
+            response.status(),
+            StatusCode::FORBIDDEN | StatusCode::UNAUTHORIZED // 403, 401 ; a little bit of a hack but it works most of the time
+        )
+    {
         // status code is 2xx or 403, need to check if it ends in /
 
         if response.url().as_str().ends_with('/') {

@@ -90,6 +90,8 @@ By default `rwalk` will use a recursive-like scan. You can change the depth of t
 ```bash
 rwalk https://example.com wordlist.txt -d 3
 ```
+
+The recursive mode only scans urls [identified as directories](src/runner/filters.rs#L290). If you are not happy with the default behavior, you can use the `--force-recursion` (`--fr`) flag to force the recursion on all found urls.
 <!-- omit in toc -->
 #### Classic scan
 
@@ -436,7 +438,10 @@ Please take these results with a grain of salt.
 
 ## Contributing
 
+*Contributions are welcome! I am always looking for new ideas and improvements.*
+
 If you want to contribute to rwalk, please read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
 
 ## License
 
