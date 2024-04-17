@@ -6,17 +6,19 @@ use crate::{
         opts::Opts,
     },
     runner::wordlists::ParsedWordlist,
+    utils::{
+        display::{display_range, display_range_status},
+        is_range,
+    },
 };
 use colored::{Colorize, CustomColor};
+use log::{info, warn};
 use tabled::{
     builder::Builder,
     settings::{Alignment, Style},
 };
 
-use super::{
-    color_for_status_code,
-    structs::{FuzzMatch, Mode},
-};
+use super::structs::{FuzzMatch, Mode};
 
 /// Builds the options table printed in the CLI
 pub fn build_opts_table(
@@ -30,48 +32,64 @@ pub fn build_opts_table(
     let mut builder = Builder::default();
 
     let mut filters_builder = Builder::default();
-    filters_builder.push_record(vec!["Filter", "Value"]);
+    filters_builder.push_record(vec!["Depth", "Filter", "Value"]);
     for filter in &opts.filter {
-        match filter {
-            KeyVal(k, v) if k == "status" => {
-                let mut out = String::new();
-                for status in v.split(',') {
-                    let mut status = status.to_string();
-                    if status.contains('-') {
-                        status = status
-                            .split('-')
-                            .map(|x| match x.parse::<u16>() {
-                                Ok(x) => color_for_status_code(x.to_string(), x),
-                                Err(_) => x.to_string(),
-                            })
-                            .collect::<Vec<_>>()
-                            .join("-")
-                            .to_string();
-                    } else if let Some(stripped) = status.strip_prefix('>') {
-                        status = ">".to_string()
-                            + &color_for_status_code(
-                                stripped.to_string(),
-                                stripped.parse().unwrap_or_default(),
-                            );
-                    } else if let Some(stripped) = status.strip_prefix('<') {
-                        status = "<".to_string()
-                            + &color_for_status_code(
-                                stripped.to_string(),
-                                stripped.parse().unwrap_or_default(),
-                            );
+        match filter.clone() {
+            KeyVal(mut k, v) if k == "status" => {
+                let out = v
+                    .split(',')
+                    .map(|status| display_range_status(status.to_string()))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                let filter_depth = if k.starts_with('[') {
+                    let start_index = k.find('[').unwrap();
+                    let end_index = k.find(']').unwrap();
+                    let depth = k[start_index + 1..end_index].parse::<usize>();
+                    k = k[end_index + 1..].to_string();
+                    if let Ok(d) = depth {
+                        Some(d)
                     } else {
-                        status = color_for_status_code(
-                            status.to_string(),
-                            status.parse().unwrap_or_default(),
-                        );
+                        warn!("Invalid depth filter: {}", depth.unwrap_err());
+                        None
                     }
-                    out.push_str(&status);
-                    out.push_str(", ");
-                }
-
-                filters_builder.push_record(vec![k, &out.trim_end_matches(", ").to_string()]);
+                } else {
+                    None
+                };
+                filters_builder.push_record(vec![
+                    filter_depth.map_or("*".to_string(), |x| x.to_string()),
+                    k,
+                    out.trim_end_matches(", ").to_string(),
+                ]);
             }
-            KeyVal(k, v) => filters_builder.push_record(vec![k, &v.bold().to_string()]),
+            KeyVal(mut k, v) => {
+                let filter_depth = if k.starts_with('[') {
+                    let start_index = k.find('[').unwrap();
+                    let end_index = k.find(']').unwrap();
+                    let depth = k[start_index + 1..end_index].parse::<usize>();
+                    k = k[end_index + 1..].to_string();
+                    if let Ok(d) = depth {
+                        Some(d)
+                    } else {
+                        warn!("Invalid depth filter: {}", depth.unwrap_err());
+                        None
+                    }
+                } else {
+                    None
+                };
+                // Try to parse the value as a range
+                let is_range = is_range(&v);
+                let v = if is_range {
+                    display_range(v.to_string())
+                } else {
+                    v
+                };
+
+                filters_builder.push_record(vec![
+                    filter_depth.map_or("*".to_string(), |x| x.to_string()),
+                    k,
+                    v,
+                ]);
+            }
         }
     }
 

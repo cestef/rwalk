@@ -12,6 +12,7 @@ use crate::utils::{
 use self::constants::DEFAULT_FILE_TYPE;
 
 pub mod constants;
+pub mod display;
 pub mod logger;
 pub mod structs;
 pub mod table;
@@ -109,6 +110,34 @@ pub fn parse_range_input(s: &str) -> Result<Vec<(usize, usize)>> {
         }
     }
     Ok(ranges)
+}
+
+pub fn is_range(s: &str) -> bool {
+    for part in s.split(',') {
+        // >number, <number, number-number, number
+        if let Some(stripped) = part.strip_prefix('>') {
+            if stripped.parse::<usize>().is_ok() {
+                return true;
+            }
+        } else if let Some(stripped) = part.strip_prefix('<') {
+            if stripped.parse::<usize>().is_ok() {
+                return true;
+            }
+        } else {
+            let parts = part.split('-').collect::<Vec<_>>();
+            if parts.len() == 1 {
+                if parts[0].parse::<usize>().is_ok() {
+                    return true;
+                }
+            } else if parts.len() == 2
+                && parts[0].parse::<usize>().is_ok()
+                && parts[1].parse::<usize>().is_ok()
+            {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 // Write the tree to a file (json, csv, md)

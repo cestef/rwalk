@@ -344,7 +344,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             String::from_utf8(buffer).unwrap(),
-            "✓ 200 /test".to_string()
+            "✓ 200 /test (dir)".to_string()
         );
     }
 }

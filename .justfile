@@ -4,6 +4,9 @@ default:
 run *ARGS="":
     cargo run --quiet -- {{ARGS}}
 
+test:
+    cargo nextest run
+
 # Build the program
 build OUTPUT="./target/release":
     cargo build --release -Z unstable-options --quiet --out-dir {{OUTPUT}}
