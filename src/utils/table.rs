@@ -12,7 +12,7 @@ use crate::{
     },
 };
 use colored::{Colorize, CustomColor};
-use log::{info, warn};
+use log::warn;
 use tabled::{
     builder::Builder,
     settings::{Alignment, Style},
