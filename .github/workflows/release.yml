@@ -50,7 +50,7 @@ jobs:
             - name: Generate tag
               id: tag
               # Get the latest tag without the v prefix
-              run: echo "tag=$(git describe --tags --abbrev=0 | sed 's/v//')" >> $GITHUB_OUTPUT
+              run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
             - uses: taiki-e/upload-rust-binary-action@v1
               with:
                   bin: rwalk
