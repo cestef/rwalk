@@ -406,23 +406,25 @@ pub async fn _main(opts: Opts) -> Result<()> {
         if let Err(e) = thread_res.unwrap() {
             error!("{}", e);
         } else {
-            println!(
-                "{} Done in {} with an average of {} req/s",
-                SUCCESS.to_string().green(),
-                HumanDuration(watch.elapsed()).to_string().bold(),
-                ((match mode {
-                    Mode::Recursive =>
-                        words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
-                            * *current_depth.lock(),
-                    Mode::Classic => {
-                        words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
-                    }
-                }) as f64
-                    / watch.elapsed().as_secs_f64())
-                .round()
-                .to_string()
-                .bold()
-            );
+            if !opts.quiet {
+                println!(
+                    "{} Done in {} with an average of {} req/s",
+                    SUCCESS.to_string().green(),
+                    HumanDuration(watch.elapsed()).to_string().bold(),
+                    ((match mode {
+                        Mode::Recursive =>
+                            words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
+                                * *current_depth.lock(),
+                        Mode::Classic => {
+                            words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
+                        }
+                    }) as f64
+                        / watch.elapsed().as_secs_f64())
+                    .round()
+                    .to_string()
+                    .bold()
+                );
+            }
 
             let root = tree.lock().root.clone().unwrap().clone();
 
