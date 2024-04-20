@@ -12,13 +12,17 @@ use crate::{
     },
 };
 use colored::{Colorize, CustomColor};
+use itertools::Itertools;
 use log::warn;
 use tabled::{
     builder::Builder,
     settings::{Alignment, Style},
 };
 
-use super::structs::{FuzzMatch, Mode};
+use super::{
+    display::color_n,
+    structs::{FuzzMatch, Mode},
+};
 
 /// Builds the options table printed in the CLI
 pub fn build_opts_table(
@@ -33,49 +37,73 @@ pub fn build_opts_table(
 
     let mut filters_builder = Builder::default();
     filters_builder.push_record(vec!["Depth", "Filter", "Value"]);
-    for filter in &opts.filter {
+    for filter in &mut opts.filter.clone() {
+        let filter_depth = if filter.0.starts_with('[') {
+            let start_index = filter.0.find('[').unwrap();
+            let end_index = filter.0.find(']').unwrap();
+            let depth = filter.0[start_index + 1..end_index].parse::<usize>();
+            if let Ok(d) = depth {
+                filter.0 = filter.0[end_index + 1..].to_string();
+                Some(d)
+            } else {
+                warn!("Invalid depth filter: {}", depth.unwrap_err());
+                None
+            }
+        } else {
+            None
+        };
         match filter.clone() {
-            KeyVal(mut k, v) if k == "status" => {
+            KeyVal(k, v) if k == "status" => {
                 let out = v
                     .split(',')
                     .map(|status| display_range_status(status.to_string()))
                     .collect::<Vec<_>>()
                     .join(", ");
-                let filter_depth = if k.starts_with('[') {
-                    let start_index = k.find('[').unwrap();
-                    let end_index = k.find(']').unwrap();
-                    let depth = k[start_index + 1..end_index].parse::<usize>();
-                    k = k[end_index + 1..].to_string();
-                    if let Ok(d) = depth {
-                        Some(d)
-                    } else {
-                        warn!("Invalid depth filter: {}", depth.unwrap_err());
-                        None
-                    }
-                } else {
-                    None
-                };
+
                 filters_builder.push_record(vec![
                     filter_depth.map_or("*".to_string(), |x| x.to_string()),
                     k,
                     out.trim_end_matches(", ").to_string(),
                 ]);
             }
-            KeyVal(mut k, v) => {
-                let filter_depth = if k.starts_with('[') {
-                    let start_index = k.find('[').unwrap();
-                    let end_index = k.find(']').unwrap();
-                    let depth = k[start_index + 1..end_index].parse::<usize>();
-                    k = k[end_index + 1..].to_string();
-                    if let Ok(d) = depth {
-                        Some(d)
-                    } else {
-                        warn!("Invalid depth filter: {}", depth.unwrap_err());
-                        None
-                    }
+            KeyVal(k, v) if k == "json" => {
+                // json:path.to.value=value1|value2
+                let split_index = v.find('=');
+
+                if let Some(index) = split_index {
+                    let path = &v[..index]
+                        .split('.')
+                        .enumerate()
+                        .map(|(i, x)| color_n(x.to_string(), i))
+                        .join(".");
+                    let values = &v[index + 1..];
+                    let values = values.split('|').map(|x| x.blue().to_string()).join(", ");
+                    filters_builder.push_record(vec![
+                        filter_depth.map_or("*".to_string(), |x| x.to_string()),
+                        format!("json:{}", path),
+                        values,
+                    ]);
                 } else {
-                    None
-                };
+                    warn!("Invalid json filter: {}", v);
+                }
+            }
+            KeyVal(k, v) if matches!(k.as_str(), "similar" | "similarity") => {
+                // similar:text:range
+                let split_index = v.find(':');
+
+                if let Some(index) = split_index {
+                    let text = &v[..index].blue().to_string();
+                    let range = display_range(v[index + 1..].to_string());
+                    filters_builder.push_record(vec![
+                        filter_depth.map_or("*".to_string(), |x| x.to_string()),
+                        format!("similar:{}", text),
+                        range,
+                    ]);
+                } else {
+                    warn!("Invalid similar filter: {}", v);
+                }
+            }
+            KeyVal(k, v) => {
                 // Try to parse the value as a range
                 let is_range = is_range(&v);
                 let v = if is_range {
@@ -179,17 +207,6 @@ pub fn build_opts_table(
     let mut url = url.trim_end_matches('/').to_string();
 
     // Only color the url parts that have been matched with fuzz_matches
-
-    fn color_n(s: String, n: usize) -> String {
-        match n % 5 {
-            0 => s.bold().green().to_string(),
-            1 => s.bold().yellow().to_string(),
-            2 => s.bold().red().to_string(),
-            3 => s.bold().cyan().to_string(),
-            _ => s.bold().magenta().to_string(),
-        }
-    }
-
     let grouped_matches = fuzz_matches
         .iter()
         .fold(HashMap::<String, Vec<&FuzzMatch>>::new(), |mut acc, x| {

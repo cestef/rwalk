@@ -159,25 +159,7 @@ pub struct Opts {
         env,
         hide_env = true,
         help_heading = Some("Responses"),
-        value_parser(
-            clap::builder::PossibleValuesParser::new(
-                [
-                    "length", 
-                    "size", 
-                    "hash", 
-                    "md5", 
-                    "headers_length", 
-                    "headers_hash", 
-                    "body", 
-                    "content", 
-                    "text", 
-                    "headers", 
-                    "cookie", 
-                    "cookies",
-                    "type"
-                ]
-            )
-        )
+        
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]

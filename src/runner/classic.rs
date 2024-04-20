@@ -109,9 +109,8 @@ impl Classic {
                     // Check if the response is filtered (`true` means we keep it)
                     let filtered = super::filters::check(
                         &opts,
+                        &progress,
                         &text,
-                        response.headers(),
-                        status_code,
                         t1.elapsed().as_millis(),
                         None,
                         &response,

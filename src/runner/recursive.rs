@@ -196,9 +196,8 @@ impl Recursive {
                     let is_dir = is_directory(&response);
                     let filtered = super::filters::check(
                         &opts,
+                        &progress,
                         &text,
-                        response.headers(),
-                        status_code,
                         t1.elapsed().as_millis(),
                         Some(*depth.lock()),
                         &response,

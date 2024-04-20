@@ -15,9 +15,8 @@ use crate::{
 // Returns true if the response should be kept
 pub fn check(
     opts: &Opts,
+    progress: &indicatif::ProgressBar,
     res_text: &str,
-    headers: &reqwest::header::HeaderMap,
-    status_code: u16,
     time: u128,
     depth: Option<usize>,
     response: &reqwest::Response,
@@ -34,7 +33,13 @@ pub fn check(
             if let Ok(d) = depth {
                 Some(d)
             } else {
-                warn!("Invalid depth filter: {}", depth.unwrap_err());
+                // warn!("Invalid depth filter: {}", depth.unwrap_err());
+                progress.println(format!(
+                    "{} {} {}",
+                    ERROR.to_string().red(),
+                    "Invalid depth filter".bold(),
+                    depth.unwrap_err()
+                ));
                 None
             }
         } else {
@@ -43,7 +48,12 @@ pub fn check(
 
         // If this filter is not for the current depth, we skip it
         if filter_depth.is_some() && depth.is_none() {
-            warn!("You provided a depth filter but you are not scanning recursively");
+            // warn!("You provided a depth filter but you are not scanning recursively");
+            progress.println(format!(
+                "{} {}",
+                WARNING.to_string().yellow(),
+                "You provided a depth filter but you are not scanning recursively".bold()
+            ));
         }
         if filter_depth.is_some() && depth.is_some() && filter_depth != depth {
             continue;
@@ -52,6 +62,7 @@ pub fn check(
         let out = match filter.0.trim_start_matches('!') {
             "time" => check_range(&parse_range_input(&filter.1).unwrap(), time as usize) ^ negated,
             "status" => {
+                let status_code = response.status().as_u16();
                 check_range(&parse_range_input(&filter.1).unwrap(), status_code as usize) ^ negated
             }
             "contains" => !res_text.contains(&filter.1) ^ negated,
@@ -64,6 +75,7 @@ pub fn check(
             "hash" => filter.1.contains(&format!("{:x}", md5::compute(res_text))) ^ negated,
             "header" => {
                 let mut header = filter.1.split('=');
+                let headers = response.headers();
                 if let Some(key) = header.next() {
                     if let Some(value) = header.next() {
                         let header_value = headers.get(key);
@@ -90,7 +102,13 @@ pub fn check(
                     let json: serde_json::Value = match serde_json::from_str(res_text) {
                         Ok(json) => json,
                         Err(e) => {
-                            warn!("Response is not valid JSON: {}", e);
+                            // warn!("Response is not valid JSON: {}", e);
+                            progress.println(format!(
+                                "{} {} {}",
+                                ERROR.to_string().red(),
+                                "Response is not valid JSON".bold(),
+                                e
+                            ));
                             return true;
                         }
                     };
@@ -103,7 +121,12 @@ pub fn check(
                             .contains(value.trim_start_matches('!'))
                     }) ^ negated
                 } else {
-                    warn!("Invalid JSON filter: {}", filter.1);
+                    // warn!("Invalid JSON filter: {}", filter.1);
+                    progress.println(format!(
+                        "{} {}",
+                        ERROR.to_string().red(),
+                        "Invalid JSON filter".bold()
+                    ));
                     true
                 }
             }
@@ -112,16 +135,21 @@ pub fn check(
                 if let Some(depth) = depth {
                     check_range(&parse_range_input(&filter.1).unwrap(), depth) ^ negated
                 } else {
-                    warn!("You provided a depth filter but you are not scanning recursively");
+                    // warn!("You provided a depth filter but you are not scanning recursively");
+                    progress.println(format!(
+                        "{} {}",
+                        WARNING.to_string().yellow(),
+                        "You provided a depth filter but you are not scanning recursively".bold()
+                    ));
                     true
                 }
             }
-
             "type" => {
                 let is_dir = is_directory(response);
                 if filter.1 == "directory" {
                     is_dir ^ negated
                 } else {
+                    let headers = response.headers();
                     let content_type = headers.get(reqwest::header::CONTENT_TYPE);
                     if let Some(content_type) = content_type {
                         (content_type.to_str().unwrap() == filter.1) ^ negated
@@ -130,9 +158,48 @@ pub fn check(
                     }
                 }
             }
-
+            "lines" => {
+                let lines = res_text.lines().count();
+                check_range(&parse_range_input(&filter.1).unwrap(), lines) ^ negated
+            }
+            // similar:value:threshold 0-100
+            "similar" | "similarity" => {
+                let split_index = filter.1.find(':');
+                if let Some(split_index) = split_index {
+                    let (value, threshold) = filter.1.split_at(split_index);
+                    let threshold = threshold.trim_start_matches(':');
+                    let threshold_range = parse_range_input(threshold);
+                    if let Ok(range) = threshold_range {
+                        let value = value.trim_end_matches(':');
+                        let similarity = strsim::jaro_winkler(value, res_text);
+                        check_range(&range, (similarity * 100.0) as usize) ^ negated
+                    } else {
+                        // warn!("Invalid threshold in filter: {}", filter.1);
+                        progress.println(format!(
+                            "{} {} {}",
+                            ERROR.to_string().red(),
+                            "Invalid threshold in filter".bold(),
+                            filter.1
+                        ));
+                        true
+                    }
+                } else {
+                    // warn!("Invalid filter: {}", filter.1);
+                    progress.println(format!(
+                        "{} {}",
+                        ERROR.to_string().red(),
+                        "Invalid filter".bold()
+                    ));
+                    true
+                }
+            }
             _ => {
-                warn!("Unknown filter: {}", filter.0);
+                // warn!("Unknown filter: {}", filter.0);
+                progress.println(format!(
+                    "{} {}",
+                    WARNING.to_string().yellow(),
+                    "Unknown filter".bold()
+                ));
                 // We return true so that the filter is not applied
                 true
             }
@@ -158,7 +225,16 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
     let mut additions: Vec<Addition> = vec![];
 
     for show in &opts.show {
-        match show.as_str() {
+        // Check if the show filter is a key:value pair
+        let show = if let Some(split_index) = show.find(':') {
+            let (key, value) = show.split_at(split_index);
+            let value = value.trim_start_matches(':');
+            (key, value)
+        } else {
+            (show.as_str(), "")
+        };
+
+        match show.0.to_lowercase().as_str() {
             "type" => {
                 let is_dir = is_directory(response);
                 additions.push(Addition {
@@ -233,6 +309,14 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
                     value: cookies.iter().fold("\n".to_string(), |acc, value| {
                         format!("{}{}\n", acc, value.to_str().unwrap_or("Not displayable"))
                     }),
+                });
+            }
+            "similar" | "similarity" => {
+                // similar:value
+                let similarity = strsim::jaro_winkler(show.1, text);
+                additions.push(Addition {
+                    key: "similarity".to_string(),
+                    value: format!("{}%", (similarity * 100.0) as usize),
                 });
             }
             _ => {}

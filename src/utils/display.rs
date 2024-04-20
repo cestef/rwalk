@@ -49,3 +49,13 @@ pub fn display_range(range: String) -> String {
         .collect::<Vec<_>>()
         .join(", ")
 }
+
+pub fn color_n(s: String, n: usize) -> String {
+    match n % 5 {
+        0 => s.bold().green().to_string(),
+        1 => s.bold().yellow().to_string(),
+        2 => s.bold().red().to_string(),
+        3 => s.bold().cyan().to_string(),
+        _ => s.bold().magenta().to_string(),
+    }
+}
