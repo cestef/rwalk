@@ -193,6 +193,15 @@ pub fn check(
                     true
                 }
             }
+            "url" => {
+                let url = response.url().as_str();
+                if filter.1.starts_with("http://") || filter.1.starts_with("https://") {
+                    url.contains(&filter.1) ^ negated
+                } else {
+                    url.contains(&format!("http://{}", filter.1))
+                        || url.contains(&format!("https://{}", filter.1)) ^ negated
+                }
+            }
             _ => {
                 // warn!("Unknown filter: {}", filter.0);
                 progress.println(format!(
