@@ -47,25 +47,18 @@ jobs:
         runs-on: ${{ matrix.os }}
         steps:
             - uses: actions/checkout@v4
-            - name: Generate tag
-              id: tag
-              # Get the latest tag without the v prefix
-              run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
             - uses: taiki-e/upload-rust-binary-action@v1
               with:
                   bin: rwalk
                   target: ${{ matrix.target }}
                   token: ${{ secrets.GITHUB_TOKEN }}
-                  archive: $bin-${{ steps.tag.outputs.tag }}-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
+                  archive: $bin-${{ github.ref_name }}-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
     homebrew-releaser:
         needs: upload-assets
         runs-on: ubuntu-latest
         name: homebrew-releaser
         steps:
             - uses: actions/checkout@v4
-            - name: Get latest tag
-              id: tag
-              run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
             - name: Release my project to my Homebrew tap
               uses: Justintime50/homebrew-releaser@392a2426758dfdcc91f302d55cf5061346af2219
               with:
@@ -84,7 +77,7 @@ jobs:
                   target_linux_arm64: true
 
                   update_readme_table: true
-                  version: ${{ steps.tag.outputs.tag }}
+                  version: ${{ github.ref_name }}
                   # Skips committing the generated formula to a homebrew tap (useful for local testing).
                   skip_commit: false
                   # Logs debugging info to console.
