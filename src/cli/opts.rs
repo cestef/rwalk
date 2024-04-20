@@ -159,7 +159,6 @@ pub struct Opts {
         env,
         hide_env = true,
         help_heading = Some("Responses"),
-        
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
