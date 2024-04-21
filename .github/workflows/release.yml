@@ -62,9 +62,7 @@ jobs:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   archive: $bin-${{ env.TAG }}-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
     homebrew-releaser:
-        needs: [upload-assets, create-release]
-        env:
-            TAG: ${{ needs.create-release.outputs.TAG }}
+        needs: upload-assets
         runs-on: ubuntu-latest
         name: homebrew-releaser
         steps:
@@ -87,7 +85,7 @@ jobs:
                   target_linux_arm64: true
 
                   update_readme_table: true
-                  version: ${{ env.TAG }}
+                  version: ${{ github.ref_name }}
                   # Skips committing the generated formula to a homebrew tap (useful for local testing).
                   skip_commit: false
                   # Logs debugging info to console.
