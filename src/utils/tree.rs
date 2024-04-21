@@ -20,7 +20,7 @@ pub struct TreeNode<T> {
     pub children: Vec<Arc<Mutex<TreeNode<T>>>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct TreeData {
     pub url: String,
     pub depth: usize,
@@ -30,11 +30,13 @@ pub struct TreeData {
     pub url_type: UrlType,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum UrlType {
     Directory,
     File(String),
     Unknown,
+    #[default]
+    None,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -198,7 +200,7 @@ impl TreeItem for TreeNode<TreeData> {
         let emoji = get_emoji_for_status_code_colored(self.data.status_code);
         write!(
             f,
-            "{}{} /{} ({})",
+            "{}{} {}{} {}",
             if self.data.status_code == 0 {
                 style.paint("🔍".to_string())
             } else {
@@ -209,19 +211,18 @@ impl TreeItem for TreeNode<TreeData> {
             } else {
                 style.paint(format!(" {}", self.data.status_code.to_string().dimmed()))
             },
+            if self.data.url_type == UrlType::None {
+                style.paint("".to_string())
+            } else {
+                style.paint("/".to_string())
+            },
             style.paint(&self.data.path.trim_start_matches('/')),
-            style.paint(
-                (if self.data.url_type == UrlType::Directory {
-                    "dir".to_string()
-                } else {
-                    match &self.data.url_type {
-                        UrlType::File(ext) => format!("file.{}", ext),
-                        UrlType::Unknown => "unknown".to_string(),
-                        _ => "unknown".to_string(),
-                    }
-                })
-                .dimmed()
-            )
+            style.paint(match &self.data.url_type {
+                UrlType::Directory => format!("({})", "dir".dimmed()),
+                UrlType::File(ext) => format!("({})", ext.dimmed()),
+                UrlType::Unknown => format!("({})", "unknown".dimmed()),
+                UrlType::None => "".to_string(),
+            })
         )?;
         Ok(())
     }

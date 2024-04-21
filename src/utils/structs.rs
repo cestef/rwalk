@@ -10,6 +10,7 @@ use super::tree::{Tree, TreeData};
 pub enum Mode {
     Recursive,
     Classic,
+    Spider,
 }
 
 #[derive(Clone, Debug)]
@@ -24,6 +25,7 @@ impl Display for Mode {
         match self {
             Mode::Recursive => write!(f, "Recursive"),
             Mode::Classic => write!(f, "Classic"),
+            Mode::Spider => write!(f, "Spider"),
         }
     }
 }
@@ -33,6 +35,7 @@ impl From<&str> for Mode {
         match s {
             "recursive" | "recursion" | "r" => Mode::Recursive,
             "classic" | "c" => Mode::Classic,
+            "spider" | "s" => Mode::Spider,
             _ => Mode::Recursive,
         }
     }

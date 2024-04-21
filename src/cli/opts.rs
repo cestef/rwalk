@@ -46,7 +46,7 @@ pub struct Opts {
         short,
         long,
         value_name = "MODE",
-        value_parser = clap::builder::PossibleValuesParser::new(["recursive", "recursion", "r", "classic", "c"]),
+        value_parser = clap::builder::PossibleValuesParser::new(["recursive", "recursion", "r", "classic", "c", "spider", "s"]),
         env,
         hide_env = true
     )]
@@ -235,6 +235,12 @@ pub struct Opts {
     /// Proxy username and password
     #[clap(long, help_heading = Some("Proxy"), value_name = "USER:PASS", env, hide_env=true)]
     pub proxy_auth: Option<String>,
+
+    /// Allow subdomains to be scanned in spider mode
+    #[clap(long, help_heading = Some("Spider"), env, hide_env=true, visible_alias = "sub")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub subdomains: bool,
 
     /// Generate markdown help - for developers
     #[clap(long, hide = true)]

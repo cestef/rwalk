@@ -168,6 +168,21 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 }
             }
         }
+        Mode::Spider => {
+            if !fuzz_matches.is_empty() {
+                warn!(
+                    "URL contains the replace keyword{}: {}, this is supported with {}",
+                    if fuzz_matches.len() > 1 { "s" } else { "" },
+                    fuzz_matches
+                        .iter()
+                        .map(|e| e.content.clone())
+                        .join(", ")
+                        .bold()
+                        .blue(),
+                    format!("{} {}", "--mode".dimmed(), "classic".bold())
+                );
+            }
+        }
     }
 
     let before = words.values().fold(0, |acc, x| acc + x.words.len());
@@ -233,7 +248,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         // Create the tree with the root URL
         let t = Arc::new(Mutex::new(Tree::new()));
         let cleaned_url = match mode {
-            Mode::Recursive => url.clone(),
+            Mode::Recursive | Mode::Spider => url.clone(),
             Mode::Classic => {
                 // Get the first part of the url, before the first occurence of a fuzz key from fuzz_matches
                 let mut smallest_index = url.len();
@@ -258,7 +273,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                     .to_string(),
                 status_code: 0,
                 extra: serde_json::Value::Null,
-                url_type: UrlType::Dir,
+                url_type: UrlType::Directory,
             },
             None,
         );
@@ -327,6 +342,11 @@ pub async fn _main(opts: Opts) -> Result<()> {
         )
         .run()
         .boxed(),
+        Mode::Spider => {
+            runner::spider::Spider::new(url.clone(), opts.clone(), tree.clone(), threads)
+                .run()
+                .boxed()
+        }
     };
     // Run the main function with a timeout if specified
     let (task, handle) = if let Some(max_time) = opts.max_time {
@@ -418,6 +438,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                         Mode::Classic => {
                             words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
                         }
+                        Mode::Spider => 1,
                     }) as f64
                         / watch.elapsed().as_secs_f64())
                     .round()
