@@ -19,18 +19,18 @@ _rwalk() {
 
     case "${cmd}" in
         rwalk)
-            opts="-m -t -d -o -u -X -D -H -C -R -c -M -q -i -r -T -w -f -P -h -V --mode --force --hce --hit-connection-errors --threads --depth --output --to --timeout --user-agent --method --data --headers --cookies --follow-redirects --config --throttle --max-time --no-color --quiet --interactive --unsecure --insecure --show --resume --save-file --no-save --keep --keep-save --transform --wf --wordlist-filter --filter --or --fr --force-recursion --rf --request-file --proxy --proxy-auth --generate-markdown --generate-completions --help --version [URL] [FILE:KEY]..."
+            opts="-m -t -d -o -u -X -D -H -C -R -c -M -q -i -r -T -w -f -P -h -V --mode --force --hce --hit-connection-errors --threads --depth --output --to --timeout --user-agent --method --data --headers --cookies --follow-redirects --config --throttle --max-time --no-color --quiet --interactive --unsecure --insecure --show --resume --save-file --no-save --keep --keep-save --transform --wf --wordlist-filter --filter --or --fr --force-recursion --rf --request-file --proxy --proxy-auth --sub --subdomains --generate-markdown --generate-completions --help --version [URL] [FILE:KEY]..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 --mode)
-                    COMPREPLY=($(compgen -W "recursive recursion r classic c" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "recursive recursion r classic c spider s" -- "${cur}"))
                     return 0
                     ;;
                 -m)
-                    COMPREPLY=($(compgen -W "recursive recursion r classic c" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "recursive recursion r classic c spider s" -- "${cur}"))
                     return 0
                     ;;
                 --threads)
@@ -134,7 +134,7 @@ _rwalk() {
                     return 0
                     ;;
                 --show)
-                    COMPREPLY=($(compgen -W "length size hash md5 headers_length headers_hash body content text headers cookie cookies type" -- "${cur}"))
+                    COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
                 --save-file)

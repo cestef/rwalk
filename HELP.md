@@ -21,7 +21,7 @@ A blazing fast web directory scanner
 
 * `-m`, `--mode <MODE>` — Crawl mode
 
-  Possible values: `recursive`, `recursion`, `r`, `classic`, `c`
+  Possible values: `recursive`, `recursion`, `r`, `classic`, `c`, `spider`, `s`
 
 * `--force` — Force scan even if the target is not responding
 
@@ -67,9 +67,6 @@ A blazing fast web directory scanner
   Possible values: `true`, `false`
 
 * `--show <SHOW>` — Show response additional body information
-
-  Possible values: `length`, `size`, `hash`, `md5`, `headers_length`, `headers_hash`, `body`, `content`, `text`, `headers`, `cookie`, `cookies`, `type`
-
 * `-r`, `--resume` — Resume from a saved file
 
   Possible values: `true`, `false`
@@ -99,6 +96,10 @@ A blazing fast web directory scanner
 * `--request-file <FILE>` — Request file (.http, .rest)
 * `-P`, `--proxy <URL>` — Proxy URL
 * `--proxy-auth <USER:PASS>` — Proxy username and password
+* `--subdomains` — Allow subdomains to be scanned in spider mode
+
+  Possible values: `true`, `false`
+
 * `--generate-markdown` — Generate markdown help - for developers
 
   Possible values: `true`, `false`

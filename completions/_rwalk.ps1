@@ -80,6 +80,8 @@ Register-ArgumentCompleter -Native -CommandName 'rwalk' -ScriptBlock {
             [CompletionResult]::new('--or', 'or', [CompletionResultType]::ParameterName, 'Treat filters as or instead of and')
             [CompletionResult]::new('--force-recursion', 'force-recursion', [CompletionResultType]::ParameterName, 'Force the recursion over non-directories')
             [CompletionResult]::new('--fr', 'fr', [CompletionResultType]::ParameterName, 'Force the recursion over non-directories')
+            [CompletionResult]::new('--subdomains', 'subdomains', [CompletionResultType]::ParameterName, 'Allow subdomains to be scanned in spider mode')
+            [CompletionResult]::new('--sub', 'sub', [CompletionResultType]::ParameterName, 'Allow subdomains to be scanned in spider mode')
             [CompletionResult]::new('--generate-markdown', 'generate-markdown', [CompletionResultType]::ParameterName, 'Generate markdown help - for developers')
             [CompletionResult]::new('--generate-completions', 'generate-completions', [CompletionResultType]::ParameterName, 'Generate shell completions - for developers')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')

@@ -1,4 +1,4 @@
-complete -c rwalk -s m -l mode -d 'Crawl mode' -r -f -a "{recursive	'',recursion	'',r	'',classic	'',c	''}"
+complete -c rwalk -s m -l mode -d 'Crawl mode' -r -f -a "{recursive	'',recursion	'',r	'',classic	'',c	'',spider	'',s	''}"
 complete -c rwalk -s t -l threads -d 'Number of threads to use' -r
 complete -c rwalk -s d -l depth -d 'Crawl recursively until given depth' -r
 complete -c rwalk -s o -l output -d 'Output file' -r
@@ -12,7 +12,7 @@ complete -c rwalk -s R -l follow-redirects -d 'Follow redirects' -r
 complete -c rwalk -s c -l config -d 'Configuration file' -r
 complete -c rwalk -l throttle -d 'Request throttling (requests per second) per thread' -r
 complete -c rwalk -s M -l max-time -d 'Max time to run (will abort after given time) in seconds' -r
-complete -c rwalk -l show -d 'Show response additional body information' -r -f -a "{length	'',size	'',hash	'',md5	'',headers_length	'',headers_hash	'',body	'',content	'',text	'',headers	'',cookie	'',cookies	'',type	''}"
+complete -c rwalk -l show -d 'Show response additional body information' -r
 complete -c rwalk -l save-file -d 'Custom save file' -r
 complete -c rwalk -s T -l transform -d 'Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"' -r
 complete -c rwalk -s w -l wordlist-filter -l wf -d 'Wordlist filtering: "contains", "starts", "ends", "regex", "length"' -r
@@ -31,6 +31,7 @@ complete -c rwalk -l no-save -d 'Don\'t save the state in case you abort'
 complete -c rwalk -l keep-save -l keep -d 'Keep the save file after finishing when using --resume'
 complete -c rwalk -l or -d 'Treat filters as or instead of and'
 complete -c rwalk -l force-recursion -l fr -d 'Force the recursion over non-directories'
+complete -c rwalk -l subdomains -l sub -d 'Allow subdomains to be scanned in spider mode'
 complete -c rwalk -l generate-markdown -d 'Generate markdown help - for developers'
 complete -c rwalk -l generate-completions -d 'Generate shell completions - for developers'
 complete -c rwalk -s h -l help -d 'Print help'

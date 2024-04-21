@@ -77,6 +77,8 @@ set edit:completion:arg-completer[rwalk] = {|@words|
             cand --or 'Treat filters as or instead of and'
             cand --force-recursion 'Force the recursion over non-directories'
             cand --fr 'Force the recursion over non-directories'
+            cand --subdomains 'Allow subdomains to be scanned in spider mode'
+            cand --sub 'Allow subdomains to be scanned in spider mode'
             cand --generate-markdown 'Generate markdown help - for developers'
             cand --generate-completions 'Generate shell completions - for developers'
             cand -h 'Print help'

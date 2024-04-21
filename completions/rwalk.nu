@@ -1,11 +1,7 @@
 module completions {
 
   def "nu-complete rwalk mode" [] {
-    [ "recursive" "recursion" "r" "classic" "c" ]
-  }
-
-  def "nu-complete rwalk show" [] {
-    [ "length" "size" "hash" "md5" "headers_length" "headers_hash" "body" "content" "text" "headers" "cookie" "cookies" "type" ]
+    [ "recursive" "recursion" "r" "classic" "c" "spider" "s" ]
   }
 
   # A blazing fast web directory scanner
@@ -35,7 +31,7 @@ module completions {
     --interactive(-i)         # Interactive mode
     --insecure                # Insecure mode, disables SSL certificate validation
     --unsecure                # Insecure mode, disables SSL certificate validation
-    --show: string@"nu-complete rwalk show" # Show response additional body information
+    --show: string            # Show response additional body information
     --resume(-r)              # Resume from a saved file
     --save-file: string       # Custom save file
     --no-save                 # Don't save the state in case you abort
@@ -52,6 +48,8 @@ module completions {
     --rf: string              # Request file (.http, .rest)
     --proxy(-P): string       # Proxy URL
     --proxy-auth: string      # Proxy username and password
+    --subdomains              # Allow subdomains to be scanned in spider mode
+    --sub                     # Allow subdomains to be scanned in spider mode
     --generate-markdown       # Generate markdown help - for developers
     --generate-completions    # Generate shell completions - for developers
     --help(-h)                # Print help

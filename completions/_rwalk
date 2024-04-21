@@ -15,8 +15,8 @@ _rwalk() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-m+[Crawl mode]:MODE:(recursive recursion r classic c)' \
-'--mode=[Crawl mode]:MODE:(recursive recursion r classic c)' \
+'-m+[Crawl mode]:MODE:(recursive recursion r classic c spider s)' \
+'--mode=[Crawl mode]:MODE:(recursive recursion r classic c spider s)' \
 '-t+[Number of threads to use]:THREADS: ' \
 '--threads=[Number of threads to use]:THREADS: ' \
 '-d+[Crawl recursively until given depth]:DEPTH: ' \
@@ -42,7 +42,7 @@ _rwalk() {
 '--throttle=[Request throttling (requests per second) per thread]:THROTTLE: ' \
 '-M+[Max time to run (will abort after given time) in seconds]:MAX_TIME: ' \
 '--max-time=[Max time to run (will abort after given time) in seconds]:MAX_TIME: ' \
-'*--show=[Show response additional body information]:SHOW:(length size hash md5 headers_length headers_hash body content text headers cookie cookies type)' \
+'*--show=[Show response additional body information]:SHOW: ' \
 '--save-file=[Custom save file]:FILE: ' \
 '*-T+[Wordlist transformations\: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"]:TRANSFORM: ' \
 '*--transform=[Wordlist transformations\: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"]:TRANSFORM: ' \
@@ -74,6 +74,8 @@ _rwalk() {
 '--or[Treat filters as or instead of and]' \
 '--force-recursion[Force the recursion over non-directories]' \
 '--fr[Force the recursion over non-directories]' \
+'--subdomains[Allow subdomains to be scanned in spider mode]' \
+'--sub[Allow subdomains to be scanned in spider mode]' \
 '--generate-markdown[Generate markdown help - for developers]' \
 '--generate-completions[Generate shell completions - for developers]' \
 '-h[Print help]' \
