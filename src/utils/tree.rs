@@ -20,7 +20,7 @@ pub struct TreeNode<T> {
     pub children: Vec<Arc<Mutex<TreeNode<T>>>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TreeData {
     pub url: String,
     pub depth: usize,
@@ -32,7 +32,7 @@ pub struct TreeData {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum UrlType {
-    Dir,
+    Directory,
     File(String),
     Unknown,
 }
@@ -211,7 +211,7 @@ impl TreeItem for TreeNode<TreeData> {
             },
             style.paint(&self.data.path.trim_start_matches('/')),
             style.paint(
-                (if self.data.url_type == UrlType::Dir {
+                (if self.data.url_type == UrlType::Directory {
                     "dir".to_string()
                 } else {
                     match &self.data.url_type {
@@ -335,7 +335,7 @@ mod tests {
                 path: "/test".to_string(),
                 status_code: 200,
                 extra: Value::Null,
-                url_type: UrlType::Dir,
+                url_type: UrlType::Directory,
             },
             children: vec![],
         };

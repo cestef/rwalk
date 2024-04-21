@@ -145,7 +145,7 @@ pub fn check(
                 }
             }
             "type" => {
-                let is_dir = is_directory(response);
+                let is_dir = is_directory(response, res_text);
                 if filter.1 == "directory" {
                     is_dir ^ negated
                 } else {
@@ -245,7 +245,7 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
 
         match show.0.to_lowercase().as_str() {
             "type" => {
-                let is_dir = is_directory(response);
+                let is_dir = is_directory(response, text);
                 additions.push(Addition {
                     key: "type".to_string(),
                     value: if is_dir {
@@ -380,8 +380,34 @@ pub fn print_error(opts: &Opts, progress: &indicatif::ProgressBar, url: &str, er
     }
 }
 
-pub fn is_directory(response: &reqwest::Response) -> bool {
-    if response.status().is_redirection() {
+pub fn is_html_directory(body: &str) -> bool {
+    let body = body.to_lowercase();
+    // Apache
+    if body.contains("index of") {
+        return true;
+    }
+    // Nginx
+    if body.contains("name=\"description\" content=\"nginx directory listing\"") {
+        return true;
+    }
+    // ASP.NET
+    if body.contains("directory listing -- /") {
+        return true;
+    }
+    // Tomcat
+    if body.contains("directory listing for /") {
+        return true;
+    }
+
+    false
+}
+
+pub fn is_directory(response: &reqwest::Response, body: &str) -> bool {
+    if let Some(content_type) = response.headers().get(reqwest::header::CONTENT_TYPE) {
+        if content_type.to_str().unwrap().starts_with("text/html") {
+            return is_html_directory(body);
+        }
+    } else if response.status().is_redirection() {
         // status code is 3xx
         match response.headers().get("Location") {
             // and has a Location header

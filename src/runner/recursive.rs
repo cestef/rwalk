@@ -40,7 +40,8 @@ impl super::Runner for Recursive {
             let root_progress = MultiProgress::new();
             // Spawn a thread for each previous node
             for previous_node in &previous_nodes {
-                if previous_node.lock().data.url_type != UrlType::Dir && !self.opts.force_recursion
+                if previous_node.lock().data.url_type != UrlType::Directory
+                    && !self.opts.force_recursion
                 {
                     log::debug!("Skipping not-directory {}", previous_node.lock().data.url);
                     continue;
@@ -193,7 +194,7 @@ impl Recursive {
                             break;
                         }
                     }
-                    let is_dir = is_directory(&response);
+                    let is_dir = is_directory(&response, &text);
                     let filtered = super::filters::check(
                         &opts,
                         &progress,
@@ -251,7 +252,7 @@ impl Recursive {
                                     status_code,
                                     extra: json!(additions),
                                     url_type: if is_dir {
-                                        UrlType::Dir
+                                        UrlType::Directory
                                     } else if let Some(content_type) = maybe_content_type {
                                         UrlType::File(content_type)
                                     } else {

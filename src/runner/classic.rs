@@ -160,7 +160,7 @@ impl Classic {
                                 .unwrap_or_default()
                                 .to_string()
                         });
-                        let is_dir = is_directory(&response);
+                        let is_dir = is_directory(&response, &text);
                         tree.insert(
                             TreeData {
                                 url: url.clone(),
@@ -172,7 +172,7 @@ impl Classic {
                                 status_code,
                                 extra: json!(additions),
                                 url_type: if is_dir {
-                                    UrlType::Dir
+                                    UrlType::Directory
                                 } else if let Some(content_type) = maybe_content_type {
                                     UrlType::File(content_type)
                                 } else {
