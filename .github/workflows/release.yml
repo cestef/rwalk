@@ -18,6 +18,8 @@ jobs:
             - uses: taiki-e/create-gh-release-action@v1
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
+            - name: Set the TAG variable without the 'v' prefix
+              run: echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
     upload-assets:
         needs: create-release
@@ -52,7 +54,7 @@ jobs:
                   bin: rwalk
                   target: ${{ matrix.target }}
                   token: ${{ secrets.GITHUB_TOKEN }}
-                  archive: $bin-${{ github.ref_name }}-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
+                  archive: $bin-${{ env.TAG }}-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
     homebrew-releaser:
         needs: upload-assets
         runs-on: ubuntu-latest
@@ -77,7 +79,7 @@ jobs:
                   target_linux_arm64: true
 
                   update_readme_table: true
-                  version: ${{ github.ref_name }}
+                  version: ${{ env.TAG }}
                   # Skips committing the generated formula to a homebrew tap (useful for local testing).
                   skip_commit: false
                   # Logs debugging info to console.
