@@ -3,15 +3,13 @@ use crate::cli::opts::Opts;
 use crate::cli::opts::OptsGetterSetter;
 use crate::utils::parse_range_input;
 use anyhow::Result;
-use clap::Parser;
 use colored::Colorize;
 use lazy_static::lazy_static;
 use log::error;
 use rustyline::DefaultEditor;
 
-pub async fn main() -> Result<()> {
+pub async fn main(mut opts: Opts) -> Result<()> {
     let mut rl = rustyline::DefaultEditor::new()?;
-    let mut state = Opts::parse();
 
     loop {
         let readline = rl.readline(">> ");
@@ -26,15 +24,15 @@ pub async fn main() -> Result<()> {
                 let args = parts[1..].to_vec();
                 // This is a bit ugly, but I can't manage to box async functions
                 match cmd {
-                    "help" | "h" | "?" => help(&mut rl, args, &mut state).await,
-                    "exit" | "quit" | "q" => exit(&mut rl, args, &mut state).await,
-                    "clear" | "cls" => clear(&mut rl, args, &mut state).await,
-                    "set" | "s" => set(&mut rl, args, &mut state).await,
-                    "append" | "a" => append(&mut rl, args, &mut state).await,
-                    "unset" | "u" => unset(&mut rl, args, &mut state).await,
-                    "get" | "g" => get(&mut rl, args, &mut state).await,
-                    "list" | "ls" | "l" => list(&mut rl, args, &mut state).await,
-                    "run" | "r" => run(&mut rl, args, &mut state).await,
+                    "help" | "h" | "?" => help(&mut rl, args, &mut opts).await,
+                    "exit" | "quit" | "q" => exit(&mut rl, args, &mut opts).await,
+                    "clear" | "cls" => clear(&mut rl, args, &mut opts).await,
+                    "set" | "s" => set(&mut rl, args, &mut opts).await,
+                    "append" | "a" => append(&mut rl, args, &mut opts).await,
+                    "unset" | "u" => unset(&mut rl, args, &mut opts).await,
+                    "get" | "g" => get(&mut rl, args, &mut opts).await,
+                    "list" | "ls" | "l" => list(&mut rl, args, &mut opts).await,
+                    "run" | "r" => run(&mut rl, args, &mut opts).await,
                     _ => {
                         println!("Unknown command: {}", cmd);
                         Ok(())
