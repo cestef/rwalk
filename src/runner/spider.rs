@@ -44,7 +44,7 @@ impl Runner for Spider {
         let mut current_depth = 0;
         let mut current_nodes = vec![base.clone()];
         let mut visited: Vec<TreeData> = vec![];
-        let max_depth = self.opts.depth.unwrap_or(DEFAULT_DEPTH);
+        let max_depth = self.opts.depth.unwrap_or(DEFAULT_DEPTH + 1);
         let pb = ProgressBar::new(0).with_style(
             indicatif::ProgressStyle::default_bar()
                 .template(PROGRESS_TEMPLATE)?
