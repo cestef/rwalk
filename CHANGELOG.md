@@ -1,3 +1,10 @@
+## v0.7.5 (2024-04-24)
+
+### Fix
+
+- Remove Cargo.lock from cz config
+- Remove Cargo.lock
+
 ## v0.7.4 (2024-04-24)
 
 ### Feat
