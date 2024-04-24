@@ -293,7 +293,7 @@ impl Serialize for Wordlist {
         format!(
             "{}{}",
             self.0,
-            if self.1.len() > 0 {
+            if !self.1.is_empty() {
                 format!(":{}", self.1.join(","))
             } else {
                 "".to_string()

@@ -154,7 +154,7 @@ async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     let key = args[0];
     let value = args[1];
 
-    let current_value = get_field_by_name::<Opts, Value>(&state, key)?;
+    let current_value = get_field_by_name::<Opts, Value>(state, key)?;
     if let Value::Array(mut vec) = current_value {
         vec.push(serde_json::from_str(value)?);
         let new_state = set_field_by_name(state, key, &serde_json::to_string(&vec)?)?;
@@ -172,7 +172,7 @@ async fn get(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
         return Ok(());
     }
     let key = args[0];
-    let maybe_value = get_field_by_name::<Opts, Value>(&state, key);
+    let maybe_value = get_field_by_name::<Opts, Value>(state, key);
     match maybe_value {
         Ok(value) => {
             println!("{}", serde_json::to_string_pretty(&value)?);
