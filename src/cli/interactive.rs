@@ -1,12 +1,14 @@
 use crate::_main;
 use crate::cli::opts::Opts;
-use crate::cli::opts::OptsGetterSetter;
-use crate::utils::parse_range_input;
+use anyhow::bail;
 use anyhow::Result;
 use colored::Colorize;
 use lazy_static::lazy_static;
 use log::error;
 use rustyline::DefaultEditor;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+use serde_json::Value;
 
 pub async fn main(mut opts: Opts) -> Result<()> {
     let mut rl = rustyline::DefaultEditor::new()?;
@@ -29,7 +31,6 @@ pub async fn main(mut opts: Opts) -> Result<()> {
                     "clear" | "cls" => clear(&mut rl, args, &mut opts).await,
                     "set" | "s" => set(&mut rl, args, &mut opts).await,
                     "append" | "a" => append(&mut rl, args, &mut opts).await,
-                    "unset" | "u" => unset(&mut rl, args, &mut opts).await,
                     "get" | "g" => get(&mut rl, args, &mut opts).await,
                     "list" | "ls" | "l" => list(&mut rl, args, &mut opts).await,
                     "run" | "r" => run(&mut rl, args, &mut opts).await,
@@ -89,6 +90,41 @@ async fn clear(rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> R
     Ok(())
 }
 
+fn get_field_by_name<T, R>(data: &T, field: &str) -> Result<R>
+where
+    T: Serialize,
+    R: DeserializeOwned,
+{
+    let mut map = match serde_json::to_value(data) {
+        Ok(Value::Object(map)) => map,
+        _ => bail!("expected a struct"),
+    };
+
+    let value = match map.remove(field) {
+        // remove the value from the map to get it without a reference
+        Some(value) => value,
+        None => bail!("field not found"),
+    };
+
+    R::deserialize(value).map_err(|e| e.into())
+}
+
+fn set_field_by_name<T>(data: &T, field: &str, value: &str) -> Result<T>
+where
+    T: Serialize + DeserializeOwned,
+{
+    let mut map = match serde_json::to_value(data) {
+        Ok(Value::Object(map)) => map,
+        _ => bail!("expected a struct"),
+    };
+
+    let value = serde_json::from_str(value)?;
+
+    map.insert(field.to_string(), value);
+
+    T::deserialize(Value::Object(map)).map_err(|e| e.into())
+}
+
 async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
     if args.len() != 2 {
         println!("Usage: set <key> <value>");
@@ -96,36 +132,18 @@ async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
     }
     let key = args[0];
     let value = args[1];
-    let value_type = get_value_type(value);
 
-    let res = match value_type {
-        ValueType::String => state.set(key, Some(value.to_string())),
-        ValueType::Bool => state.set(key, parse_bool(value)),
-        ValueType::Usize => state.set(key, Some(value.parse::<usize>().unwrap())),
-        ValueType::Range => state.set(key, Some(value.to_string())),
-        ValueType::StringVec => {
-            let re = regex::Regex::new(r#"\[(.*)\]"#).unwrap();
-            let value = re.replace_all(value, "$1").to_string();
-            let value = value.split(',').map(|s| s.to_string()).collect::<Vec<_>>();
-            state.set(key, value)
+    let maybe_new_state = set_field_by_name(state, key, value);
+    match maybe_new_state {
+        Ok(new_state) => {
+            *state = new_state;
+            Ok(())
         }
-    };
-
-    match res {
-        Ok(_) => {}
-        Err(_) => {
-            // Try to set the value as a string
-            let res = state.set(key, Some(value.to_string()));
-            match res {
-                Ok(_) => {}
-                Err(e) => {
-                    println!("Error: {}", e);
-                    return Ok(());
-                }
-            }
+        Err(e) => {
+            error!("Error setting value: {}", e);
+            Ok(())
         }
     }
-    Ok(())
 }
 
 async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
@@ -136,95 +154,15 @@ async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     let key = args[0];
     let value = args[1];
 
-    let re = regex::Regex::new(r#"\[(.*)\]"#).unwrap();
-    let current_value = match state.getenum(key) {
-        Ok(value) => {
-            let s = format!("{:?}", value);
-            // depth(Some(1)) or depth(None)
-            let re = regex::Regex::new(format!(r#"{}\(Some\((.*)\)\)"#, key).as_str()).unwrap();
-            let s = re.replace_all(&s, "$1").to_string();
-            // depth(1)
-            let re = regex::Regex::new(format!(r#"{}\((.*)\)"#, key).as_str()).unwrap();
-            let s = re.replace_all(&s, "$1").to_string();
-            s
-        }
-        Err(_) => "".to_string(),
-    };
-    let current_value = re.replace_all(&current_value, "$1").to_string();
-    let mut current_value = current_value
-        .split(',')
-        .map(|s| s.to_string())
-        .collect::<Vec<_>>();
-    let mut value = value.split(',').map(|s| s.to_string()).collect::<Vec<_>>();
-    current_value.append(&mut value);
-    let res = state.set(
-        key,
-        current_value
-            .iter()
-            .filter(|s| !s.is_empty())
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>(),
-    );
-
-    match res {
-        Ok(_) => {}
-        Err(e) => {
-            println!("Error: {}", e);
-            return Ok(());
-        }
+    let current_value = get_field_by_name::<Opts, Value>(&state, key)?;
+    if let Value::Array(mut vec) = current_value {
+        vec.push(serde_json::from_str(value)?);
+        let new_state = set_field_by_name(state, key, &serde_json::to_string(&vec)?)?;
+        *state = new_state;
+        println!("{} = {}", key, serde_json::to_string_pretty(&vec)?);
+    } else {
+        println!("{} is not an array", key);
     }
-
-    Ok(())
-}
-
-#[derive(Debug)]
-enum ValueType {
-    String,
-    Bool,
-    Usize,
-    Range,
-    StringVec,
-}
-
-fn parse_bool(s: &str) -> bool {
-    match s.to_lowercase().as_str() {
-        "true" => true,
-        "false" => false,
-        _ => false,
-    }
-}
-
-fn get_value_type(s: &str) -> ValueType {
-    if s.starts_with('[') && s.ends_with(']') {
-        return ValueType::StringVec;
-    }
-    if ["true", "false"].contains(&s.to_lowercase().as_str()) {
-        return ValueType::Bool;
-    }
-    if s.parse::<usize>().is_ok() {
-        return ValueType::Usize;
-    }
-    if parse_range_input(s).is_ok() {
-        return ValueType::Range;
-    }
-    ValueType::String
-}
-
-async fn unset(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
-    if args.len() != 1 {
-        println!("Usage: unset <key>");
-        return Ok(());
-    }
-    let key = args[0];
-    let res = state.set(key, None as Option<String>);
-    match res {
-        Ok(_) => {}
-        Err(e) => {
-            println!("Error: {}", e);
-            return Ok(());
-        }
-    }
-
     Ok(())
 }
 
@@ -234,71 +172,42 @@ async fn get(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
         return Ok(());
     }
     let key = args[0];
-    let value = match state.getenum(key) {
+    let maybe_value = get_field_by_name::<Opts, Value>(&state, key);
+    match maybe_value {
         Ok(value) => {
-            let s = format!("{:?}", value);
-            // depth(Some(1)) or depth(None)
-            let re = regex::Regex::new(format!(r#"{}\(Some\((.*)\)\)"#, key).as_str()).unwrap();
-            let s = re.replace_all(&s, "$1").to_string();
-            // depth(1)
-            let re = regex::Regex::new(format!(r#"{}\((.*)\)"#, key).as_str()).unwrap();
-            let s = re.replace_all(&s, "$1").to_string();
-            s
+            println!("{}", serde_json::to_string_pretty(&value)?);
+            Ok(())
         }
-        Err(_) => {
-            println!("Unknown key: {}", key);
-            return Ok(());
+        Err(e) => {
+            error!("Error getting value: {}", e);
+            Ok(())
         }
+    }
+}
+
+fn list_fields<T>(data: &T) -> Vec<(String, String)>
+where
+    T: Serialize,
+{
+    let map = match serde_json::to_value(data) {
+        Ok(Value::Object(map)) => map,
+        _ => return vec![],
     };
 
-    println!("{}: {}", key, value);
-    Ok(())
+    map.iter()
+        .map(|(k, v)| (k.clone(), v.to_string()))
+        .collect()
 }
 
 async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
-    println!("Listing all values:");
-    let struct_info = state.getstructinfo();
-    let mut fields: Vec<(String, String, String)> =
-        vec![("".to_string(), "".to_string(), "".to_string()); struct_info.field_names.len()];
-    for (i, name) in struct_info.field_names.iter().enumerate() {
-        fields[i].0 = name.to_string();
-        let value = match state.getenum(&name.to_string()) {
-            Ok(value) => {
-                let s = format!("{:?}", value);
-                // depth(Some(1)) or depth(None)
-                let re =
-                    regex::Regex::new(format!(r#"{}\(Some\((.*)\)\)"#, name).as_str()).unwrap();
-                let s = re.replace_all(&s, "$1").to_string();
-                // depth(1)
-                let re = regex::Regex::new(format!(r#"{}\((.*)\)"#, name).as_str()).unwrap();
-                let s = re.replace_all(&s, "$1").to_string();
-                s
-            }
-            Err(_) => "".to_string(),
-        };
-        fields[i].2 = value;
-    }
-    for (i, ty) in struct_info.field_types.iter().enumerate() {
-        let re = regex::Regex::new(r#"Option < (.*) >"#).unwrap();
-        let ty = re.replace_all(ty, "$1").to_string();
-        let re = regex::Regex::new(r#"Vec < (.*) >"#).unwrap();
-        let ty = re.replace_all(&ty, "Vec<$1>").to_string();
-        fields[i].1 = ty;
-    }
-
-    let max_len = fields
-        .iter()
-        .map(|(name, _, _)| name.len())
-        .max()
-        .unwrap_or(0);
-
-    for (name, ty, value) in fields {
+    let fields = list_fields(state);
+    let max_key_len = fields.iter().map(|(k, _)| k.len()).max().unwrap_or(0);
+    for (key, value) in fields {
         println!(
-            "  {:<width$} {} = {}",
-            name.bold(),
-            ty.dimmed(),
-            value,
-            width = max_len,
+            "{:<width$} = {}",
+            key.bold(),
+            value.dimmed(),
+            width = max_key_len
         );
     }
     Ok(())

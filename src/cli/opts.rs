@@ -3,7 +3,6 @@ use std::path::Path;
 use crate::utils::constants::{
     DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT,
 };
-use field_accessor_pub::FieldAccessor;
 use serde::{Deserialize, Serialize};
 
 use super::helpers::{
@@ -14,7 +13,7 @@ use anyhow::Result;
 use clap::Parser;
 use merge::Merge;
 
-#[derive(Parser, Clone, Debug, Default, FieldAccessor, Serialize, Deserialize, Merge)]
+#[derive(Parser, Clone, Debug, Default, Serialize, Deserialize, Merge)]
 #[clap(
     version,
     author = "cstef",
@@ -291,7 +290,16 @@ impl Serialize for Wordlist {
     where
         S: serde::Serializer,
     {
-        format!("{}:{}", self.0, self.1.join(",")).serialize(serializer)
+        format!(
+            "{}{}",
+            self.0,
+            if self.1.len() > 0 {
+                format!(":{}", self.1.join(","))
+            } else {
+                "".to_string()
+            }
+        )
+        .serialize(serializer)
     }
 }
 

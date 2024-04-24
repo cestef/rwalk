@@ -18,9 +18,7 @@ clap-markdown = "0.1.3"
 colored = "2.0.4"
 csv = "1.3.0"
 dirs = "5.0.1"
-
 env_logger = "0.10.1"
-field_accessor_pub = "0.5.3"
 futures = "0.3.29"
 http-rest-file = "0.5.1"
 indicatif = { version = "0.17.7", features = ["improved_unicode"] }
@@ -38,7 +36,6 @@ reqwest = { version = "0.12.3", default-features = false, features = [
 ] }
 rustyline = "12.0.0"
 serde = { version = "1.0.192", features = ["rc"] }
-serde_json = "1.0.108"
 stopwatch = "0.0.7"
 tokio = { version = "1.34.0", features = [
     "io-std",
@@ -55,6 +52,7 @@ clap_complete_nushell = "4.5.1"
 tabled = { version = "0.15.0", features = ["ansi"] }
 strsim = "0.11.1"
 scraper = "0.19.0"
+serde_json = "1.0.116"
 
 # Strip the debug symbols from the binary
 [profile.release]
