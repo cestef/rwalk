@@ -2,3 +2,4 @@
 .DS_Store
 .rwalk.json
 config.toml
+Cargo.lock
