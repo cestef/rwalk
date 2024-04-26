@@ -34,6 +34,7 @@ pub async fn main(mut opts: Opts) -> Result<()> {
                     "get" | "g" => get(&mut rl, args, &mut opts).await,
                     "list" | "ls" | "l" => list(&mut rl, args, &mut opts).await,
                     "run" | "r" => run(&mut rl, args, &mut opts).await,
+                    "remove" | "rm" => remove(&mut rl, args, &mut opts).await,
                     _ => {
                         println!("Unknown command: {}", cmd);
                         Ok(())
@@ -70,6 +71,8 @@ lazy_static! {
         Command::new("get", "Get a value"),
         Command::new("list", "List all values"),
         Command::new("run", "Run the scanner"),
+        Command::new("append", "Append a value to an array"),
+        Command::new("remove", "Remove a value from an array"),
     ];
 }
 
@@ -88,6 +91,38 @@ async fn exit(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> R
 async fn clear(rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
     rl.clear_screen()?;
     Ok(())
+}
+
+async fn remove(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+    if args.len() != 2 {
+        println!("Usage: remove <key> <value>");
+        return Ok(());
+    }
+    let key = args[0];
+    let value = args[1];
+
+    let current_value = get_field_by_name::<Opts, Value>(state, key)?;
+    if let Value::Array(mut vec) = current_value {
+        let new_vec = vec
+            .into_iter()
+            .filter(|v| v != value)
+            .collect::<Vec<Value>>();
+        let new_value = Value::Array(new_vec);
+        let maybe_new_state = set_field_by_name(state, key, &serde_json::to_string(&new_value)?);
+        match maybe_new_state {
+            Ok(new_state) => {
+                *state = new_state;
+                Ok(())
+            }
+            Err(e) => {
+                error!("Error setting value: {}", e);
+                Ok(())
+            }
+        }
+    } else {
+        println!("Value is not an array");
+        Ok(())
+    }
 }
 
 fn get_field_by_name<T, R>(data: &T, field: &str) -> Result<R>
