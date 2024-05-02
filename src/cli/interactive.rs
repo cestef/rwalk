@@ -102,7 +102,7 @@ async fn remove(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     let value = args[1];
 
     let current_value = get_field_by_name::<Opts, Value>(state, key)?;
-    if let Value::Array(mut vec) = current_value {
+    if let Value::Array(vec) = current_value {
         let new_vec = vec
             .into_iter()
             .filter(|v| v != value)
