@@ -249,7 +249,7 @@ pub fn from_save(
             print_tree(&*root.lock())?;
             *depth.lock() = *save.depth.lock();
             if save.wordlist_checksum == { compute_checksum(&words) } {
-                *current_indexes.lock() = save.indexes.clone();
+                current_indexes.lock().clone_from(&save.indexes);
             } else {
                 warn!(
                     "Wordlists have changed, starting from scratch at depth {}",

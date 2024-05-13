@@ -86,7 +86,7 @@ async fn main() -> Result<()> {
     let res = if opts.interactive {
         cli::interactive::main(opts).await
     } else {
-        _main(opts).await
+        _main(opts).await.map(|_| ())
     };
     if let Err(e) = res {
         error!("{}", e);

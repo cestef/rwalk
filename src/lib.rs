@@ -43,7 +43,7 @@ pub mod cli;
 pub mod runner;
 pub mod utils;
 
-pub async fn _main(opts: Opts) -> Result<()> {
+pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
     if opts.url.is_none() && !opts.resume {
         bail!("Missing URL");
     }
@@ -291,7 +291,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
         error!("Error while connecting to {}: {}", root_url, e);
         // Exit if the root URL is down and the user didn't specify to force the execution
         if !opts.force {
-            return Ok(());
+            bail!("Root URL is down, use --force to continue");
         }
     } else {
         tree.lock().root.clone().unwrap().lock().data.status_code = res?.status().as_u16();
@@ -458,7 +458,7 @@ pub async fn _main(opts: Opts) -> Result<()> {
                 tokio::fs::remove_file(opts.save_file.clone().unwrap()).await?;
             }
             if opts.output.is_some() {
-                let res = utils::save_to_file(&opts, root, current_depth, tree);
+                let res = utils::save_to_file(&opts, root, current_depth, tree.clone());
 
                 match res {
                     Ok(_) => info!("Saved to {}", opts.output.unwrap().bold()),
@@ -487,5 +487,6 @@ pub async fn _main(opts: Opts) -> Result<()> {
             error!("{}", e);
         }
     }
-    Ok(())
+    let tree = tree.lock().clone();
+    Ok(tree)
 }

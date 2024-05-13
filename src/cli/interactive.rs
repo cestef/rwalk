@@ -1,18 +1,37 @@
 use crate::_main;
 use crate::cli::opts::Opts;
+use crate::utils::tree::Tree;
+use crate::utils::tree::TreeData;
 use anyhow::bail;
 use anyhow::Result;
 use colored::Colorize;
 use lazy_static::lazy_static;
 use log::error;
+use rusty_v8 as v8;
 use rustyline::DefaultEditor;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
 
-pub async fn main(mut opts: Opts) -> Result<()> {
-    let mut rl = rustyline::DefaultEditor::new()?;
+pub struct State {
+    opts: Opts,
+    last_result: Option<Tree<TreeData>>,
+}
 
+pub async fn main(opts: Opts) -> Result<()> {
+    let mut rl = rustyline::DefaultEditor::new()?;
+    let platform = v8::new_default_platform(0, false);
+    v8::V8::initialize_platform(platform.into());
+    v8::V8::initialize();
+    let isolate = &mut v8::Isolate::new(Default::default());
+    let scope = &mut v8::HandleScope::new(isolate);
+    let context = v8::Context::new(scope);
+
+    let scope = &mut v8::ContextScope::new(scope, context);
+    let mut state = State {
+        opts,
+        last_result: None,
+    };
     loop {
         let readline = rl.readline(">> ");
         match readline {
@@ -26,15 +45,16 @@ pub async fn main(mut opts: Opts) -> Result<()> {
                 let args = parts[1..].to_vec();
                 // This is a bit ugly, but I can't manage to box async functions
                 match cmd {
-                    "help" | "h" | "?" => help(&mut rl, args, &mut opts).await,
-                    "exit" | "quit" | "q" => exit(&mut rl, args, &mut opts).await,
-                    "clear" | "cls" => clear(&mut rl, args, &mut opts).await,
-                    "set" | "s" => set(&mut rl, args, &mut opts).await,
-                    "append" | "a" => append(&mut rl, args, &mut opts).await,
-                    "get" | "g" => get(&mut rl, args, &mut opts).await,
-                    "list" | "ls" | "l" => list(&mut rl, args, &mut opts).await,
-                    "run" | "r" => run(&mut rl, args, &mut opts).await,
-                    "remove" | "rm" => remove(&mut rl, args, &mut opts).await,
+                    "help" | "h" | "?" => help(&mut rl, args, &mut state).await,
+                    "exit" | "quit" | "q" => exit(&mut rl, args, &mut state).await,
+                    "clear" | "cls" => clear(&mut rl, args, &mut state).await,
+                    "set" | "s" => set(&mut rl, args, &mut state).await,
+                    "append" | "a" => append(&mut rl, args, &mut state).await,
+                    "get" | "g" => get(&mut rl, args, &mut state).await,
+                    "list" | "ls" | "l" => list(&mut rl, args, &mut state).await,
+                    "run" | "r" => run(&mut rl, args, &mut state).await,
+                    "remove" | "rm" => remove(&mut rl, args, &mut state).await,
+                    "eval" | "e" => eval(&mut rl, args, &mut state, scope).await,
                     _ => {
                         println!("Unknown command: {}", cmd);
                         Ok(())
@@ -76,7 +96,7 @@ lazy_static! {
     ];
 }
 
-async fn help(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
+async fn help(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut State) -> Result<()> {
     println!("Available commands:");
     for cmd in COMMANDS.iter() {
         println!("  {:<10} {}", cmd.name.bold(), cmd.description.dimmed());
@@ -84,16 +104,16 @@ async fn help(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> R
     Ok(())
 }
 
-async fn exit(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
+async fn exit(_rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut State) -> Result<()> {
     std::process::exit(0);
 }
 
-async fn clear(rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut Opts) -> Result<()> {
+async fn clear(rl: &mut DefaultEditor, _args: Vec<&str>, _state: &mut State) -> Result<()> {
     rl.clear_screen()?;
     Ok(())
 }
 
-async fn remove(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+async fn remove(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut State) -> Result<()> {
     if args.len() != 2 {
         println!("Usage: remove <key> <value>");
         return Ok(());
@@ -101,17 +121,18 @@ async fn remove(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     let key = args[0];
     let value = args[1];
 
-    let current_value = get_field_by_name::<Opts, Value>(state, key)?;
+    let current_value = get_field_by_name::<Opts, Value>(&state.opts, key)?;
     if let Value::Array(vec) = current_value {
         let new_vec = vec
             .into_iter()
             .filter(|v| v != value)
             .collect::<Vec<Value>>();
         let new_value = Value::Array(new_vec);
-        let maybe_new_state = set_field_by_name(state, key, &serde_json::to_string(&new_value)?);
+        let maybe_new_state =
+            set_field_by_name(&state.opts, key, &serde_json::to_string(&new_value)?);
         match maybe_new_state {
             Ok(new_state) => {
-                *state = new_state;
+                state.opts = new_state;
                 Ok(())
             }
             Err(e) => {
@@ -160,7 +181,7 @@ where
     T::deserialize(Value::Object(map)).map_err(|e| e.into())
 }
 
-async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut State) -> Result<()> {
     if args.len() != 2 {
         println!("Usage: set <key> <value>");
         return Ok(());
@@ -168,10 +189,10 @@ async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
     let key = args[0];
     let value = args[1];
 
-    let maybe_new_state = set_field_by_name(state, key, value);
+    let maybe_new_state = set_field_by_name(&state.opts, key, value);
     match maybe_new_state {
         Ok(new_state) => {
-            *state = new_state;
+            state.opts = new_state;
             Ok(())
         }
         Err(e) => {
@@ -181,7 +202,7 @@ async fn set(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Resu
     }
 }
 
-async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut State) -> Result<()> {
     if args.len() != 2 {
         println!("Usage: append <key> <value>");
         return Ok(());
@@ -189,11 +210,11 @@ async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     let key = args[0];
     let value = args[1];
 
-    let current_value = get_field_by_name::<Opts, Value>(state, key)?;
+    let current_value = get_field_by_name::<Opts, Value>(&state.opts, key)?;
     if let Value::Array(mut vec) = current_value {
         vec.push(serde_json::from_str(value)?);
-        let new_state = set_field_by_name(state, key, &serde_json::to_string(&vec)?)?;
-        *state = new_state;
+        let new_state = set_field_by_name(&state.opts, key, &serde_json::to_string(&vec)?)?;
+        state.opts = new_state;
         println!("{} = {}", key, serde_json::to_string_pretty(&vec)?);
     } else {
         println!("{} is not an array", key);
@@ -201,13 +222,13 @@ async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> R
     Ok(())
 }
 
-async fn get(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut Opts) -> Result<()> {
+async fn get(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut State) -> Result<()> {
     if args.len() != 1 {
         println!("Usage: get <key>");
         return Ok(());
     }
     let key = args[0];
-    let maybe_value = get_field_by_name::<Opts, Value>(state, key);
+    let maybe_value = get_field_by_name::<Opts, Value>(&state.opts, key);
     match maybe_value {
         Ok(value) => {
             println!("{}", serde_json::to_string_pretty(&value)?);
@@ -234,8 +255,8 @@ where
         .collect()
 }
 
-async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
-    let fields = list_fields(state);
+async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut State) -> Result<()> {
+    let fields = list_fields(&state.opts);
     let max_key_len = fields.iter().map(|(k, _)| k.len()).max().unwrap_or(0);
     for (key, value) in fields {
         println!(
@@ -248,14 +269,60 @@ async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Re
     Ok(())
 }
 
-async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut Opts) -> Result<()> {
-    let res = _main(state.clone()).await;
+async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut State) -> Result<()> {
+    let res = _main(state.opts.clone()).await;
     match res {
-        Ok(_) => {}
+        Ok(r) => {
+            state.last_result = Some(r);
+        }
         Err(e) => {
             error!("{}", e);
             return Ok(());
         }
     }
+    Ok(())
+}
+
+fn expose_data<T: Serialize>(
+    scope: &mut v8::HandleScope,
+    name: &str,
+    data: &T,
+) -> Result<(), serde_json::Error> {
+    let json = serde_json::to_string(data)?;
+    let source = format!(
+        "try {{ var {} = {}; }} catch(e) {{ {} = e; }}",
+        name, json, name
+    );
+    let source = v8::String::new(scope, source.as_str()).unwrap();
+    let script = v8::Script::compile(scope, source, None).unwrap();
+    script.run(scope);
+    Ok(())
+}
+
+async fn eval(
+    _rl: &mut DefaultEditor,
+    args: Vec<&str>,
+    state: &mut State,
+    scope: &mut v8::HandleScope<'_>,
+) -> Result<()> {
+    if args.is_empty() {
+        println!("Usage: eval <expression>");
+        return Ok(());
+    }
+
+    expose_data(scope, "opts", &state.opts)?;
+    expose_data(scope, "last_result", &state.last_result)?;
+
+    let source = v8::String::new(scope, args.join(" ").as_str()).unwrap();
+    let script = v8::Script::compile(scope, source, None).unwrap();
+    let result = script.run(scope);
+
+    if let Some(result) = result {
+        // Convert the result to a JSON string
+        let json = v8::json::stringify(scope, result).unwrap();
+        let json = json.to_rust_string_lossy(scope);
+        println!("{}", json);
+    }
+
     Ok(())
 }
