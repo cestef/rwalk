@@ -297,7 +297,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
         tree.lock().root.clone().unwrap().lock().data.status_code = res?.status().as_u16();
     }
 
-    let watch = stopwatch::Stopwatch::start_new();
+    let start_time = std::time::Instant::now();
 
     if !opts.quiet {
         info!(
@@ -430,7 +430,9 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
                 println!(
                     "{} Done in {} with an average of {} req/s",
                     SUCCESS.to_string().green(),
-                    HumanDuration(watch.elapsed()).to_string().bold(),
+                    HumanDuration(std::time::Instant::now().duration_since(start_time))
+                        .to_string()
+                        .bold(),
                     ((match mode {
                         Mode::Recursive =>
                             words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
@@ -440,7 +442,9 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
                         }
                         Mode::Spider => 1,
                     }) as f64
-                        / watch.elapsed().as_secs_f64())
+                        / std::time::Instant::now()
+                            .duration_since(start_time)
+                            .as_secs_f64())
                     .round()
                     .to_string()
                     .bold()

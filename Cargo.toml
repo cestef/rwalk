@@ -36,7 +36,6 @@ reqwest = { version = "0.12.3", default-features = false, features = [
 ] }
 rustyline = "12.0.0"
 serde = { version = "1.0.192", features = ["rc"] }
-stopwatch = "0.0.7"
 tokio = { version = "1.34.0", features = [
     "io-std",
     "sync",
