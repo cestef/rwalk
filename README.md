@@ -285,6 +285,48 @@ Available transformations:
 - `capitalize`
 - `reverse`
 
+### Scripting
+
+`rwalk` supports scripting with [`rhai`](https://github.com/rhaiscript/rhai).
+
+#### Response scripts
+
+These scripts will be ran after a successful (passing all filters) response is received. The script will have access to the following variables:
+
+- `data` [TreeData](src/utils/tree.rs#L24): The response data
+  - `url`
+  - `depth`
+  - `path`
+  - `status_code`
+  - `extra`
+  - `url_type`
+- `opts` [Opts](src/cli/opts.rs#L22): The options passed to `rwalk`
+
+
+#### Interactive mode
+
+When using the `--interactive` (`-i`) flag, you can run scripts with the `eval` command. For example:
+
+```bash
+rwalk ... -i
+```
+
+```bash
+> eval "print('Hello, world!')"
+```
+
+Will print `Hello, world!` to the terminal.
+
+> [!NOTE]
+> Passing no arguments to the `eval` command will start an interactive mode for scripting.
+
+You have access to the following variables in the script:
+
+- `tree` [TreeNode](src/utils/tree.rs#L18): The previous scan data if any representing the root node of the tree
+  - `data` [TreeData](src/utils/tree.rs#L24)
+  - `children` Vec<[TreeNode](src/utils/tree.rs#L18)>
+
+
 ### Miscellaneous
 
 <!-- omit in toc -->
