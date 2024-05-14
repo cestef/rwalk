@@ -19,7 +19,7 @@ _rwalk() {
 
     case "${cmd}" in
         rwalk)
-            opts="-m -t -d -o -u -X -D -H -C -R -c -M -q -i -r -T -w -f -P -h -V --mode --force --hce --hit-connection-errors --threads --depth --output --to --timeout --user-agent --method --data --headers --cookies --follow-redirects --config --throttle --max-time --no-color --quiet --interactive --unsecure --insecure --show --resume --save-file --no-save --keep --keep-save --transform --wf --wordlist-filter --filter --or --fr --force-recursion --rf --request-file --proxy --proxy-auth --sub --subdomains --generate-markdown --generate-completions --help --version [URL] [FILE:KEY]..."
+            opts="-m -t -d -o -u -X -D -H -C -R -c -M -q -i -r -T -w -f -P -h -V --mode --force --hce --hit-connection-errors --threads --depth --output --to --timeout --user-agent --method --data --headers --cookies --follow-redirects --config --throttle --max-time --no-color --quiet --interactive --unsecure --insecure --show --resume --save-file --no-save --keep --keep-save --transform --wf --wordlist-filter --filter --or --fr --force-recursion --rf --request-file --proxy --proxy-auth --sub --subdomains --scripts --generate-markdown --generate-completions --help --version [URL] [FILE:KEY]..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -186,6 +186,10 @@ _rwalk() {
                     return 0
                     ;;
                 --proxy-auth)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --scripts)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

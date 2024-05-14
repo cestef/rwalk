@@ -59,6 +59,7 @@ set edit:completion:arg-completer[rwalk] = {|@words|
             cand -P 'Proxy URL'
             cand --proxy 'Proxy URL'
             cand --proxy-auth 'Proxy username and password'
+            cand --scripts 'Scripts to run after each request'
             cand --force 'Force scan even if the target is not responding'
             cand --hit-connection-errors 'Consider connection errors as a hit'
             cand --hce 'Consider connection errors as a hit'

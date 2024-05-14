@@ -50,6 +50,7 @@ module completions {
     --proxy-auth: string      # Proxy username and password
     --subdomains              # Allow subdomains to be scanned in spider mode
     --sub                     # Allow subdomains to be scanned in spider mode
+    --scripts: string         # Scripts to run after each request
     --generate-markdown       # Generate markdown help - for developers
     --generate-completions    # Generate shell completions - for developers
     --help(-h)                # Print help

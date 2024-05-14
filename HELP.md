@@ -100,6 +100,7 @@ A blazing fast web directory scanner
 
   Possible values: `true`, `false`
 
+* `--scripts <SCRIPTS>` — Scripts to run after each request
 * `--generate-markdown` — Generate markdown help - for developers
 
   Possible values: `true`, `false`

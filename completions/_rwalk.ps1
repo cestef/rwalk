@@ -62,6 +62,7 @@ Register-ArgumentCompleter -Native -CommandName 'rwalk' -ScriptBlock {
             [CompletionResult]::new('-P', 'P ', [CompletionResultType]::ParameterName, 'Proxy URL')
             [CompletionResult]::new('--proxy', 'proxy', [CompletionResultType]::ParameterName, 'Proxy URL')
             [CompletionResult]::new('--proxy-auth', 'proxy-auth', [CompletionResultType]::ParameterName, 'Proxy username and password')
+            [CompletionResult]::new('--scripts', 'scripts', [CompletionResultType]::ParameterName, 'Scripts to run after each request')
             [CompletionResult]::new('--force', 'force', [CompletionResultType]::ParameterName, 'Force scan even if the target is not responding')
             [CompletionResult]::new('--hit-connection-errors', 'hit-connection-errors', [CompletionResultType]::ParameterName, 'Consider connection errors as a hit')
             [CompletionResult]::new('--hce', 'hce', [CompletionResultType]::ParameterName, 'Consider connection errors as a hit')

@@ -56,6 +56,7 @@ _rwalk() {
 '-P+[Proxy URL]:URL: ' \
 '--proxy=[Proxy URL]:URL: ' \
 '--proxy-auth=[Proxy username and password]:USER:PASS: ' \
+'*--scripts=[Scripts to run after each request]:SCRIPTS: ' \
 '--force[Force scan even if the target is not responding]' \
 '--hit-connection-errors[Consider connection errors as a hit]' \
 '--hce[Consider connection errors as a hit]' \

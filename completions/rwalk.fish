@@ -20,6 +20,7 @@ complete -c rwalk -s f -l filter -d 'Response filtering: "time", "status", "cont
 complete -c rwalk -l request-file -l rf -d 'Request file (.http, .rest)' -r
 complete -c rwalk -s P -l proxy -d 'Proxy URL' -r
 complete -c rwalk -l proxy-auth -d 'Proxy username and password' -r
+complete -c rwalk -l scripts -d 'Scripts to run after each request' -r
 complete -c rwalk -l force -d 'Force scan even if the target is not responding'
 complete -c rwalk -l hit-connection-errors -l hce -d 'Consider connection errors as a hit'
 complete -c rwalk -l no-color -d 'Don\'t use colors You can also set the NO_COLOR environment variable'
