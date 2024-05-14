@@ -309,7 +309,7 @@ async fn eval(
     scope: &mut Scope<'_>,
 ) -> Result<()> {
     if let Some(last_result) = &state.last_result {
-        scope.set_or_push("data", last_result.clone());
+        scope.set_or_push("tree", last_result.clone());
     }
     scope.set_or_push("opts", state.opts.clone());
     if args.is_empty() {
