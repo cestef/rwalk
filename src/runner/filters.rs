@@ -405,7 +405,11 @@ pub fn is_html_directory(body: &str) -> bool {
 pub fn is_directory(response: &reqwest::Response, body: &str) -> bool {
     if let Some(content_type) = response.headers().get(reqwest::header::CONTENT_TYPE) {
         if content_type.to_str().unwrap().starts_with("text/html") {
-            return is_html_directory(body);
+            log::debug!("{} is HTML", response.url());
+            if is_html_directory(body) {
+                log::debug!("{} is directory suitable for recursion", response.url());
+                return true;
+            }
         }
     } else if response.status().is_redirection() {
         // status code is 3xx
