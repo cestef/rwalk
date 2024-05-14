@@ -7,7 +7,9 @@ use anyhow::Result;
 use colored::Colorize;
 use lazy_static::lazy_static;
 use log::error;
-use rusty_v8 as v8;
+use quickjs_runtime::builder::QuickJsRuntimeBuilder;
+use quickjs_runtime::facades::QuickJsRuntimeFacade;
+use quickjs_runtime::jsutils::Script;
 use rustyline::DefaultEditor;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -20,14 +22,22 @@ pub struct State {
 
 pub async fn main(opts: Opts) -> Result<()> {
     let mut rl = rustyline::DefaultEditor::new()?;
-    let platform = v8::new_default_platform(0, false);
-    v8::V8::initialize_platform(platform.into());
-    v8::V8::initialize();
-    let isolate = &mut v8::Isolate::new(Default::default());
-    let scope = &mut v8::HandleScope::new(isolate);
-    let context = v8::Context::new(scope);
-
-    let scope = &mut v8::ContextScope::new(scope, context);
+    let mut runtime = QuickJsRuntimeBuilder::new()
+        .realm_adapter_init_hook(|_, f| {
+            f.install_closure(
+                &[],
+                "print",
+                |_, _, v, vs| {
+                    for arg in vs {
+                        println!("{}", arg.to_string()?);
+                    }
+                    Ok(v.clone())
+                },
+                1,
+            )?;
+            Ok(())
+        })
+        .build();
     let mut state = State {
         opts,
         last_result: None,
@@ -54,7 +64,7 @@ pub async fn main(opts: Opts) -> Result<()> {
                     "list" | "ls" | "l" => list(&mut rl, args, &mut state).await,
                     "run" | "r" => run(&mut rl, args, &mut state).await,
                     "remove" | "rm" => remove(&mut rl, args, &mut state).await,
-                    "eval" | "e" => eval(&mut rl, args, &mut state, scope).await,
+                    "eval" | "e" => eval(&mut rl, args, &mut state, &mut runtime).await,
                     _ => {
                         println!("Unknown command: {}", cmd);
                         Ok(())
@@ -210,12 +220,26 @@ async fn append(_rl: &mut DefaultEditor, args: Vec<&str>, state: &mut State) -> 
     let key = args[0];
     let value = args[1];
 
-    let current_value = get_field_by_name::<Opts, Value>(&state.opts, key)?;
+    let maybe_current_value = get_field_by_name::<Opts, Value>(&state.opts, key);
+    let current_value = match maybe_current_value {
+        Ok(value) => value,
+        Err(e) => {
+            error!("Error getting value: {}", e);
+            return Ok(());
+        }
+    };
     if let Value::Array(mut vec) = current_value {
         vec.push(serde_json::from_str(value)?);
-        let new_state = set_field_by_name(&state.opts, key, &serde_json::to_string(&vec)?)?;
-        state.opts = new_state;
-        println!("{} = {}", key, serde_json::to_string_pretty(&vec)?);
+        let maybe_new_state = set_field_by_name(&state.opts, key, &serde_json::to_string(&vec)?);
+        match maybe_new_state {
+            Ok(new_state) => {
+                state.opts = new_state;
+                println!("{} = {}", key, serde_json::to_string_pretty(&vec)?);
+            }
+            Err(e) => {
+                error!("Error setting value: {}", e);
+            }
+        }
     } else {
         println!("{} is not an array", key);
     }
@@ -283,46 +307,57 @@ async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut State) -> Re
     Ok(())
 }
 
-fn expose_data<T: Serialize>(
-    scope: &mut v8::HandleScope,
-    name: &str,
-    data: &T,
-) -> Result<(), serde_json::Error> {
-    let json = serde_json::to_string(data)?;
-    let source = format!(
-        "try {{ var {} = {}; }} catch(e) {{ {} = e; }}",
-        name, json, name
-    );
-    let source = v8::String::new(scope, source.as_str()).unwrap();
-    let script = v8::Script::compile(scope, source, None).unwrap();
-    script.run(scope);
-    Ok(())
-}
-
 async fn eval(
     _rl: &mut DefaultEditor,
     args: Vec<&str>,
-    state: &mut State,
-    scope: &mut v8::HandleScope<'_>,
+    _state: &mut State,
+    runtime: &mut QuickJsRuntimeFacade,
 ) -> Result<()> {
     if args.is_empty() {
-        println!("Usage: eval <expression>");
-        return Ok(());
+        // Enter interactive mode
+        loop {
+            let readline = _rl.readline(">>> ");
+            match readline {
+                Ok(mut line) => {
+                    line = line.trim().to_string();
+                    if line.is_empty() {
+                        continue;
+                    }
+                    match line.as_str() {
+                        "exit" | "quit" | "q" => break,
+                        "clear" | "cls" => {
+                            _rl.clear_screen()?;
+                            continue;
+                        }
+                        _ => {}
+                    }
+                    _rl.add_history_entry(line.as_str())?;
+                    let script = Script::new("eval.js", &format!("({})", line));
+                    let maybe_out = runtime.eval(None, script).await;
+                    match maybe_out {
+                        Ok(out) => {
+                            println!("{}", out.to_json_string().await?);
+                        }
+                        Err(e) => {
+                            error!("{}", e);
+                        }
+                    }
+                }
+                Err(_) => break,
+            }
+        }
     }
+    let expr = args.join(" ");
+    let script = Script::new("eval.js", &format!("({})", expr));
 
-    expose_data(scope, "opts", &state.opts)?;
-    expose_data(scope, "last_result", &state.last_result)?;
-
-    let source = v8::String::new(scope, args.join(" ").as_str()).unwrap();
-    let script = v8::Script::compile(scope, source, None).unwrap();
-    let result = script.run(scope);
-
-    if let Some(result) = result {
-        // Convert the result to a JSON string
-        let json = v8::json::stringify(scope, result).unwrap();
-        let json = json.to_rust_string_lossy(scope);
-        println!("{}", json);
+    let maybe_out = runtime.eval(None, script).await;
+    match maybe_out {
+        Ok(out) => {
+            println!("{}", out.to_json_string().await?);
+        }
+        Err(e) => {
+            error!("{}", e);
+        }
     }
-
     Ok(())
 }
