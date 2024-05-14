@@ -1,15 +1,17 @@
 use crate::_main;
 use crate::cli::opts::Opts;
-use crate::utils::tree::Tree;
+use crate::utils::tree::tree;
 use crate::utils::tree::TreeData;
+use crate::utils::tree::TreeNode;
 use anyhow::bail;
 use anyhow::Result;
 use colored::Colorize;
 use lazy_static::lazy_static;
 use log::error;
-use quickjs_runtime::builder::QuickJsRuntimeBuilder;
-use quickjs_runtime::facades::QuickJsRuntimeFacade;
-use quickjs_runtime::jsutils::Script;
+use rhai::exported_module;
+use rhai::Dynamic;
+use rhai::Engine;
+use rhai::Scope;
 use rustyline::DefaultEditor;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -17,31 +19,21 @@ use serde_json::Value;
 
 pub struct State {
     opts: Opts,
-    last_result: Option<Tree<TreeData>>,
+    last_result: Option<TreeNode<TreeData>>,
 }
 
 pub async fn main(opts: Opts) -> Result<()> {
     let mut rl = rustyline::DefaultEditor::new()?;
-    let mut runtime = QuickJsRuntimeBuilder::new()
-        .realm_adapter_init_hook(|_, f| {
-            f.install_closure(
-                &[],
-                "print",
-                |_, _, v, vs| {
-                    for arg in vs {
-                        println!("{}", arg.to_string()?);
-                    }
-                    Ok(v.clone())
-                },
-                1,
-            )?;
-            Ok(())
-        })
-        .build();
+    let mut engine = Engine::new();
+    let tree_module = exported_module!(tree);
+    engine.register_global_module(tree_module.into());
+    let mut scope = Scope::new();
+
     let mut state = State {
         opts,
         last_result: None,
     };
+
     loop {
         let readline = rl.readline(">> ");
         match readline {
@@ -64,7 +56,7 @@ pub async fn main(opts: Opts) -> Result<()> {
                     "list" | "ls" | "l" => list(&mut rl, args, &mut state).await,
                     "run" | "r" => run(&mut rl, args, &mut state).await,
                     "remove" | "rm" => remove(&mut rl, args, &mut state).await,
-                    "eval" | "e" => eval(&mut rl, args, &mut state, &mut runtime).await,
+                    "eval" | "e" => eval(&mut rl, args, &mut state, &mut engine, &mut scope).await,
                     _ => {
                         println!("Unknown command: {}", cmd);
                         Ok(())
@@ -284,10 +276,10 @@ async fn list(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut State) -> R
     let max_key_len = fields.iter().map(|(k, _)| k.len()).max().unwrap_or(0);
     for (key, value) in fields {
         println!(
-            "{:<width$} = {}",
+            "{} {dots} = {}",
             key.bold(),
             value.dimmed(),
-            width = max_key_len
+            dots = "·".repeat(max_key_len - key.len()).dimmed(),
         );
     }
     Ok(())
@@ -297,7 +289,9 @@ async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut State) -> Re
     let res = _main(state.opts.clone()).await;
     match res {
         Ok(r) => {
-            state.last_result = Some(r);
+            if let Some(root) = r.root {
+                state.last_result = Some(root.lock().clone());
+            }
         }
         Err(e) => {
             error!("{}", e);
@@ -310,13 +304,18 @@ async fn run(_rl: &mut DefaultEditor, _args: Vec<&str>, state: &mut State) -> Re
 async fn eval(
     _rl: &mut DefaultEditor,
     args: Vec<&str>,
-    _state: &mut State,
-    runtime: &mut QuickJsRuntimeFacade,
+    state: &mut State,
+    engine: &mut Engine,
+    scope: &mut Scope<'_>,
 ) -> Result<()> {
+    if let Some(last_result) = &state.last_result {
+        scope.set_or_push("data", last_result.clone());
+    }
+    scope.set_or_push("opts", state.opts.clone());
     if args.is_empty() {
         // Enter interactive mode
         loop {
-            let readline = _rl.readline(">>> ");
+            let readline = _rl.readline("eval> ");
             match readline {
                 Ok(mut line) => {
                     line = line.trim().to_string();
@@ -332,28 +331,28 @@ async fn eval(
                         _ => {}
                     }
                     _rl.add_history_entry(line.as_str())?;
-                    let script = Script::new("eval.js", &format!("({})", line));
-                    let maybe_out = runtime.eval(None, script).await;
-                    match maybe_out {
-                        Ok(out) => {
-                            println!("{}", out.to_json_string().await?);
-                        }
-                        Err(e) => {
-                            error!("{}", e);
-                        }
-                    }
+                    execute(engine, scope, line)?;
                 }
                 Err(_) => break,
             }
         }
+    } else {
+        let line = args.join(" ");
+        execute(engine, scope, line)?;
     }
-    let expr = args.join(" ");
-    let script = Script::new("eval.js", &format!("({})", expr));
 
-    let maybe_out = runtime.eval(None, script).await;
+    Ok(())
+}
+
+fn execute(engine: &mut Engine, scope: &mut Scope, line: String) -> Result<()> {
+    let maybe_out = engine.eval_with_scope::<Dynamic>(scope, &line);
     match maybe_out {
         Ok(out) => {
-            println!("{}", out.to_json_string().await?);
+            let out = out.to_string().trim().to_string();
+            if out.is_empty() {
+                return Ok(());
+            }
+            println!("{}", out);
         }
         Err(e) => {
             error!("{}", e);

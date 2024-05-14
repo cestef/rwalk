@@ -21,7 +21,7 @@ use reqwest::Client;
 use serde_json::json;
 use url::Url;
 
-use super::{filters::is_directory, wordlists::ParsedWordlist, Runner};
+use super::{filters::is_directory, scripting::run_scripts, wordlists::ParsedWordlist, Runner};
 
 pub struct Classic {
     url: String,
@@ -161,26 +161,29 @@ impl Classic {
                                 .to_string()
                         });
                         let is_dir = is_directory(&response, &text);
-                        tree.insert(
-                            TreeData {
-                                url: url.clone(),
-                                depth: 0,
-                                path: parsed.path().to_string().replace(
-                                    Url::parse(&root_url)?.path().to_string().as_str(),
-                                    "",
-                                ),
-                                status_code,
-                                extra: json!(additions),
-                                url_type: if is_dir {
-                                    UrlType::Directory
-                                } else if let Some(content_type) = maybe_content_type {
-                                    UrlType::File(content_type)
-                                } else {
-                                    UrlType::Unknown
-                                },
+                        let data = TreeData {
+                            url: url.clone(),
+                            depth: 0,
+                            path: parsed
+                                .path()
+                                .to_string()
+                                .replace(Url::parse(&root_url)?.path().to_string().as_str(), ""),
+                            status_code,
+                            extra: json!(additions),
+                            url_type: if is_dir {
+                                UrlType::Directory
+                            } else if let Some(content_type) = maybe_content_type {
+                                UrlType::File(content_type)
+                            } else {
+                                UrlType::Unknown
                             },
-                            tree.root.clone(),
-                        );
+                        };
+                        run_scripts(&opts, &data, progress.clone())
+                            .await
+                            .map_err(|err| {
+                                anyhow!("Failed to run scripts on URL {}: {}", url, err)
+                            })?;
+                        tree.insert(data, tree.root.clone());
                     }
                 }
                 Err(err) => {

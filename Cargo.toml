@@ -10,7 +10,6 @@ keywords = ["web", "directory", "scanner", "fuzzing", "bruteforce"]
 edition = "2021"
 exclude = ["assets/*", ".github/*"]
 
-
 [dependencies]
 anyhow = "1.0.75"
 clap = { version = "4.5.4", features = ["derive", "env", "string"] }
@@ -52,7 +51,7 @@ tabled = { version = "0.15.0", features = ["ansi"] }
 strsim = "0.11.1"
 scraper = "0.19.0"
 serde_json = "1.0.117"
-quickjs_runtime = "0.13.3"
+rhai = "1.18.0"
 
 # Strip the debug symbols from the binary
 [profile.release]

@@ -1,12 +1,12 @@
-use std::{collections::HashMap, sync::Arc};
-
 use anyhow::Result;
 use colored::Colorize;
 use log::{info, warn};
 use parking_lot::Mutex;
 use ptree::{print_tree, TreeItem};
+use rhai::plugin::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     cli::opts::Opts,
@@ -28,6 +28,53 @@ pub struct TreeData {
     pub status_code: u16,
     pub extra: Value,
     pub url_type: UrlType,
+}
+
+#[export_module]
+pub mod tree {
+    #[rhai_fn(get = "url")]
+    pub fn get_url(data: &mut TreeData) -> String {
+        data.url.clone()
+    }
+
+    #[rhai_fn(get = "depth")]
+    pub fn depth(data: &mut TreeData) -> usize {
+        data.depth
+    }
+
+    #[rhai_fn(get = "path")]
+    pub fn path(data: &mut TreeData) -> String {
+        data.path.clone()
+    }
+
+    #[rhai_fn(get = "status_code")]
+    pub fn status_code(data: &mut TreeData) -> u16 {
+        data.status_code
+    }
+
+    #[rhai_fn(get = "extra")]
+    pub fn extra(data: &mut TreeData) -> Value {
+        data.extra.clone()
+    }
+
+    #[rhai_fn(get = "url_type")]
+    pub fn url_type(data: &mut TreeData) -> UrlType {
+        data.url_type.clone()
+    }
+
+    #[rhai_fn(get = "data")]
+    pub fn data(data: &mut TreeNode<TreeData>) -> TreeData {
+        data.data.clone()
+    }
+
+    #[rhai_fn(get = "children")]
+    pub fn children(data: &mut TreeNode<TreeData>) -> Dynamic {
+        let mut children = Vec::new();
+        for child in &data.children {
+            children.push(child.lock().clone());
+        }
+        children.into()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
