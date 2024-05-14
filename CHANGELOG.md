@@ -1,3 +1,22 @@
+## v0.8.0 (2024-05-14)
+
+### Feat
+
+- Add scripting capabilities with rhai
+- switch to quickjs for scripting
+- Add javascript eval command to interact with the output data in -i mode
+- add a remove command for interactive mode
+
+### Fix
+
+- remove useless mut
+
+### Refactor
+
+- rename data to tree in eval
+- Switch to format! instead of "+" concatenation
+- Switch to std::time::Instant instead of stopwatch
+
 ## v0.7.5 (2024-04-24)
 
 ### Fix
