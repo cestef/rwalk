@@ -13,11 +13,15 @@ pub fn display_range_status(mut status: String) -> String {
             .join("-")
             .to_string();
     } else if let Some(stripped) = status.strip_prefix('>') {
-        status = ">".to_string()
-            + &color_for_status_code(stripped.to_string(), stripped.parse().unwrap_or_default());
+        status = format!(
+            ">{}",
+            color_for_status_code(stripped.to_string(), stripped.parse().unwrap_or_default())
+        );
     } else if let Some(stripped) = status.strip_prefix('<') {
-        status = "<".to_string()
-            + &color_for_status_code(stripped.to_string(), stripped.parse().unwrap_or_default());
+        status = format!(
+            "<{}",
+            color_for_status_code(stripped.to_string(), stripped.parse().unwrap_or_default())
+        );
     } else {
         status = color_for_status_code(status.to_string(), status.parse().unwrap_or_default());
     }
@@ -30,15 +34,15 @@ pub fn display_range(range: String) -> String {
         .split(',')
         .map(|x| {
             if let Some(stripped) = x.strip_prefix('>') {
-                ">".to_string() + &stripped.blue().to_string()
+                format!(">{}", stripped.blue())
             } else if let Some(stripped) = x.strip_prefix('<') {
-                "<".to_string() + &stripped.blue().to_string()
+                format!("<{}", stripped.blue())
             } else {
                 let parts = x.split('-').collect::<Vec<_>>();
                 if parts.len() == 2 {
                     let start = parts[0].parse::<u16>().unwrap_or_default();
                     let end = parts[1].parse::<u16>().unwrap_or_default();
-                    start.to_string().blue().to_string() + "-" + &end.to_string().blue().to_string()
+                    format!("{}-{}", start.to_string().blue(), end.to_string().blue())
                 } else if let Ok(x) = x.parse::<u16>() {
                     x.to_string().blue().to_string()
                 } else {
