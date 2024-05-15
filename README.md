@@ -158,13 +158,22 @@ Available filters:
 - `length`: _`<RANGE>`_
 - `status`: _`<RANGE>`_
 - `time`: _`<RANGE>`_
-- `hash`: _`<STRING>`_ (MD5)
+- `hash`: _`<STRING>`_ _MD5 hash of the body_
+- `header`: _`<STRING>=<STRING>`_
+- `url`: _`<STRING>`_
+- `type`: _`<STRING>`_
+- `lines`: _`<RANGE>`_
+- `similarity`: _`<WORD>:<RANGE>`_ _Similarity of the body to the provided word_
+- `json`: _`<PATH>=<STRING>`_ _Match the value at the provided path in the JSON body_
+- `depth`: _`<RANGE>`_
 
 Each filter can be negated by adding a `!` before the filter. For example, to exclude responses that contain `admin`:
 
 ```bash
 rwalk ... --filter "!contains:admin"
 ```
+
+To match against bodies
 
 You can also filter only at specific depths with the `[depth]filter` format. For example, to only show responses that contain `admin` at depth `2`:
 
@@ -192,6 +201,8 @@ Available details:
 - `headers_length`
 - `headers_hash`
 - `type`
+- `cookies`
+- `similarity:<WORD>` _Similarity of the body to the provided word_
 
 ### Ranges
 
