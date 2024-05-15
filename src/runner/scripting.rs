@@ -15,15 +15,16 @@ pub async fn run_scripts(opts: &Opts, data: &TreeData, progress: ProgressBar) ->
     let tree_module = exported_module!(tree);
 
     engine.register_global_module(tree_module.into());
+    let mut root_scope = Scope::new();
+    root_scope.push("data", data.clone());
+    root_scope.push("opts", opts.clone());
     for script in &opts.scripts {
         progress.println(format!(
             "{} Running script: {}",
             "→".dimmed(),
             script.dimmed()
         ));
-        let mut scope = Scope::new();
-        scope.push("data", data.clone());
-        scope.push("opts", opts.clone());
+        let mut scope = root_scope.clone();
         let progress = Arc::new(progress.clone());
         engine.on_print(move |s| {
             progress.println(s);
