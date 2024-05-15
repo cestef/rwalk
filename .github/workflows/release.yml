@@ -1,100 +1,102 @@
 name: Release
 
 permissions:
-  contents: write
+    contents: write
 
 on:
-  push:
-    tags:
-      - v[0-9]+.*
-  workflow_dispatch:
+    push:
+        tags:
+            - v[0-9]+.*
+    workflow_dispatch:
 env:
-  CARGO_TERM_COLOR: always
+    CARGO_TERM_COLOR: always
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: taiki-e/create-gh-release-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set the TAG variable without the 'v' prefix
-        id: set-tag
-        run: echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    create-release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: taiki-e/create-gh-release-action@v1
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  changelog: CHANGELOG.md
+                  allow-missing-changelog: true
+            - name: Set the TAG variable without the 'v' prefix
+              id: set-tag
+              run: echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-    outputs:
-      TAG: ${{ steps.set-tag.outputs.TAG }}
+        outputs:
+            TAG: ${{ steps.set-tag.outputs.TAG }}
 
-  upload-assets:
-    needs: create-release
-    env:
-      TAG: ${{ needs.create-release.outputs.TAG }}
-    strategy:
-      matrix:
-        include:
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            tar_os: linux
-            tar_arch: arm64
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            tar_os: darwin
-            tar_arch: arm64
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            tar_os: linux
-            tar_arch: amd64
-          - target: x86_64-apple-darwin
-            os: macos-latest
-            tar_os: darwin
-            tar_arch: amd64
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            tar_os: windows
-            tar_arch: amd64
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: taiki-e/upload-rust-binary-action@v1
-        with:
-          bin: rwalk
-          target: ${{ matrix.target }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          archive: $bin-${{ env.TAG }}-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
-  homebrew-releaser:
-    needs: upload-assets
-    runs-on: ubuntu-latest
-    name: homebrew-releaser
-    steps:
-      - uses: actions/checkout@v4
-      - name: Release my project to my Homebrew tap
-        uses: Justintime50/homebrew-releaser@392a2426758dfdcc91f302d55cf5061346af2219
-        with:
-          homebrew_owner: cestef
-          homebrew_tap: homebrew-tap
-          formula_folder: formula
-          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          commit_owner: homebrew-releaser
-          commit_email: homebrew-releaser@cstef.dev
+    upload-assets:
+        needs: create-release
+        env:
+            TAG: ${{ needs.create-release.outputs.TAG }}
+        strategy:
+            matrix:
+                include:
+                    - target: aarch64-unknown-linux-gnu
+                      os: ubuntu-latest
+                      tar_os: linux
+                      tar_arch: arm64
+                    - target: aarch64-apple-darwin
+                      os: macos-latest
+                      tar_os: darwin
+                      tar_arch: arm64
+                    - target: x86_64-unknown-linux-gnu
+                      os: ubuntu-latest
+                      tar_os: linux
+                      tar_arch: amd64
+                    - target: x86_64-apple-darwin
+                      os: macos-latest
+                      tar_os: darwin
+                      tar_arch: amd64
+                    - target: x86_64-pc-windows-msvc
+                      os: windows-latest
+                      tar_os: windows
+                      tar_arch: amd64
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            - uses: taiki-e/upload-rust-binary-action@v1
+              with:
+                  bin: rwalk
+                  target: ${{ matrix.target }}
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  archive: $bin-${{ env.TAG }}-${{ matrix.tar_os }}-${{ matrix.tar_arch }}
+    homebrew-releaser:
+        needs: upload-assets
+        runs-on: ubuntu-latest
+        name: homebrew-releaser
+        steps:
+            - uses: actions/checkout@v4
+            - name: Release my project to my Homebrew tap
+              uses: Justintime50/homebrew-releaser@392a2426758dfdcc91f302d55cf5061346af2219
+              with:
+                  homebrew_owner: cestef
+                  homebrew_tap: homebrew-tap
+                  formula_folder: formula
+                  github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+                  commit_owner: homebrew-releaser
+                  commit_email: homebrew-releaser@cstef.dev
 
-          install: 'bin.install "rwalk"'
+                  install: 'bin.install "rwalk"'
 
-          target_darwin_amd64: true
-          target_darwin_arm64: true
-          target_linux_amd64: true
-          target_linux_arm64: true
+                  target_darwin_amd64: true
+                  target_darwin_arm64: true
+                  target_linux_amd64: true
+                  target_linux_arm64: true
 
-          update_readme_table: true
-          version: ${{ github.ref_name }}
+                  update_readme_table: true
+                  version: ${{ github.ref_name }}
 
-          skip_commit: false
-          debug: false
+                  skip_commit: false
+                  debug: false
