@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     cli::opts::Opts,
     utils::tree::{tree, TreeData},
@@ -18,17 +16,23 @@ pub async fn run_scripts(opts: &Opts, data: &TreeData, progress: ProgressBar) ->
     let mut root_scope = Scope::new();
     root_scope.push("data", data.clone());
     root_scope.push("opts", opts.clone());
+    let engine_progress = progress.clone();
+    let engine_opts = opts.clone();
+    engine.on_print(move |s| {
+        if !engine_opts.quiet {
+            engine_progress.println(s);
+        }
+    });
     for script in &opts.scripts {
-        progress.println(format!(
-            "{} Running script: {}",
-            "→".dimmed(),
-            script.dimmed()
-        ));
+        if !opts.quiet {
+            progress.println(format!(
+                "{} Running script: {}",
+                "→".dimmed(),
+                script.dimmed()
+            ));
+        }
         let mut scope = root_scope.clone();
-        let progress = Arc::new(progress.clone());
-        engine.on_print(move |s| {
-            progress.println(s);
-        });
+
         engine
             .run_file_with_scope(&mut scope, script.into())
             .map_err(|e| anyhow!(format!("Error running script: {}", e)))?;
