@@ -19,7 +19,7 @@ use crate::{
     },
 };
 
-use super::filters::is_directory;
+use super::{filters::is_directory, scripting::run_scripts};
 
 pub struct Recursive {
     opts: Opts,
@@ -244,6 +244,11 @@ impl Recursive {
                                         .unwrap_or_default()
                                         .to_string()
                                 });
+                            run_scripts(&opts, &data, progress.clone())
+                                .await
+                                .map_err(|err| {
+                                    anyhow!("Failed to run scripts on URL {}: {}", url, err)
+                                })?;
                             tree.lock().insert(
                                 TreeData {
                                     url: url.clone(),
@@ -286,6 +291,11 @@ impl Recursive {
                             .iter()
                             .any(|child| child.lock().data.path == *word)
                         {
+                            run_scripts(&opts, &data, progress.clone())
+                                .await
+                                .map_err(|err| {
+                                    anyhow!("Failed to run scripts on URL {}: {}", url, err)
+                                })?;
                             tree.lock().insert(
                                 TreeData {
                                     url: url.clone(),

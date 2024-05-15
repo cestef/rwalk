@@ -3,6 +3,7 @@ use super::{
     filters::is_directory,
     Runner,
 };
+use crate::runner::scripting::run_scripts;
 use crate::{
     cli::opts::Opts,
     utils::{
@@ -10,6 +11,7 @@ use crate::{
         tree::{Tree, TreeData, UrlType},
     },
 };
+use anyhow::anyhow;
 use anyhow::{Context, Ok, Result};
 use colored::Colorize;
 use indicatif::ProgressBar;
@@ -174,6 +176,9 @@ impl Runner for Spider {
                         status_code: status,
                         extra: json!(additions),
                     };
+                    run_scripts(&self.opts, &data, pb.clone())
+                        .await
+                        .map_err(|err| anyhow!("Failed to run scripts on URL {}: {}", url, err))?;
                     visited.push(data);
                     let document = Document::parse(&url, &text);
 
