@@ -1,3 +1,18 @@
+## v0.8.1 (2024-05-15)
+
+### Feat
+
+- add scripting to recursive and spider modes
+
+### Fix
+
+- do not consider a response as non-dir if html doesn't match
+
+### Refactor
+
+- do not re-init engine each iteration + remove logs when quiet
+- avoid creating multiple scopes when running scripts
+
 ## v0.8.0 (2024-05-14)
 
 ### Feat
