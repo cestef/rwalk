@@ -3,7 +3,7 @@
 use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::{generate, Generator, Shell};
 use clap_complete_nushell::Nushell;
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{eyre, Result};
 use log::error;
 use merge::Merge;
 use rwalk::{
@@ -42,6 +42,24 @@ async fn main() -> Result<()> {
 
     if opts.generate_markdown {
         clap_markdown::print_help_markdown::<Opts>();
+        process::exit(0);
+    }
+
+    if let Some(ref shell) = opts.completions {
+        // Generate completions for the specified shell and print them to the console
+        let name = env!("CARGO_PKG_NAME");
+        let mut stream = std::io::stdout();
+        let shell: Box<dyn Generator> = match shell.to_lowercase().as_str() {
+            "nushell" => Box::new(Nushell),
+            _ => Box::new(
+                Shell::from_str(shell, true)
+                    .map_err(|e| eyre!("Invalid shell: {}. Error: {}", shell, e))?,
+            ),
+        };
+        let mut cmd = Opts::command();
+        cmd.set_bin_name(name);
+        cmd.build();
+        shell.generate(&cmd, &mut stream);
         process::exit(0);
     }
 

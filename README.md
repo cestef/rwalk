@@ -470,6 +470,51 @@ rwalk https://example.com wordlist.txt -R 2
 rwalk https://example.com wordlist.txt -X POST -D '{"username": "admin", "password": "admin"}'
 ```
 
+## Installing completions
+
+Based on the shell you are using, you can install completions with the following commands:
+
+<details>
+<summary>Bash</summary>
+
+```bash
+rwalk --completions bash > /usr/local/etc/bash_completion.d/
+```
+</details>
+
+<details>
+<summary>Fish</summary>
+
+```bash
+rwalk --completions fish > ~/.config/fish/completions/rwalk.fish
+```
+</details>
+
+<details>
+<summary>Zsh</summary>
+
+```bash
+rwalk --completions zsh > /usr/local/share/zsh/site-functions/_rwalk
+```
+
+You may need to add the following line to your `.zshrc` file:
+
+```bash
+fpath+=/usr/local/share/zsh/site-functions
+```
+</details>
+
+<details>
+
+<summary>Nushell</summary>
+
+```bash
+mkdir $"($nu.default-config-dir)/completions"; rwalk --completions nushell | save $"($nu.default-config-dir)/completions/rwalk.nu" -f; echo 'source $"($nu.default-config-dir)/completions/rwalk.nu"' | save -a $nu.config-path
+```
+
+This script will create a `completions` directory in the default config directory, save the completions file there, and add the source command to the config file.
+</details>
+
 ## FAQ
 
 <!-- omit in toc -->
