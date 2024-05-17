@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::task::JoinHandle;
 
-use anyhow::{anyhow, Result};
+use color_eyre::eyre::{anyhow, Result};
 use parking_lot::Mutex;
 
 use crate::{

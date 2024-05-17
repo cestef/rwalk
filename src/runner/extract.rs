@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use color_eyre::eyre::{Context, Result};
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
 use std::fmt;
@@ -66,13 +66,13 @@ impl fmt::Display for Link {
 }
 
 pub fn is_same_domain(url: &Url, base: &Url, allow_subdomain: bool) -> Result<bool> {
-    let url_domain = url
-        .domain()
-        .ok_or_else(|| anyhow::anyhow!("Could not parse domain from URL: {}", url.to_string()))?;
+    let url_domain = url.domain().ok_or_else(|| {
+        color_eyre::eyre::anyhow!("Could not parse domain from URL: {}", url.to_string())
+    })?;
 
-    let base_domain = base
-        .domain()
-        .ok_or_else(|| anyhow::anyhow!("Could not parse domain from URL: {}", base.to_string()))?;
+    let base_domain = base.domain().ok_or_else(|| {
+        color_eyre::eyre::anyhow!("Could not parse domain from URL: {}", base.to_string())
+    })?;
 
     if allow_subdomain {
         Ok(url_domain == base_domain || url_domain.ends_with(&format!(".{}", base_domain)))

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use color_eyre::eyre::Result;
 use colored::Colorize;
 use log::{info, warn};
 use parking_lot::Mutex;
@@ -285,7 +285,7 @@ pub fn from_save(
 ) -> Result<Arc<Mutex<Tree<TreeData>>>> {
     if let Some(root) = &save.tree.clone().lock().root {
         if opts.url.is_some() && root.lock().data.url != opts.url.clone().unwrap() {
-            Err(anyhow::anyhow!(
+            Err(color_eyre::eyre::anyhow!(
                 "The URL of the saved state does not match the URL provided"
             ))
         } else {
@@ -306,7 +306,7 @@ pub fn from_save(
             Ok(save.tree.clone())
         }
     } else {
-        Err(anyhow::anyhow!("No saved state found"))
+        Err(color_eyre::eyre::anyhow!("No saved state found"))
     }
 }
 

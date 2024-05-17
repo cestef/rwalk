@@ -11,8 +11,8 @@ use crate::{
         tree::{Tree, TreeData, UrlType},
     },
 };
-use anyhow::anyhow;
-use anyhow::{Context, Ok, Result};
+use color_eyre::eyre::anyhow;
+use color_eyre::eyre::{Context, Ok, Result};
 use colored::Colorize;
 use indicatif::ProgressBar;
 use itertools::Itertools;

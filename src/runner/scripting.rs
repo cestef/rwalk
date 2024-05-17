@@ -2,7 +2,7 @@ use crate::{
     cli::opts::Opts,
     utils::tree::{tree, TreeData},
 };
-use anyhow::{anyhow, Result};
+use color_eyre::eyre::{anyhow, Result};
 use colored::Colorize;
 use indicatif::ProgressBar;
 

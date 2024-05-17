@@ -19,8 +19,8 @@ use crate::{
         table::build_opts_table,
     },
 };
-use anyhow::bail;
-use anyhow::Result;
+use color_eyre::eyre::bail;
+use color_eyre::eyre::Result;
 use colored::Colorize;
 use futures::{future::abortable, FutureExt};
 use indicatif::HumanDuration;

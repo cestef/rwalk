@@ -9,7 +9,7 @@ pub mod wordlists;
 
 use std::future::Future;
 
-use anyhow::Result;
+use color_eyre::eyre::Result;
 
 pub trait Runner {
     fn run(self) -> impl Future<Output = Result<()>> + Send;

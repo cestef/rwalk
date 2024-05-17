@@ -1,5 +1,5 @@
-use anyhow::Result;
 use clap::Parser;
+use color_eyre::eyre::Result;
 use rwalk::{
     _main,
     cli::opts::{Opts, Wordlist},

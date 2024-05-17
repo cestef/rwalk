@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Context, Result};
+use color_eyre::eyre::{Context, Result};
 use colored::Colorize;
 use tokio::io::AsyncReadExt;
 
@@ -433,7 +433,7 @@ fn expand_tilde<P: AsRef<Path>>(path_user_input: P) -> Result<PathBuf> {
     }
     if p == Path::new("~") {
         return dirs::home_dir()
-            .ok_or_else(|| anyhow::anyhow!("Failed to expand tilde in path: {}", p.display()));
+            .ok_or_else(|| color_eyre::eyre::anyhow!("Failed to expand tilde in path: {}", p.display()));
     }
     dirs::home_dir()
         .map(|mut h| {
@@ -446,7 +446,7 @@ fn expand_tilde<P: AsRef<Path>>(path_user_input: P) -> Result<PathBuf> {
                 h
             }
         })
-        .ok_or_else(|| anyhow::anyhow!("Failed to expand tilde in path: {}", p.display()))
+        .ok_or_else(|| color_eyre::eyre::anyhow!("Failed to expand tilde in path: {}", p.display()))
 }
 
 #[cfg(test)]

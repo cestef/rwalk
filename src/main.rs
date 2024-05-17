@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use anyhow::Result;
+use color_eyre::eyre::Result;
 use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::{generate, Generator, Shell};
 use clap_complete_nushell::Nushell;
@@ -19,7 +19,8 @@ use std::{fs::OpenOptions, path::Path, process};
 #[tokio::main]
 async fn main() -> Result<()> {
     utils::logger::init_logger();
-
+    utils::init_panic()?;
+    panic!("test");
     let mut opts = Opts::parse();
 
     if let Some(p) = opts.config {

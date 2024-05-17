@@ -9,7 +9,7 @@ use super::helpers::{
     parse_cookie, parse_header, parse_method, parse_url, parse_wordlist, KeyOrKeyVal,
     KeyOrKeyValParser, KeyVal, KeyValParser,
 };
-use anyhow::Result;
+use color_eyre::eyre::Result;
 use clap::Parser;
 use merge::Merge;
 

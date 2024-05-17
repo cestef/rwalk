@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use color_eyre::eyre::{Context, ContextCompat, Result};
 use http_rest_file::{model::Header, Parser};
 use reqwest::{
     header::{HeaderMap, HeaderName},
