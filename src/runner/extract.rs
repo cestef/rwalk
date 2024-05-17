@@ -67,11 +67,11 @@ impl fmt::Display for Link {
 
 pub fn is_same_domain(url: &Url, base: &Url, allow_subdomain: bool) -> Result<bool> {
     let url_domain = url.domain().ok_or_else(|| {
-        color_eyre::eyre::anyhow!("Could not parse domain from URL: {}", url.to_string())
+        color_eyre::eyre::eyre!("Could not parse domain from URL: {}", url.to_string())
     })?;
 
     let base_domain = base.domain().ok_or_else(|| {
-        color_eyre::eyre::anyhow!("Could not parse domain from URL: {}", base.to_string())
+        color_eyre::eyre::eyre!("Could not parse domain from URL: {}", base.to_string())
     })?;
 
     if allow_subdomain {

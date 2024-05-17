@@ -11,7 +11,7 @@ use crate::{
         tree::{Tree, TreeData, UrlType},
     },
 };
-use color_eyre::eyre::anyhow;
+use color_eyre::eyre::eyre;
 use color_eyre::eyre::{Context, Ok, Result};
 use colored::Colorize;
 use indicatif::ProgressBar;
@@ -178,7 +178,7 @@ impl Runner for Spider {
                     };
                     run_scripts(&self.opts, &data, pb.clone())
                         .await
-                        .map_err(|err| anyhow!("Failed to run scripts on URL {}: {}", url, err))?;
+                        .map_err(|err| eyre!("Failed to run scripts on URL {}: {}", url, err))?;
                     visited.push(data);
                     let document = Document::parse(&url, &text);
 

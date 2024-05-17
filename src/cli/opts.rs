@@ -258,6 +258,10 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     #[serde(default)]
     pub generate_completions: bool,
+
+    #[clap(long)]
+    #[serde(default)]
+    pub completions: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]

@@ -2,7 +2,7 @@ use crate::{
     cli::opts::Opts,
     utils::tree::{tree, TreeData},
 };
-use color_eyre::eyre::{anyhow, Result};
+use color_eyre::eyre::{eyre, Result};
 use colored::Colorize;
 use indicatif::ProgressBar;
 
@@ -35,7 +35,7 @@ pub async fn run_scripts(opts: &Opts, data: &TreeData, progress: ProgressBar) ->
 
         engine
             .run_file_with_scope(&mut scope, script.into())
-            .map_err(|e| anyhow!(format!("Error running script: {}", e)))?;
+            .map_err(|e| eyre!(format!("Error running script: {}", e)))?;
     }
     Ok(())
 }

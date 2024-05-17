@@ -11,7 +11,7 @@ use crate::{
         tree::{Tree, TreeData, UrlType},
     },
 };
-use color_eyre::eyre::{anyhow, Result};
+use color_eyre::eyre::{eyre, Result};
 use colored::Colorize;
 use indicatif::ProgressBar;
 use itertools::Itertools;
@@ -147,7 +147,7 @@ impl Classic {
                         let root_url = tree
                             .root
                             .clone()
-                            .ok_or(anyhow!("Failed to get root URL from tree"))?
+                            .ok_or(eyre!("Failed to get root URL from tree"))?
                             .lock()
                             .data
                             .url
@@ -181,7 +181,7 @@ impl Classic {
                         run_scripts(&opts, &data, progress.clone())
                             .await
                             .map_err(|err| {
-                                anyhow!("Failed to run scripts on URL {}: {}", url, err)
+                                eyre!("Failed to run scripts on URL {}: {}", url, err)
                             })?;
                         tree.insert(data, tree.root.clone());
                     }
@@ -201,7 +201,7 @@ impl Classic {
                         let root_url = tree
                             .root
                             .clone()
-                            .ok_or(anyhow!("Failed to get root URL from tree"))?
+                            .ok_or(eyre!("Failed to get root URL from tree"))?
                             .lock()
                             .data
                             .url
@@ -273,7 +273,7 @@ impl Runner for Classic {
         for handle in handles {
             let res = handle
                 .await
-                .map_err(|err| anyhow!("Failed to receive result from worker thread: {}", err))?;
+                .map_err(|err| eyre!("Failed to receive result from worker thread: {}", err))?;
             if res.is_err() {
                 return Err(res.err().unwrap());
             }

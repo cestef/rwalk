@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::task::JoinHandle;
 
-use color_eyre::eyre::{anyhow, Result};
+use color_eyre::eyre::{eyre, Result};
 use parking_lot::Mutex;
 
 use crate::{
@@ -72,7 +72,7 @@ impl super::Runner for Recursive {
 
                 let progress = progresses
                     .get(&previous_node.lock().data.url)
-                    .ok_or(anyhow!("Failed to get progress bar"))?
+                    .ok_or(eyre!("Failed to get progress bar"))?
                     .clone();
 
                 let client = super::client::build(&self.opts)?;
@@ -105,9 +105,9 @@ impl super::Runner for Recursive {
             }
 
             for handle in handles {
-                let res = handle.await.map_err(|err| {
-                    anyhow!("Failed to receive result from worker thread: {}", err)
-                })?;
+                let res = handle
+                    .await
+                    .map_err(|err| eyre!("Failed to receive result from worker thread: {}", err))?;
                 if res.is_err() {
                     return Err(res.err().unwrap());
                 }
@@ -151,13 +151,13 @@ impl Recursive {
         while indexes
             .lock()
             .get_mut(&previous_node.lock().data.url)
-            .ok_or(anyhow!("Couldn't find indexes for the previous node"))?[i]
+            .ok_or(eyre!("Couldn't find indexes for the previous node"))?[i]
             < chunk.len()
         {
             let index = indexes
                 .lock()
                 .get_mut(&previous_node.lock().data.url)
-                .ok_or(anyhow!("Couldn't find indexes for the previous node"))?[i];
+                .ok_or(eyre!("Couldn't find indexes for the previous node"))?[i];
 
             let word = chunk[index].clone();
             let data = previous_node.lock().data.clone();
@@ -247,7 +247,7 @@ impl Recursive {
                             run_scripts(&opts, &data, progress.clone())
                                 .await
                                 .map_err(|err| {
-                                    anyhow!("Failed to run scripts on URL {}: {}", url, err)
+                                    eyre!("Failed to run scripts on URL {}: {}", url, err)
                                 })?;
                             tree.lock().insert(
                                 TreeData {
@@ -294,7 +294,7 @@ impl Recursive {
                             run_scripts(&opts, &data, progress.clone())
                                 .await
                                 .map_err(|err| {
-                                    anyhow!("Failed to run scripts on URL {}: {}", url, err)
+                                    eyre!("Failed to run scripts on URL {}: {}", url, err)
                                 })?;
                             tree.lock().insert(
                                 TreeData {
@@ -324,7 +324,7 @@ impl Recursive {
             indexes
                 .lock()
                 .get_mut(&previous_node.lock().data.url)
-                .ok_or(anyhow!("Couldn't find indexes for the previous node"))?[i] += 1;
+                .ok_or(eyre!("Couldn't find indexes for the previous node"))?[i] += 1;
             progress.inc(1);
         }
 

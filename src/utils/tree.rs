@@ -285,7 +285,7 @@ pub fn from_save(
 ) -> Result<Arc<Mutex<Tree<TreeData>>>> {
     if let Some(root) = &save.tree.clone().lock().root {
         if opts.url.is_some() && root.lock().data.url != opts.url.clone().unwrap() {
-            Err(color_eyre::eyre::anyhow!(
+            Err(color_eyre::eyre::eyre!(
                 "The URL of the saved state does not match the URL provided"
             ))
         } else {
@@ -306,7 +306,7 @@ pub fn from_save(
             Ok(save.tree.clone())
         }
     } else {
-        Err(color_eyre::eyre::anyhow!("No saved state found"))
+        Err(color_eyre::eyre::eyre!("No saved state found"))
     }
 }
 
