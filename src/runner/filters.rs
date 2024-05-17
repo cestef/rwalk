@@ -411,7 +411,8 @@ pub fn is_directory(response: &reqwest::Response, body: &str) -> bool {
                 return true;
             }
         }
-    } else if response.status().is_redirection() {
+    }
+    if response.status().is_redirection() {
         // status code is 3xx
         match response.headers().get("Location") {
             // and has a Location header
