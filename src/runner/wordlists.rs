@@ -432,8 +432,9 @@ fn expand_tilde<P: AsRef<Path>>(path_user_input: P) -> Result<PathBuf> {
         return Ok(p.to_path_buf());
     }
     if p == Path::new("~") {
-        return dirs::home_dir()
-            .ok_or_else(|| color_eyre::eyre::anyhow!("Failed to expand tilde in path: {}", p.display()));
+        return dirs::home_dir().ok_or_else(|| {
+            color_eyre::eyre::anyhow!("Failed to expand tilde in path: {}", p.display())
+        });
     }
     dirs::home_dir()
         .map(|mut h| {

@@ -9,8 +9,8 @@ use super::helpers::{
     parse_cookie, parse_header, parse_method, parse_url, parse_wordlist, KeyOrKeyVal,
     KeyOrKeyValParser, KeyVal, KeyValParser,
 };
-use color_eyre::eyre::Result;
 use clap::Parser;
+use color_eyre::eyre::Result;
 use merge::Merge;
 
 #[derive(Parser, Clone, Debug, Default, Serialize, Deserialize, Merge)]
