@@ -23,5 +23,4 @@ pub const DEFAULT_METHOD: &str = "GET";
 pub const DEFAULT_MODE: &str = "recursive";
 pub const DEFAULT_DEPTH: usize = 1;
 pub const DEFAULT_FILE_TYPE: &str = "txt";
-pub const COMPLETIONS_PATH: &str = "completions";
 pub const DEFAULT_CONFIG_PATH: &str = ".config/rwalk/config.toml";

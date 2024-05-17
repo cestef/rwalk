@@ -253,12 +253,6 @@ pub struct Opts {
     #[serde(default)]
     pub generate_markdown: bool,
 
-    /// Generate shell completions - for developers
-    #[clap(long, hide = true)]
-    #[merge(strategy = merge::bool::overwrite_false)]
-    #[serde(default)]
-    pub generate_completions: bool,
-
     #[clap(long)]
     #[serde(default)]
     pub completions: Option<String>,

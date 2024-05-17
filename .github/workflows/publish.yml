@@ -1,43 +1,42 @@
 on:
-  push:
-    tags:
-      - "v*.*.*"
-  workflow_dispatch:
+    push:
+        tags:
+            - "v*.*.*"
+    workflow_dispatch:
 
 name: Publish
 env:
-  CARGO_TERM_COLOR: always
+    CARGO_TERM_COLOR: always
 jobs:
-  publish:
-    name: Publish
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: cargo run -- --generate-markdown > HELP.md
-      - run: cargo run -- --generate-completions
-      - run: git add HELP.md completions/*
-      - run: git config --global user.email "action@github.run"
-      - run: git config --global user.name "GitHub Action"
-      - run: git commit -m "Update HELP.md and completions" || true
-      - run: git pull origin main --rebase
-      - run: git push origin HEAD:refs/heads/main
+    publish:
+        name: Publish
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v2
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            - name: Install stable toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+                  override: true
+            - run: cargo run -- --generate-markdown > HELP.md
+            - run: git add HELP.md
+            - run: git config --global user.email "action@github.run"
+            - run: git config --global user.name "GitHub Action"
+            - run: git commit -m "Update HELP.md" || true
+            - run: git pull origin main --rebase
+            - run: git push origin HEAD:refs/heads/main
 
-      - run: cargo publish --token ${CRATES_TOKEN} --no-verify
-        env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+            - run: cargo publish --token ${CRATES_TOKEN} --no-verify
+              env:
+                  CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use clap::{CommandFactory, Parser, ValueEnum};
-use clap_complete::{generate, Generator, Shell};
+use clap_complete::{Generator, Shell};
 use clap_complete_nushell::Nushell;
 use color_eyre::eyre::{eyre, Result};
 use log::error;
@@ -9,12 +9,9 @@ use merge::Merge;
 use rwalk::{
     _main,
     cli::{self, opts::Opts},
-    utils::{
-        self,
-        constants::{COMPLETIONS_PATH, DEFAULT_CONFIG_PATH},
-    },
+    utils::{self, constants::DEFAULT_CONFIG_PATH},
 };
-use std::{fs::OpenOptions, path::Path, process};
+use std::{path::Path, process};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -60,36 +57,6 @@ async fn main() -> Result<()> {
         cmd.set_bin_name(name);
         cmd.build();
         shell.generate(&cmd, &mut stream);
-        process::exit(0);
-    }
-
-    if opts.generate_completions {
-        let name = env!("CARGO_PKG_NAME");
-        let dir = Path::new(COMPLETIONS_PATH);
-        if !dir.exists() {
-            log::debug!("Creating completions directory: {}", dir.display());
-            std::fs::create_dir_all(dir)?;
-        }
-        for s in Shell::value_variants().iter() {
-            log::debug!("Generating completions for {}", s);
-            let mut file = OpenOptions::new()
-                .write(true)
-                .create(true)
-                .truncate(true)
-                .open(dir.join(s.file_name(name)))?;
-            generate(*s, &mut Opts::command(), name, &mut file);
-        }
-
-        log::debug!("Generating completions for nushell");
-        // Generate completions for nushell
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(dir.join(Nushell.file_name(name)))?;
-        generate(Nushell, &mut Opts::command(), name, &mut file);
-
-        log::info!("Generated completions");
         process::exit(0);
     }
 
