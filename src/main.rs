@@ -69,7 +69,7 @@ async fn main() -> Result<()> {
     }
 
     let res = if opts.interactive {
-        cli::interactive::main(opts).await
+        cli::interactive::main_interactive(opts).await
     } else {
         _main(opts).await.map(|_| ())
     };

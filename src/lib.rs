@@ -335,7 +335,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
             url.clone(),
             opts.clone(),
             tree.clone(),
-            // We do not need to chunk the words here
+            // We do not need to chunk the words here as it is chunked in the Classic struct
             words.clone(),
             threads,
         )
@@ -360,7 +360,6 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
     let main_thread = tokio::spawn(task);
     let aborted = Arc::new(AtomicBool::new(false));
     // Create a channel to receive the abort signal
-    // TODO: Maybe we could use a oneshot channel here
     let (tx, mut rx) = tokio::sync::oneshot::channel::<()>();
 
     // We need to clone the variables to be used in the signal handler
