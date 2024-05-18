@@ -6,6 +6,16 @@ pub fn init_logger() {
     let env = Env::default().filter_or("RWALK_LOG", "info");
 
     Builder::from_env(env)
+        .filter_module("hyper_util::client::legacy::pool", log::LevelFilter::Warn)
+        .filter_module("reqwest::connect", log::LevelFilter::Warn)
+        .filter_module(
+            "hyper_util::client::legacy::connect::http",
+            log::LevelFilter::Warn,
+        )
+        .filter_module(
+            "hyper_util::client::legacy::connect::dns",
+            log::LevelFilter::Warn,
+        )
         .format(|buf, record| {
             let mut style = buf.style();
             match record.level() {
@@ -23,8 +33,23 @@ pub fn init_logger() {
                 log::Level::Debug => "⚙",
                 log::Level::Trace => "⚡",
             });
+            let module = match record.level() {
+                log::Level::Debug => Some(style.value(record.module_path().unwrap())),
+                log::Level::Trace => Some(style.value(record.module_path().unwrap())),
+                _ => None,
+            };
 
-            writeln!(buf, "{} {}", icon, record.args())
+            writeln!(
+                buf,
+                "{} {}{}",
+                icon,
+                if let Some(module) = module {
+                    format!("({}) ", module)
+                } else {
+                    "".to_string()
+                },
+                record.args()
+            )
         })
         .init();
 }

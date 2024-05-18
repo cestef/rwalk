@@ -19,13 +19,12 @@ use crate::{
         table::build_opts_table,
     },
 };
-use color_eyre::eyre::bail;
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{bail, Result};
 use colored::Colorize;
 use futures::{future::abortable, FutureExt};
 use indicatif::HumanDuration;
 use itertools::Itertools;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use merge::Merge;
 use parking_lot::Mutex;
 use ptree::print_tree;
@@ -350,9 +349,12 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
     };
     // Run the main function with a timeout if specified
     let (task, handle) = if let Some(max_time) = opts.max_time {
-        abortable(timeout(Duration::from_secs(max_time as u64), main_fun).into_inner())
+        log::debug!("Setting timeout to {}s", max_time);
+        abortable(timeout(Duration::from_secs(max_time as u64), main_fun))
     } else {
-        abortable(main_fun)
+        // NOTE: This is clearly not the best way to handle this because it adds a useless poll but whatever
+        // u64::MAX = 18_446_744_073_709_551_615 secs = 584'942'417'355 years (hopefully enough time to finish the scan)
+        abortable(timeout(Duration::from_secs(u64::MAX), main_fun))
     };
 
     let main_thread = tokio::spawn(task);
@@ -417,14 +419,21 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
         tokio::spawn(ctrlc_task);
     let abort_res = main_thread.await?;
 
-    let thread_res = match abort_res {
+    let timeout_res = match abort_res {
         Ok(res) => Some(res),
-        Err(_) => None,
+        Err(e) => {
+            debug!("Aborted: {}", e);
+            None
+        }
     };
 
-    if thread_res.is_some() {
-        if let Err(e) = thread_res.unwrap() {
-            error!("{}", e);
+    if let Some(thread_res) = timeout_res {
+        if let Err(e) = thread_res {
+            debug!("Timeout reached: {}", e);
+            error!(
+                "Timeout reached after {}s",
+                opts.max_time.unwrap().to_string().bold()
+            );
         } else {
             if !opts.quiet {
                 println!(
