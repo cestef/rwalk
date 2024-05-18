@@ -222,7 +222,15 @@ impl Classic {
                             tree.root.clone(),
                         );
                     } else {
-                        super::filters::print_error(&opts, &progress, url, err);
+                        super::filters::print_error(
+                            &opts,
+                            |msg| {
+                                progress.println(msg);
+                                Ok(())
+                            },
+                            url,
+                            err,
+                        )?;
                     }
                 }
             }

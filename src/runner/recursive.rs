@@ -38,8 +38,9 @@ impl super::Runner for Recursive {
             let mut progresses = HashMap::new();
             let depth = self.depth.clone();
             let root_progress = MultiProgress::new();
-            // Spawn a thread for each previous node
+            // Create a progress bar for each previous node
             for previous_node in &previous_nodes {
+                let root_progress = root_progress.clone();
                 if previous_node.lock().data.url_type != UrlType::Directory
                     && !self.opts.force_recursion
                 {
@@ -85,12 +86,14 @@ impl super::Runner for Recursive {
                     let indexes = self.current_indexes.clone();
                     let opts = self.opts.clone();
                     let depth = depth.clone();
+                    let root_progress = root_progress.clone();
                     let chunk_handle: JoinHandle<Result<()>> = tokio::spawn(async move {
                         let previous_node = previous_node.clone();
                         Self::process_chunk(
                             chunk,
                             client,
                             progress,
+                            root_progress.clone(),
                             tree,
                             opts,
                             depth,
@@ -141,6 +144,7 @@ impl Recursive {
         chunk: Vec<String>,
         client: reqwest::Client,
         progress: indicatif::ProgressBar,
+        root_progress: indicatif::MultiProgress,
         tree: Arc<Mutex<Tree<TreeData>>>,
         opts: Opts,
         depth: Arc<Mutex<usize>>,
@@ -207,7 +211,7 @@ impl Recursive {
                     if filtered {
                         let additions = super::filters::parse_show(&opts, &text, &response);
 
-                        progress.println(format!(
+                        root_progress.println(format!(
                             "{} {} {} {}{}",
                             if response.status().is_success() {
                                 SUCCESS.to_string().green()
@@ -227,7 +231,7 @@ impl Recursive {
                                     addition.value.dimmed()
                                 )
                             })
-                        ));
+                        ))?;
                         // Check if this path is already in the tree
                         if !previous_node
                             .lock()
@@ -278,13 +282,13 @@ impl Recursive {
                 }
                 Err(err) => {
                     if opts.hit_connection_errors && err.is_connect() {
-                        progress.println(format!(
+                        root_progress.println(format!(
                             "{} {} {} {}",
                             SUCCESS.to_string().green(),
                             "Connection error".bold(),
                             url,
                             format!("{}ms", t1.elapsed().as_millis().to_string().bold()).dimmed()
-                        ));
+                        ))?;
                         if !previous_node
                             .lock()
                             .children
@@ -308,15 +312,23 @@ impl Recursive {
                                 Some(previous_node.clone()),
                             );
                         } else {
-                            progress.println(format!(
+                            root_progress.println(format!(
                                 "{} {} {}",
                                 WARNING.to_string().yellow(),
                                 "Already in tree".bold(),
                                 url
-                            ));
+                            ))?;
                         }
                     } else {
-                        super::filters::print_error(&opts, &progress, &url, err);
+                        super::filters::print_error(
+                            &opts,
+                            |msg| {
+                                root_progress.println(msg)?;
+                                Ok(())
+                            },
+                            &url,
+                            err,
+                        )?;
                     }
                 }
             }

@@ -11,6 +11,7 @@ use crate::{
         parse_range_input,
     },
 };
+use color_eyre::eyre::Result;
 
 // Returns true if the response should be kept
 pub fn check(
@@ -335,49 +336,55 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
     additions
 }
 
-pub fn print_error(opts: &Opts, progress: &indicatif::ProgressBar, url: &str, err: reqwest::Error) {
+pub fn print_error(
+    opts: &Opts,
+    print_fn: impl FnOnce(String) -> Result<()>,
+    url: &str,
+    err: reqwest::Error,
+) -> Result<()> {
     if !opts.quiet {
         if err.is_timeout() {
-            progress.println(format!(
+            print_fn(format!(
                 "{} {} {}",
                 ERROR.to_string().red(),
                 "Timeout reached".bold(),
                 url
-            ));
+            ))?;
         } else if err.is_redirect() {
-            progress.println(format!(
+            print_fn(format!(
                 "{} {} {} {}",
                 WARNING.to_string().yellow(),
                 "Redirect limit reached".bold(),
                 url,
                 "Check --follow-redirects".dimmed()
-            ));
+            ))?;
         } else if err.is_connect() {
-            progress.println(format!(
+            print_fn(format!(
                 "{} {} {} {}",
                 ERROR.to_string().red(),
                 "Connection error".bold(),
                 url,
                 format!("({})", err).dimmed()
-            ));
+            ))?;
         } else if err.is_request() {
-            progress.println(format!(
+            print_fn(format!(
                 "{} {} {} {}",
                 ERROR.to_string().red(),
                 "Request error".bold(),
                 url,
                 format!("({})", err).dimmed()
-            ));
+            ))?;
         } else {
-            progress.println(format!(
+            print_fn(format!(
                 "{} {} {} {}",
                 ERROR.to_string().red(),
                 "Unknown Error".bold(),
                 url,
                 format!("({})", err).dimmed()
-            ));
+            ))?;
         }
     }
+    Ok(())
 }
 
 pub fn is_html_directory(body: &str) -> bool {
