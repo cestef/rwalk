@@ -19,7 +19,7 @@ use crate::{
         table::build_opts_table,
     },
 };
-use color_eyre::eyre::{bail, Result};
+use color_eyre::eyre::{bail, eyre, Result};
 use colored::Colorize;
 use futures::{future::abortable, FutureExt};
 use indicatif::HumanDuration;
@@ -361,7 +361,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
     let aborted = Arc::new(AtomicBool::new(false));
     // Create a channel to receive the abort signal
     // TODO: Maybe we could use a oneshot channel here
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(1);
+    let (tx, mut rx) = tokio::sync::oneshot::channel::<()>();
 
     // We need to clone the variables to be used in the signal handler
     // TODO: Find a better way to do this
@@ -411,7 +411,8 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
                 );
             }
         }
-        tx.send(()).await?;
+        tx.send(())
+            .map_err(|_| eyre!(format!("Error while sending abort signal")))?;
         Ok(())
     });
 
@@ -485,7 +486,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
 
     // Wait for the abort signal if aborted has been set
     if aborted.load(Ordering::Relaxed) {
-        rx.recv().await;
+        rx.try_recv()?;
     }
 
     // Terminate the signal stream.
