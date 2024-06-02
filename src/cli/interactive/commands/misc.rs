@@ -1,21 +1,59 @@
-use crate::cli::interactive::COMMANDS;
+use std::sync::Arc;
+
+use crate::cli::interactive::{Command, State};
+use async_trait::async_trait;
 use color_eyre::eyre::Result;
-use colored::Colorize;
+use rhai::{Engine, Scope};
 use rustyline::DefaultEditor;
+use tokio::sync::Mutex;
 
-pub fn help() -> Result<()> {
-    println!("Available commands:");
-    for cmd in COMMANDS.iter() {
-        println!("  {:<10} {}", cmd.name.bold(), cmd.description.dimmed());
+#[derive(Debug)]
+pub struct ExitCommand;
+
+#[async_trait]
+impl Command for ExitCommand {
+    fn name(&self) -> &'static str {
+        "exit"
     }
-    Ok(())
-}
 
-pub fn exit() -> Result<()> {
-    std::process::exit(0);
-}
+    fn description(&self) -> &'static str {
+        "Exits the interactive shell"
+    }
 
-pub fn clear(rl: &mut DefaultEditor) -> Result<()> {
-    rl.clear_screen()?;
-    Ok(())
+    async fn run(
+        &self,
+        _rl: Arc<Mutex<DefaultEditor>>,
+        _args: Vec<&str>,
+        _state: Arc<Mutex<State>>,
+        _engine: Arc<Mutex<Engine>>,
+        _scope: Arc<Mutex<Scope<'_>>>,
+    ) -> Result<()> {
+        std::process::exit(0);
+    }
+}
+#[derive(Debug)]
+pub struct ClearCommand;
+
+#[async_trait]
+impl Command for ClearCommand {
+    fn name(&self) -> &'static str {
+        "clear"
+    }
+
+    fn description(&self) -> &'static str {
+        "Clears the screen"
+    }
+
+    async fn run(
+        &self,
+        rl: Arc<Mutex<DefaultEditor>>,
+        _args: Vec<&str>,
+        _state: Arc<Mutex<State>>,
+        _engine: Arc<Mutex<Engine>>,
+        _scope: Arc<Mutex<Scope<'_>>>,
+    ) -> Result<()> {
+        let mut rl = rl.lock().await;
+        rl.clear_screen()?;
+        Ok(())
+    }
 }
