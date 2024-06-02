@@ -3,3 +3,4 @@
 .rwalk.json
 config.toml
 Cargo.lock
+/scripts
