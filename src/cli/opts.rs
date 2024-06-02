@@ -242,10 +242,16 @@ pub struct Opts {
     pub subdomains: bool,
 
     /// Scripts to run after each request
-    #[clap(long, help_heading = Some("Scripts"), env, hide_env=true)]
+    #[clap(long, help_heading = Some("Scripts"), env, hide_env=true, visible_alias = "sc")]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
     pub scripts: Vec<String>,
+
+    /// Ignore scripts errors
+    #[clap(long, help_heading = Some("Scripts"), env, hide_env=true, visible_alias = "ise")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub ignore_scripts_errors: bool,
 
     /// Generate markdown help - for developers
     #[clap(long, hide = true)]

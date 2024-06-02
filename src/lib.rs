@@ -435,6 +435,10 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
                 opts.max_time.unwrap().to_string().bold()
             );
         } else {
+            let run_res = thread_res.unwrap();
+            if let Err(e) = run_res {
+                error!("{}", e);
+            }
             if !opts.quiet {
                 println!(
                     "{} Done in {} with an average of {} req/s",

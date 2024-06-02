@@ -33,9 +33,12 @@ pub async fn run_scripts(opts: &Opts, data: &TreeData, progress: ProgressBar) ->
         }
         let mut scope = root_scope.clone();
 
-        engine
+        let res = engine
             .run_file_with_scope(&mut scope, script.into())
-            .map_err(|e| eyre!(format!("Error running script: {}", e)))?;
+            .map_err(|e| eyre!(format!("Error running script: {}", e)));
+        if !opts.ignore_scripts_errors {
+            res?;
+        }
     }
     Ok(())
 }
