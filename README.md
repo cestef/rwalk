@@ -15,9 +15,9 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
     <img src="assets/rwalk.gif">
 </p>
 
-<!-- omit in toc -->
 
-## Features
+
+## Features <!-- omit in toc -->
 
 - [x] Multi-threaded
 - [x] Recursive directory scanning
@@ -30,9 +30,9 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 - [x] Request throttling
 - [x] Proxy support
 
-<!-- omit in toc -->
 
-## Table of Contents
+
+## Table of Contents <!-- omit in toc -->
 
 - [Installation](#installation)
 - [Usage](#usage)
@@ -41,34 +41,37 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
   - [Additional response details](#additional-response-details)
   - [Ranges](#ranges)
   - [Wordlists](#wordlists)
+  - [Scripting](#scripting)
   - [Miscellaneous](#miscellaneous)
 - [Examples](#examples)
+- [Installing completions](#installing-completions)
 - [FAQ](#faq)
 - [Benchmarks](#benchmarks)
 - [Contributing](#contributing)
 - [License](#license)
 
+
 ## Installation
 
-<!-- omit in toc -->
 
-### From [homebrew](https://brew.sh)
+
+### From [homebrew](https://brew.sh) <!-- omit in toc -->
 
 ```bash
 brew install cestef/tap/rwalk
 ```
 
-<!-- omit in toc -->
 
-### From [crates.io](https://crates.io/crates/rwalk)
+
+### From [crates.io](https://crates.io/crates/rwalk) <!-- omit in toc -->
 
 ```bash
 cargo install rwalk
 ```
 
-<!-- omit in toc -->
 
-### From source
+
+### From source <!-- omit in toc -->
 
 ```bash
 git clone https://github.com/cestef/rwalk.git
@@ -88,9 +91,9 @@ You can run `rwalk --help` or [read the help file](HELP.md) for more information
 
 ### Scanning modes
 
-<!-- omit in toc -->
 
-#### Recursive scan
+
+#### Recursive scan <!-- omit in toc -->
 
 By default `rwalk` will use a recursive-like scan. You can change the depth of the scan with the `--depth` (`-d`) flag:
 
@@ -100,9 +103,9 @@ rwalk https://example.com wordlist.txt -d 3
 
 The recursive mode only scans urls [identified as directories](src/runner/filters.rs#L405). If you are not happy with the default behavior, you can use the `--force-recursion` (`--fr`) flag to force the recursion on all found urls.
 
-<!-- omit in toc -->
 
-#### Classic scan
+
+#### Classic scan <!-- omit in toc -->
 
 In case you want to fuzz more precise paths, you can either use the `--mode classic` flag or provide a fuzzing placeholder in the URL. For example:
 
@@ -239,9 +242,9 @@ cat wordlist.txt | rwalk https://example.com -
 > [!NOTE]
 > A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, `rwalk` will only load the wordlists if the checksums match. See [Saving and Resuming scans](#saving-and-resuming-scans) for more information.
 
-<!-- omit in toc -->
 
-#### Filters
+
+#### Filters <!-- omit in toc -->
 
 You can filter words from the wordlist by using the `--wordlist-filter` (`-w`) flag. For example, to only use words that start with `admin`:
 
@@ -263,9 +266,9 @@ Available filters:
 - `regex`: _`<REGEX>`_
 - `length`: _`<RANGE>`_
 
-<!-- omit in toc -->
 
-#### Transformations
+
+#### Transformations <!-- omit in toc -->
 
 To quickly modify the wordlist, you can use the `--transform` (`-T`) flag. For example, to add a suffix to all words in the wordlist:
 
@@ -300,7 +303,7 @@ Available transformations:
 
 `rwalk` supports scripting with [`rhai`](https://github.com/rhaiscript/rhai).
 
-#### Response scripts
+#### Response scripts <!-- omit in toc -->
 
 These scripts will be ran after a successful (passing all filters) response is received. The script will have access to the following variables:
 
@@ -314,7 +317,7 @@ These scripts will be ran after a successful (passing all filters) response is r
 - `opts` [Opts](src/cli/opts.rs#L22): The options passed to `rwalk`
 
 
-#### Interactive mode
+#### Interactive mode <!-- omit in toc -->
 
 When using the `--interactive` (`-i`) flag, you can run scripts with the `eval` command. For example:
 
@@ -340,9 +343,9 @@ You have access to the following variables in the script:
 
 ### Miscellaneous
 
-<!-- omit in toc -->
 
-#### Interactive mode
+
+#### Interactive mode <!-- omit in toc -->
 
 You can use the `--interactive` (`-i`) flag to enter interactive mode. In this mode, you can set parameters one by one and run the scan when you're ready.
 
@@ -356,9 +359,9 @@ Available commands:
 - `exit`: Exit interactive mode
 - `help`: Show help
 - `clear`: Clear the screen
-<!-- omit in toc -->
 
-#### Output
+
+#### Output <!-- omit in toc -->
 
 By default, `rwalk` will print the results to the terminal. You can also save the results to a file with the `--output` (`-o`) flag:
 
@@ -372,9 +375,8 @@ Available output formats:
 - `*.csv`
 - `*.md`
 - `*.txt`
-<!-- omit in toc -->
 
-#### Throttling
+#### Throttling <!-- omit in toc -->
 
 The throttling value will be multiplied by the number of threads. For example, if you have `10` threads and a throttling value of `5`, the total number of requests per second will be `50`.
 
@@ -382,9 +384,7 @@ The throttling value will be multiplied by the number of threads. For example, i
 rwalk https://example.com wordlist.txt --throttle 5 -t 10
 ```
 
-<!-- omit in toc -->
-
-#### Saving and resuming scans
+#### Saving and resuming scans <!-- omit in toc -->
 
 By default, if you abort the scan with <kbd>Ctrl</kbd> + <kbd>C</kbd>, rwalk will save the progress to a file called `.rwalk.json`. You can resume the scan by running with `--resume`:
 
@@ -400,9 +400,9 @@ rwalk https://example.com wordlist.txt --save-file myscan.json
 
 The auto-saving behavior can be disabled with `--no-save`.
 
-<!-- omit in toc -->
 
-#### Proxy support
+
+#### Proxy support <!-- omit in toc -->
 
 You can pass a proxy URL with the `--proxy` flag:
 
@@ -416,9 +416,9 @@ Authentication is also supported with `--proxy-auth`:
 rwalk https://example.com wordlist.txt --proxy http://pro.xy:8080 --proxy-auth username:password
 ```
 
-<!-- omit in toc -->
 
-#### Passing parameters from a config
+
+#### Passing parameters from a config <!-- omit in toc -->
 
 The configuration file located at `~/.config/rwalk/config.toml` will be loaded by default. You can also pass a custom configuration file with the `--config` flag:
 
@@ -428,17 +428,17 @@ rwalk https://example.com wordlist.txt --config myconfig.toml
 
 ## Examples
 
-<!-- omit in toc -->
 
-### Basic scan
+
+### Basic scan <!-- omit in toc -->
 
 ```bash
 rwalk https://example.com wordlist.txt
 ```
 
-<!-- omit in toc -->
 
-### Recursive scan
+
+### Recursive scan <!-- omit in toc -->
 
 ```bash
 rwalk https://example.com wordlist.txt -d 3
@@ -446,25 +446,25 @@ rwalk https://example.com wordlist.txt -d 3
 
 > **Warning:** Recursive scans can take a long time and generate a lot of traffic. Use with caution.
 
-<!-- omit in toc -->
 
-### Custom headers/cookies
+
+### Custom headers/cookies <!-- omit in toc -->
 
 ```bash
 rwalk https://example.com wordlist.txt -H "X-Forwarded-For: 203.0.113.195" -c "session=1234567890"
 ```
 
-<!-- omit in toc -->
 
-### Follow redirects
+
+### Follow redirects <!-- omit in toc -->
 
 ```bash
 rwalk https://example.com wordlist.txt -R 2
 ```
 
-<!-- omit in toc -->
 
-### Custom request body
+
+### Custom request body <!-- omit in toc -->
 
 ```bash
 rwalk https://example.com wordlist.txt -X POST -D '{"username": "admin", "password": "admin"}'
@@ -517,28 +517,24 @@ This script will create a `completions` directory in the default config director
 
 ## FAQ
 
-<!-- omit in toc -->
 
-### Where can I find wordlists?
+
+### Where can I find wordlists? <!-- omit in toc -->
 
 - [SecLists](https://github.com/danielmiessler/SecLists)
 - [DirBuster](https://gitlab.com/kalilinux/packages/dirbuster)
 - [OneListForAll](https://github.com/six2dez/OneListForAll)
-<!-- omit in toc -->
 
-### How do I get support?
+### How do I get support? <!-- omit in toc -->
 
 Open an issue or ask in the [Discord server](https://cstef.dev/discord).
 
-<!-- omit in toc -->
 
-### Is rwalk stable?
+### Is rwalk stable? <!-- omit in toc -->
 
 rwalk is stable but it's still in the early stages of development. It should work for most use cases but there may be bugs.
 
-<!-- omit in toc -->
-
-### Where can I test this tool?
+### Where can I test this tool? <!-- omit in toc -->
 
 You can use the [ffuf.me](http://ffuf.me) website to test rwalk.
 I also wrote a [blog post](https://blog.cstef.dev/posts/web-scanning-efficiently) about it with a few cool examples.
