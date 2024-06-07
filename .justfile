@@ -1,7 +1,7 @@
 default: 
     just -l
 # Run the program
-run *ARGS="":
+@run *ARGS="":
     cargo run --quiet -- {{ARGS}}
 
 test:
