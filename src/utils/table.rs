@@ -272,6 +272,12 @@ pub fn build_opts_table(
             if num_cpus::get() > 1 { "s" } else { "" }
         ),
     ]);
+    if opts.output.is_some() {
+        builder.push_record(vec![
+            "Output",
+            &opts.output.as_ref().unwrap().bold().blue().to_string(),
+        ]);
+    }
 
     builder
         .build()

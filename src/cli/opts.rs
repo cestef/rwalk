@@ -76,6 +76,12 @@ pub struct Opts {
     #[clap(short, long, value_name = "FILE", env, hide_env = true)]
     pub output: Option<String>,
 
+    /// Pretty format the output (only JSON)
+    #[clap(long, env, hide_env = true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub pretty: bool,
+
     /// Request timeout in seconds
     #[clap(long, default_value = DEFAULT_TIMEOUT.to_string(), env, hide_env = true, visible_alias = "to", help_heading = Some("Requests"))]
     pub timeout: Option<usize>,

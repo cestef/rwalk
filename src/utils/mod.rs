@@ -183,7 +183,12 @@ pub fn save_to_file(
 
     match file_type {
         "json" => {
-            file.write_all(serde_json::to_string(&*root.lock())?.as_bytes())?;
+            let value = if opts.pretty {
+                serde_json::to_string_pretty(&*root.lock())?
+            } else {
+                serde_json::to_string(&*root.lock())?
+            };
+            file.write_all(value.as_bytes())?;
             file.flush()?;
             Ok(())
         }
