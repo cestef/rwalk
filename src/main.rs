@@ -64,10 +64,6 @@ async fn main() -> Result<()> {
         colored::control::set_override(false);
     }
 
-    if !opts.quiet {
-        utils::banner();
-    }
-
     let res = if opts.interactive {
         cli::interactive::main_interactive(opts).await
     } else {

@@ -4,10 +4,7 @@ use parking_lot::Mutex;
 use std::{io::Write, sync::Arc};
 
 use crate::cli::opts::Opts;
-use crate::utils::{
-    constants::BANNER_STR,
-    tree::{Tree, TreeData, TreeNode},
-};
+use crate::utils::tree::{Tree, TreeData, TreeNode};
 
 use self::constants::DEFAULT_FILE_TYPE;
 
@@ -17,17 +14,6 @@ pub mod logger;
 pub mod structs;
 pub mod table;
 pub mod tree;
-
-pub fn banner() {
-    println!("{}", BANNER_STR.to_string().bold().bright_red());
-    println!(
-        "{} {}",
-        "Version:".dimmed(),
-        env!("CARGO_PKG_VERSION").dimmed().bold()
-    );
-    println!("{} {}", "Author:".dimmed(), "cstef".dimmed().bold());
-    println!();
-}
 
 pub fn get_emoji_for_status_code_colored(status_code: u16) -> String {
     let emoji = get_emoji_for_status_code(status_code);
