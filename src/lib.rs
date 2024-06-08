@@ -363,7 +363,6 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
     let (tx, mut rx) = tokio::sync::oneshot::channel::<()>();
 
     // We need to clone the variables to be used in the signal handler
-    // TODO: Find a better way to do this
     let ctrlc_tree = tree.clone();
     let ctrlc_depth = current_depth.clone();
     let ctrlc_words = words.clone();
@@ -375,7 +374,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
         tokio::signal::ctrl_c()
             .await
             .expect("Failed to listen to Ctrl-C");
-
+        println!();
         info!("Aborting...");
 
         ctrlc_aborted.store(true, Ordering::Relaxed);
@@ -489,7 +488,10 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
 
     // Wait for the abort signal if aborted has been set
     if aborted.load(Ordering::Relaxed) {
-        rx.try_recv()?;
+        while rx.try_recv().is_err() {
+            // Sleep for a short time to avoid busy waiting
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
     }
 
     // Terminate the signal stream.
@@ -497,6 +499,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
 
     // Wait for the signal handler to finish
     let signals_res = signals_task.await?;
+
     // If we didn't abort and the signal handler returns an error, this is unexpected
     // Because the signal handler should only error when aborted
     if aborted.load(Ordering::Relaxed) {
