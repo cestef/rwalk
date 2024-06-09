@@ -229,6 +229,10 @@ pub struct Opts {
     #[serde(default)]
     pub force_recursion: bool,
 
+    /// Override the default directory detection method with your own rhai script
+    #[clap(long, help_heading = Some("Responses"), env, hide_env=true, visible_alias = "ds", visible_alias = "dir-script")]
+    pub directory_script: Option<String>,
+
     /// Request file (.http, .rest)
     #[clap(long, value_name = "FILE", env, hide_env = true, visible_alias = "rf", help_heading = Some("Requests"),)]
     pub request_file: Option<String>,

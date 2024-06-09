@@ -1,6 +1,7 @@
 use colored::Colorize;
 use log::warn;
 use reqwest::StatusCode;
+use rhai::Dynamic;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -146,7 +147,7 @@ pub fn check(
                 }
             }
             "type" => {
-                let is_dir = is_directory(response, res_text);
+                let is_dir = is_directory(opts, response, res_text.to_string(), progress);
                 if filter.1 == "directory" {
                     is_dir ^ negated
                 } else {
@@ -231,7 +232,12 @@ pub struct Addition {
     pub value: String,
 }
 
-pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<Addition> {
+pub fn parse_show(
+    opts: &Opts,
+    text: &str,
+    response: &reqwest::Response,
+    progress: &indicatif::ProgressBar,
+) -> Vec<Addition> {
     let mut additions: Vec<Addition> = vec![];
 
     for show in &opts.show {
@@ -246,7 +252,7 @@ pub fn parse_show(opts: &Opts, text: &str, response: &reqwest::Response) -> Vec<
 
         match show.0.to_lowercase().as_str() {
             "type" => {
-                let is_dir = is_directory(response, text);
+                let is_dir = is_directory(opts, response, text.to_string(), progress);
                 additions.push(Addition {
                     key: "type".to_string(),
                     value: if is_dir {
@@ -409,11 +415,68 @@ pub fn is_html_directory(body: &str) -> bool {
     false
 }
 
-pub fn is_directory(response: &reqwest::Response, body: &str) -> bool {
+#[derive(Clone)]
+pub struct ScriptingResponse {
+    pub status_code: u16,
+    pub headers: reqwest::header::HeaderMap,
+    pub body: String,
+    pub url: String,
+}
+
+pub fn is_directory(
+    opts: &Opts,
+    response: &reqwest::Response,
+    body: String,
+    progress: &indicatif::ProgressBar,
+) -> bool {
+    if let Some(directory_script) = opts.directory_script.as_ref() {
+        let mut engine = rhai::Engine::new();
+        let mut scope = rhai::Scope::new();
+        scope.push(
+            "response",
+            ScriptingResponse {
+                status_code: response.status().as_u16(),
+                headers: response.headers().clone(),
+                body: body.clone(),
+                url: response.url().as_str().to_string(),
+            },
+        );
+        scope.push("opts", opts.clone());
+        let engine_opts = opts.clone();
+        let engine_progress = progress.clone();
+        engine.on_print(move |s| {
+            if !engine_opts.quiet {
+                engine_progress.println(s);
+            }
+        });
+
+        let res = engine
+            .eval_file_with_scope::<Dynamic>(&mut scope, directory_script.into())
+            .map_err(|e| {
+                progress.println(format!(
+                    "{} {} {}",
+                    ERROR.to_string().red(),
+                    "Error running script".bold(),
+                    e
+                ));
+                e
+            });
+        if let Ok(res) = res {
+            if let Ok(res) = res.as_bool() {
+                return res;
+            } else {
+                progress.println(format!(
+                    "{} {}",
+                    ERROR.to_string().red(),
+                    "Script did not return a boolean".bold()
+                ));
+            }
+        }
+    }
     if let Some(content_type) = response.headers().get(reqwest::header::CONTENT_TYPE) {
         if content_type.to_str().unwrap().starts_with("text/html") {
             // log::debug!("{} is HTML", response.url());
-            if is_html_directory(body) {
+            if is_html_directory(&body) {
                 log::debug!("{} is directory suitable for recursion", response.url());
                 return true;
             }

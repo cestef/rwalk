@@ -119,7 +119,7 @@ impl Runner for Spider {
                         break;
                     }
                 }
-                let is_dir = is_directory(&response, &text);
+                let is_dir = is_directory(&self.opts, &response, text.clone(), &pb);
 
                 let filtered = super::filters::check(
                     &self.opts,
@@ -131,7 +131,7 @@ impl Runner for Spider {
                 );
 
                 if filtered {
-                    let additions = super::filters::parse_show(&self.opts, &text, &response);
+                    let additions = super::filters::parse_show(&self.opts, &text, &response, &pb);
 
                     pb.println(format!(
                         "{} {} {} {}{}",

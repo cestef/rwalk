@@ -198,7 +198,7 @@ impl Recursive {
                             break;
                         }
                     }
-                    let is_dir = is_directory(&response, &text);
+                    let is_dir = is_directory(&opts, &response, text.clone(), &progress);
                     let filtered = super::filters::check(
                         &opts,
                         &progress,
@@ -209,7 +209,8 @@ impl Recursive {
                     );
 
                     if filtered {
-                        let additions = super::filters::parse_show(&opts, &text, &response);
+                        let additions =
+                            super::filters::parse_show(&opts, &text, &response, &progress);
 
                         root_progress.println(format!(
                             "{} {} {} {}{}",

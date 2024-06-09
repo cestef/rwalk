@@ -118,7 +118,8 @@ impl Classic {
 
                     if filtered {
                         // Parse what additional information should be shown
-                        let additions = super::filters::parse_show(&opts, &text, &response);
+                        let additions =
+                            super::filters::parse_show(&opts, &text, &response, &progress);
 
                         progress.println(format!(
                             "{} {} {} {}{}",
@@ -160,7 +161,7 @@ impl Classic {
                                 .unwrap_or_default()
                                 .to_string()
                         });
-                        let is_dir = is_directory(&response, &text);
+                        let is_dir = is_directory(&opts, &response, text, &progress);
                         let data = TreeData {
                             url: url.clone(),
                             depth: 0,
