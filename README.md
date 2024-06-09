@@ -101,7 +101,7 @@ By default `rwalk` will use a recursive-like scan. You can change the depth of t
 rwalk https://example.com wordlist.txt -d 3
 ```
 
-The recursive mode only scans urls [identified as directories](src/runner/filters.rs#L412). If you are not happy with the default behavior, you can use the `--force-recursion` (`--fr`) flag to force the recursion on all found urls.
+The recursive mode only scans urls [identified as directories](src/runner/filters.rs#L412). If you are not happy with the default behavior, you can either use the `--force-recursion` (`--fr`) flag to force the recursion on all found urls, or provide your own detection algorithm in `rhai` with [`--directory-script`](#directory-script) (`--ds`).
 
 
 
@@ -242,8 +242,6 @@ cat wordlist.txt | rwalk https://example.com -
 > [!NOTE]
 > A checksum is computed for the wordlists and stored in case you abort the scan. If you resume the scan, `rwalk` will only load the wordlists if the checksums match. See [Saving and Resuming scans](#saving-and-resuming-scans) for more information.
 
-
-
 #### Filters <!-- omit in toc -->
 
 You can filter words from the wordlist by using the `--wordlist-filter` (`-w`) flag. For example, to only use words that start with `admin`:
@@ -265,8 +263,6 @@ Available filters:
 - `contains`: _`<STRING>`_
 - `regex`: _`<REGEX>`_
 - `length`: _`<RANGE>`_
-
-
 
 #### Transformations <!-- omit in toc -->
 
@@ -340,10 +336,14 @@ You have access to the following variables in the script:
   - `data` [TreeData](src/utils/tree.rs#L24)
   - `children` Vec<[TreeNode](src/utils/tree.rs#L18)>
 
+#### Directory scripts <!-- omit in toc -->
+
+This script will be ran for each url to determine if it is a directory or not. It will have access to the following variables:
+
+- `response` [ScriptingResponse](src/runner/filters.rs#L422): The response data (more compact version of reqwest's `Response`)
+- `opts` [Opts](src/cli/opts.rs#L22): The options passed to `rwalk`
 
 ### Miscellaneous
-
-
 
 #### Interactive mode <!-- omit in toc -->
 
@@ -399,8 +399,6 @@ rwalk https://example.com wordlist.txt --save-file myscan.json
 ```
 
 The auto-saving behavior can be disabled with `--no-save`.
-
-
 
 #### Proxy support <!-- omit in toc -->
 

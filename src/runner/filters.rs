@@ -1,7 +1,10 @@
+use std::collections::BTreeMap;
+
 use colored::Colorize;
 use log::warn;
 use reqwest::StatusCode;
-use rhai::Dynamic;
+use rhai::plugin::*;
+use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -415,10 +418,10 @@ pub fn is_html_directory(body: &str) -> bool {
     false
 }
 
-#[derive(Clone)]
+#[derive(Clone, CustomType)]
 pub struct ScriptingResponse {
     pub status_code: u16,
-    pub headers: reqwest::header::HeaderMap,
+    pub headers: Dynamic,
     pub body: String,
     pub url: String,
 }
@@ -432,16 +435,27 @@ pub fn is_directory(
     if let Some(directory_script) = opts.directory_script.as_ref() {
         let mut engine = rhai::Engine::new();
         let mut scope = rhai::Scope::new();
+        let headers = response
+            .headers()
+            .iter()
+            .map(|(key, value)| {
+                (
+                    key.as_str().to_string(),
+                    value.to_str().unwrap().to_string(),
+                )
+            })
+            .collect::<BTreeMap<String, String>>();
         scope.push(
             "response",
             ScriptingResponse {
                 status_code: response.status().as_u16(),
-                headers: response.headers().clone(),
+                headers: headers.clone().into(),
                 body: body.clone(),
                 url: response.url().as_str().to_string(),
             },
         );
         scope.push("opts", opts.clone());
+        engine.build_type::<ScriptingResponse>();
         let engine_opts = opts.clone();
         let engine_progress = progress.clone();
         engine.on_print(move |s| {
