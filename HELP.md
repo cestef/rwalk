@@ -34,6 +34,10 @@ A blazing fast web directory scanner
 * `-t`, `--threads <THREADS>` — Number of threads to use
 * `-d`, `--depth <DEPTH>` — Crawl recursively until given depth
 * `-o`, `--output <FILE>` — Output file
+* `--pretty` — Pretty format the output (only JSON)
+
+  Possible values: `true`, `false`
+
 * `--timeout <TIMEOUT>` — Request timeout in seconds
 
   Default value: `10`
@@ -93,6 +97,7 @@ A blazing fast web directory scanner
 
   Possible values: `true`, `false`
 
+* `--directory-script <DIRECTORY_SCRIPT>` — Override the default directory detection method with your own rhai script
 * `--request-file <FILE>` — Request file (.http, .rest)
 * `-P`, `--proxy <URL>` — Proxy URL
 * `--proxy-auth <USER:PASS>` — Proxy username and password
@@ -101,14 +106,15 @@ A blazing fast web directory scanner
   Possible values: `true`, `false`
 
 * `--scripts <SCRIPTS>` — Scripts to run after each request
+* `--ignore-scripts-errors` — Ignore scripts errors
+
+  Possible values: `true`, `false`
+
 * `--generate-markdown` — Generate markdown help - for developers
 
   Possible values: `true`, `false`
 
-* `--generate-completions` — Generate shell completions - for developers
-
-  Possible values: `true`, `false`
-
+* `--completions <COMPLETIONS>`
 
 
 
