@@ -15,8 +15,6 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
     <img src="assets/rwalk.gif">
 </p>
 
-
-
 ## Features <!-- omit in toc -->
 
 - [x] Multi-threaded
