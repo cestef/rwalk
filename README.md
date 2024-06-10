@@ -374,6 +374,9 @@ Available output formats:
 - `*.md`
 - `*.txt`
 
+> [!NOTE]
+> For JSON output, you can use the `--pretty` flag to pretty-print the JSON.
+
 #### Throttling <!-- omit in toc -->
 
 The throttling value will be multiplied by the number of threads. For example, if you have `10` threads and a throttling value of `5`, the total number of requests per second will be `50`.
