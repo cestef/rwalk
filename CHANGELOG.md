@@ -1,3 +1,32 @@
+## v0.8.2 (2024-06-10)
+
+### Feat
+
+- add --dir-script to override the directory detection method
+- add --pretty option for JSON output
+- add --ignore-scripts-errors (--ise)
+- add a completions command to directly put the completions at the right place (--completions)
+- switch to eyre for error handling
+
+### Fix
+
+- allow for access to the correct variables in directory scripting
+- aborting throwing an error because of an empty channel
+- print on root bar in recursive mode
+- actually time out with max_time
+- remove exclusive condition in directory detection
+- apply formatting
+- remove test panic
+
+### Refactor
+
+- remove banner
+- create a Command trait for commands
+- modularize interactive commands
+- use oneshot channel for aborting
+- --generate-completions is now obselete
+- switch to eyre! instead of anyhow!
+
 ## v0.8.1 (2024-05-15)
 
 ### Feat
