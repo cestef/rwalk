@@ -320,7 +320,7 @@ rwalk ... -i
 ```
 
 ```bash
-> eval "print('Hello, world!')"
+> eval print('Hello, world!')
 ```
 
 Will print `Hello, world!` to the terminal.
