@@ -272,6 +272,12 @@ pub struct Opts {
     #[clap(long)]
     #[serde(default)]
     pub completions: Option<String>,
+
+    /// Open the config in the default editor (EDITOR)
+    #[clap(long, help_heading = Some("Debug"), env, hide_env=true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub open_config: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]

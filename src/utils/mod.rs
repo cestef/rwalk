@@ -1,6 +1,7 @@
 use color_eyre::eyre::{bail, Result};
 use colored::{Colorize, CustomColor};
 use parking_lot::Mutex;
+use std::path::PathBuf;
 use std::{io::Write, sync::Arc};
 
 use crate::cli::opts::Opts;
@@ -167,6 +168,15 @@ pub fn init_panic() -> Result<()> {
 
         std::process::exit(1);
     }));
+    Ok(())
+}
+// Open the file in the default editor
+pub fn open_file(file: &PathBuf) -> Result<()> {
+    let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vi".to_string());
+    let status = std::process::Command::new(editor).arg(file).status()?;
+    if !status.success() {
+        bail!("Failed to open file in editor");
+    }
     Ok(())
 }
 

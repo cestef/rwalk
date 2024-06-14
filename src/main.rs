@@ -11,7 +11,10 @@ use rwalk::{
     cli::{self, opts::Opts},
     utils::{self, constants::DEFAULT_CONFIG_PATH},
 };
-use std::{path::Path, process};
+use std::{
+    path::{Path, PathBuf},
+    process,
+};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -36,7 +39,20 @@ async fn main() -> Result<()> {
     }
 
     log::debug!("Parsed options: {:#?}", opts);
+    if opts.open_config {
+        // Open the config file in the default editor
 
+        let path: PathBuf = opts.config.map_or_else(
+            || {
+                let home = dirs::home_dir().ok_or_else(|| eyre!("No home directory found"))?;
+                color_eyre::eyre::Ok(home.join(Path::new(DEFAULT_CONFIG_PATH)))
+            },
+            |e| Ok(PathBuf::from(e)),
+        )?;
+        log::debug!("Opening config file: {}", path.display());
+        utils::open_file(&path)?;
+        process::exit(0);
+    }
     if opts.generate_markdown {
         clap_markdown::print_help_markdown::<Opts>();
         process::exit(0);
