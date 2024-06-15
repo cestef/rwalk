@@ -20,6 +20,7 @@ use std::{
 async fn main() -> Result<()> {
     utils::logger::init_logger();
     utils::init_panic()?;
+
     let mut opts = Opts::parse();
 
     if let Some(p) = opts.config {
@@ -51,6 +52,12 @@ async fn main() -> Result<()> {
         )?;
         log::debug!("Opening config file: {}", path.display());
         utils::open_file(&path)?;
+        process::exit(0);
+    }
+    if opts.default_config {
+        // Print the default config to the console
+        let default = Opts::default();
+        println!("{}", toml::to_string_pretty(&default)?);
         process::exit(0);
     }
     if opts.generate_markdown {

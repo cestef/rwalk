@@ -278,6 +278,12 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     #[serde(default)]
     pub open_config: bool,
+
+    /// Print the default config in TOML format. Useful for debugging and creating your own config
+    #[clap(long, help_heading = Some("Debug"), env, hide_env=true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub default_config: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
