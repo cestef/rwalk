@@ -65,7 +65,7 @@ Set FontSize 18
 Set Width 1220
 Set Height 800
 
-Type "rwalk https://cstef.dev -m spider -d 3"
+Type "rwalk https://cstef.dev -m spider -d 3 --subdomains"
 Sleep 500ms
 Enter
-Sleep 13s
+Sleep 5s

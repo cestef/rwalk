@@ -28,8 +28,6 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 - [x] Request throttling
 - [x] Proxy support
 
-
-
 ## Table of Contents <!-- omit in toc -->
 
 - [Installation](#installation)
@@ -48,10 +46,7 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 - [Contributing](#contributing)
 - [License](#license)
 
-
 ## Installation
-
-
 
 ### From [homebrew](https://brew.sh) <!-- omit in toc -->
 
@@ -59,15 +54,11 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 brew install cestef/tap/rwalk
 ```
 
-
-
 ### From [crates.io](https://crates.io/crates/rwalk) <!-- omit in toc -->
 
 ```bash
 cargo install rwalk
 ```
-
-
 
 ### From source <!-- omit in toc -->
 
@@ -88,8 +79,6 @@ cargo install --path .
 You can run `rwalk --help` or [read the help file](HELP.md) for more information.
 
 ### Scanning modes
-
-
 
 #### Recursive scan <!-- omit in toc -->
 
@@ -135,6 +124,20 @@ rwalk https://example.com/W1/W2 wordlist.txt:W1,W2
 ```
 
 This will generate all possible combinations of the wordlist at `W1` and `W2`.
+
+#### Spider scan <!-- omit in toc -->
+
+A spider scan consists of scanning all the links found in the responses. This can be achieved with the `--mode spider` flag:
+
+```bash
+rwalk https://example.com --mode spider -d 3
+```
+
+Note that the spider scan does not need any wordlist as it will use the links found in the responses.
+
+Just as with the recursive scan, you need to specify until which depth you want to scan with the `--depth` (`-d`) flag.
+
+By default, The links are extracted from the following attributes: `href`, `src`, `content`, `data-src`. You can change this behavior with the `--attributes` (`-a`) flag.
 
 ### Response Filtering
 
@@ -516,8 +519,6 @@ This script will create a `completions` directory in the default config director
 
 ## FAQ
 
-
-
 ### Where can I find wordlists? <!-- omit in toc -->
 
 - [SecLists](https://github.com/danielmiessler/SecLists)
@@ -527,7 +528,6 @@ This script will create a `completions` directory in the default config director
 ### How do I get support? <!-- omit in toc -->
 
 Open an issue or ask in the [Discord server](https://cstef.dev/discord).
-
 
 ### Is rwalk stable? <!-- omit in toc -->
 

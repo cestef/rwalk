@@ -34,7 +34,8 @@ pub struct Opts {
         value_name = "FILE:KEY",
         env,
         hide_env = true,
-        value_parser = parse_wordlist
+        value_parser = parse_wordlist,
+        value_delimiter = ','
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
@@ -99,13 +100,13 @@ pub struct Opts {
     pub data: Option<String>,
 
     /// Headers to send
-    #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true, help_heading = Some("Requests"),)]
+    #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true, help_heading = Some("Requests"),value_delimiter = ',')]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
     pub headers: Vec<String>,
 
     /// Cookies to send
-    #[clap(short = 'C', long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true, help_heading = Some("Requests"),)]
+    #[clap(short = 'C', long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true, help_heading = Some("Requests"),value_delimiter = ',')]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
     pub cookies: Vec<String>,
@@ -164,6 +165,7 @@ pub struct Opts {
         env,
         hide_env = true,
         help_heading = Some("Responses"),
+        value_delimiter = ','
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
@@ -192,13 +194,13 @@ pub struct Opts {
     pub keep_save: bool,
 
     /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
-    #[clap(short='T', long, help_heading = Some("Wordlists"), env, hide_env=true, value_parser(KeyOrKeyValParser))]
+    #[clap(short='T', long, help_heading = Some("Wordlists"), env, hide_env=true, value_parser(KeyOrKeyValParser), value_delimiter = ',')]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
     pub transform: Vec<KeyOrKeyVal<String, String>>,
 
     /// Wordlist filtering: "contains", "starts", "ends", "regex", "length"
-    #[clap(short='w', long, help_heading = Some("Wordlists"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(KeyValParser), visible_alias = "wf")]
+    #[clap(short='w', long, help_heading = Some("Wordlists"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(KeyValParser), visible_alias = "wf", value_delimiter = ',')]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
     pub wordlist_filter: Vec<KeyVal<String, String>>,
@@ -211,7 +213,8 @@ pub struct Opts {
         value_name = "KEY:FILTER",
         env,
         hide_env=true,
-        value_parser(KeyValParser)
+        value_parser(KeyValParser),
+        value_delimiter = ','
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
@@ -258,7 +261,7 @@ pub struct Opts {
     pub external: bool,
 
     /// Scripts to run after each request
-    #[clap(long, help_heading = Some("Scripts"), env, hide_env=true, visible_alias = "sc")]
+    #[clap(long, help_heading = Some("Scripts"), env, hide_env=true, visible_alias = "sc", value_delimiter = ',')]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
     pub scripts: Vec<String>,
