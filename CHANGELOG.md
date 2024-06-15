@@ -1,3 +1,13 @@
+## v0.8.4 (2024-06-15)
+
+### Feat
+
+- add `--attributes` to override which attributes are crawled in spider mode
+- allow comma separated values in vec args
+- add `--external` to allow scanning external domains + improve tree display in spider mode
+- add `--default-config` to display the default config in TOML format
+- add `--open-config` to directly open the config in the default editor
+
 ## v0.8.3 (2024-06-10)
 
 ### Fix
