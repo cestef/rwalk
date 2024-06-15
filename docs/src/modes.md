@@ -1,0 +1,7 @@
+# Modes
+
+## Recursive
+
+## Classic
+
+## Spider
