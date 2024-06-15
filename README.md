@@ -54,6 +54,12 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 brew install cestef/tap/rwalk
 ```
 
+### With [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall) <!-- omit in toc -->
+
+```bash
+cargo binstall rwalk
+```
+
 ### From [crates.io](https://crates.io/crates/rwalk) <!-- omit in toc -->
 
 ```bash
