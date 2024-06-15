@@ -105,6 +105,11 @@ A blazing fast web directory scanner
 
   Possible values: `true`, `false`
 
+* `--external` — Allow external domains to be scanned in spider mode (Warning: this can generate a lot of traffic)
+
+  Possible values: `true`, `false`
+
+* `-a`, `--attributes <ATTRIBUTES>` — Attributes to be crawled in spider mode
 * `--scripts <SCRIPTS>` — Scripts to run after each request
 * `--ignore-scripts-errors` — Ignore scripts errors
 
@@ -115,6 +120,14 @@ A blazing fast web directory scanner
   Possible values: `true`, `false`
 
 * `--completions <COMPLETIONS>`
+* `--open-config` — Open the config in the default editor (EDITOR)
+
+  Possible values: `true`, `false`
+
+* `--default-config` — Print the default config in TOML format. Useful for debugging and creating your own config
+
+  Possible values: `true`, `false`
+
 
 
 
