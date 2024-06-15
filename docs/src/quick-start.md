@@ -86,9 +86,36 @@ In most of our examples, [ffuf.me](http://ffuf.me) will be used as the target UR
 rwalk http://ffuf.me/cd/recursion common.txt -d 3
 ```
 
+Should output:
 ```ansi
 [0;32m✓[0m [0;2m200[0m /cd/recursion ([0;2mdir[0m)[0m
 [0;2m└─ [0;38:2:1:255:165:0m✖[0m [0;2m403[0m /admin ([0;2mdir[0m)[0m
 [0;2m   └─ [0;38:2:1:255:165:0m✖[0m [0;2m403[0m /users ([0;2mdir[0m)[0m
 [0;2m      └─ [0;32m✓[0m [0;2m200[0m /96 ([0;2mtext/html[0m)[0m
+```
+
+##### Classic mode
+
+For this example, we will try to find any path leading to a `development.log` or `class` file.
+
+We will create a file named `files.txt` with the following content:
+
+```txt
+development.log
+class
+```
+
+Then we can run:
+
+```ansi
+rwalk http://ffuf.me/cd/[0;32mW1[0m/[0;33mFILE[0m common.txt:[0;32mW1[0m files.txt:[0;33mFILE[0m
+```
+
+Note that the `W1` and `FILE` keys are used to reference the wordlists in the command.
+
+Should output:
+```ansi
+[0;38:2:1:255:165:0m⚠[0m [0;2m404[0m /cd ([0;2mdir[0m)[0m
+[0;2m├─ [0;32m✓[0m [0;2m200[0m /basic/class ([0;2mtext/html[0m)[0m
+[0;2m└─ [0;32m✓[0m [0;2m200[0m /basic/development.log ([0;2mtext/html[0m)[0m
 ```

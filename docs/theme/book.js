@@ -160,6 +160,8 @@ function playground_text(playground, hidden = true) {
 		langs: Object.keys(bundledLanguages),
 	});
 
+	console.log(`available themes: ${Object.keys(bundledThemes).join("\n")}`);
+
 	let code_nodes = Array.from(document.querySelectorAll("code"))
 		// Don't highlight `inline code` blocks in headers.
 		.filter(function (node) {
@@ -211,7 +213,12 @@ function playground_text(playground, hidden = true) {
 			}
 			let html = highlighter.codeToHtml(block.textContent, {
 				lang: block.className.split("-")[1],
-				themes: { light: "github-light", dark: "github-dark" },
+				themes: {
+					light: "vitesse-light",
+					ayu: "ayu-dark",
+					dark: "vitesse-dark",
+					navy: "poimandres",
+				},
 				defaultColor: false,
 			});
 			if (parent.tagName === "PRE") {

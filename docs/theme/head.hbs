@@ -20,13 +20,14 @@
         border: 1px solid #eaecef;
     }
 
-
-    html.ayu .shiki span,
-    html.ayu .shiki,
-    html.coal .shiki span,
     html.coal .shiki,
-    html.navy .shiki span,
-    html.navy .shiki {
+    html.navy .shiki,
+    html.ayu .shiki {
+        border: 1px solid #2d3748;
+    }
+
+    html.coal .shiki span,
+    html.coal .shiki {
         color: var(--shiki-dark) !important;
         background-color: var(--shiki-dark-bg) !important;
         /* Optional, if you also want font styles */
@@ -34,9 +35,29 @@
         font-weight: var(--shiki-dark-font-weight) !important;
         text-decoration: var(--shiki-dark-text-decoration) !important;
     }
+    html.navy .shiki span,
+    html.navy .shiki {
+        color: var(--shiki-navy) !important;
+        background-color: var(--shiki-navy-bg) !important;
+        /* Optional, if you also want font styles */
+        font-style: var(--shiki-navy-font-style) !important;
+        font-weight: var(--shiki-navy-font-weight) !important;
+        text-decoration: var(--shiki-navy-text-decoration) !important;
+    }
+    html.ayu .shiki span,
+    html.ayu .shiki {
+        color: var(--shiki-ayu) !important;
+        background-color: var(--shiki-ayu-bg) !important;
+        /* Optional, if you also want font styles */
+        font-style: var(--shiki-ayu-font-style) !important;
+        font-weight: var(--shiki-ayu-font-weight) !important;
+        text-decoration: var(--shiki-ayu-text-decoration) !important;
+    }
 
     html.light .shiki,
-    html.light .shiki span{
+    html.light .shiki span,
+    html.rust .shiki,
+    html.rust .shiki span {
         color: var(--shiki-light) !important;
         background-color: var(--shiki-light-bg) !important;
         /* Optional, if you also want font styles */
