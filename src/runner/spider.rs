@@ -3,7 +3,6 @@ use super::{
     filters::is_directory,
     Runner,
 };
-use crate::runner::scripting::run_scripts;
 use crate::{
     cli::opts::Opts,
     utils::{
@@ -11,6 +10,7 @@ use crate::{
         tree::{Tree, TreeData, UrlType},
     },
 };
+use crate::{runner::scripting::run_scripts, utils::tree::TreeNode};
 use color_eyre::eyre::eyre;
 use color_eyre::eyre::{Context, Ok, Result};
 use colored::Colorize;
@@ -187,7 +187,7 @@ impl Runner for Spider {
                         .context(format!("Could not parse links from {}", url))?;
 
                     for link in links {
-                        if link.link_type != LinkType::Internal {
+                        if !self.opts.external && link.link_type == LinkType::External {
                             continue;
                         }
 
@@ -206,7 +206,7 @@ impl Runner for Spider {
         let mut tree = self.tree.lock();
         let root = tree.root.clone().unwrap();
 
-        if self.opts.subdomains {
+        if self.opts.subdomains || self.opts.external {
             // We need to group the visited nodes by domain
             let mut grouped: std::collections::HashMap<String, Vec<TreeData>> =
                 std::collections::HashMap::new();
@@ -278,6 +278,54 @@ impl Runner for Spider {
                     } else {
                         current = found.unwrap();
                     }
+                }
+            }
+        }
+
+        // Reduce the paths that have only one child
+        // This is done to make the tree more readable
+        // For example, if we have a tree like this:
+        // /
+        // |-> a
+        //    |-> b
+        //      |-> c
+        // We can reduce it to:
+        // /
+        // |-> a/b/c
+        // This is done for all paths that have only one child
+
+        for domain in root.lock().children.clone() {
+            let mut domain = domain.lock();
+            for (i, child) in domain.children.clone().iter().enumerate() {
+                let mut current = child.clone();
+                // Check until where we can reduce the path
+                // If we have a node with more than one child, we stop
+                let mut path = vec![current.clone()];
+                while current.lock().children.len() == 1 {
+                    let child = current.lock().children[0].clone();
+                    path.push(child.clone());
+                    current = child;
+                }
+                // If we can reduce the path, we do it
+                if path.len() > 1 {
+                    // Create the new path
+                    let new_path = path.iter().fold("".to_string(), |acc, node| {
+                        format!("{}/{}", acc, node.lock().data.path)
+                    });
+
+                    // Create the new node
+                    // We copy the data from the last node in the path
+                    let new_node = TreeData {
+                        path: new_path,
+                        ..path.last().unwrap().lock().data.clone()
+                    };
+
+                    // Remove the old nodes
+                    domain.children.remove(i);
+                    domain.children.push(Arc::new(Mutex::new(TreeNode {
+                        data: new_node,
+                        children: vec![],
+                    })));
                 }
             }
         }

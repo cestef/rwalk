@@ -251,6 +251,12 @@ pub struct Opts {
     #[serde(default)]
     pub subdomains: bool,
 
+    /// Allow external domains to be scanned in spider mode (Warning: this can generate a lot of traffic)
+    #[clap(long, help_heading = Some("Spider"), env, hide_env=true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub external: bool,
+
     /// Scripts to run after each request
     #[clap(long, help_heading = Some("Scripts"), env, hide_env=true, visible_alias = "sc")]
     #[merge(strategy = merge::vec::overwrite_empty)]
