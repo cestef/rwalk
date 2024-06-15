@@ -35,7 +35,6 @@ pub struct Opts {
         env,
         hide_env = true,
         value_parser = parse_wordlist,
-        value_delimiter = ','
     )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
