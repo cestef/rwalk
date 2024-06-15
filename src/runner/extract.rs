@@ -96,18 +96,26 @@ impl Document {
         }
     }
 
-    pub fn links(&self, allow_subdomain: bool) -> Result<Vec<Link>> {
+    pub fn links(
+        &self,
+        allow_subdomain: bool,
+        attributes: Option<Vec<String>>,
+    ) -> Result<Vec<Link>> {
         match self.document_type {
             DocumentType::Html => {
                 let html = Html::parse_document(&self.body);
 
                 let mut links = Vec::new();
 
-                for attribute in ATTRIBUTES.iter() {
+                for attribute in if let Some(attributes) = attributes {
+                    attributes
+                } else {
+                    ATTRIBUTES.iter().map(|s| s.to_string()).collect()
+                } {
                     for element in
                         html.select(&Selector::parse(&format!("[{}]", attribute)).unwrap())
                     {
-                        let value = element.value().attr(attribute).unwrap_or_default();
+                        let value = element.value().attr(&attribute).unwrap_or_default();
 
                         let maybe_absolute_url = ABSOLUTE_URL_REGEX.find(value);
                         let maybe_relative_url = RELATIVE_URL_REGEX.find(value);

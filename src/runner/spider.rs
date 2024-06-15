@@ -183,7 +183,14 @@ impl Runner for Spider {
                     let document = Document::parse(&url, &text);
 
                     let links = document
-                        .links(self.opts.subdomains)
+                        .links(
+                            self.opts.subdomains,
+                            if !self.opts.attributes.is_empty() {
+                                Some(self.opts.attributes.clone())
+                            } else {
+                                None
+                            },
+                        )
                         .context(format!("Could not parse links from {}", url))?;
 
                     for link in links {

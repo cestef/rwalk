@@ -260,6 +260,12 @@ pub struct Opts {
     #[serde(default)]
     pub external: bool,
 
+    /// Attributes to be crawled in spider mode
+    #[clap(short, long, help_heading = Some("Spider"), env, hide_env=true, value_delimiter = ',')]
+    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
+    pub attributes: Vec<String>,
+
     /// Scripts to run after each request
     #[clap(long, help_heading = Some("Scripts"), env, hide_env=true, visible_alias = "sc", value_delimiter = ',')]
     #[merge(strategy = merge::vec::overwrite_empty)]
