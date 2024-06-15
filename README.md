@@ -564,7 +564,7 @@ just bench <URL> <WORDLIST_FILE> <THREADS>
 
 Please take these results with a grain of salt.
 
-> <i> "There are three types of lies: lies, damn lies and benchmarks"</i>
+> <i> "There are three types of lies: lies, damned lies and benchmarks"</i>
 
 ## Contributing
 
