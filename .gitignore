@@ -3,5 +3,4 @@
 .rwalk.json
 config.toml
 Cargo.lock
-/scripts
 /assets/raw.gif
