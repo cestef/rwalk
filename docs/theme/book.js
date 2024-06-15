@@ -711,8 +711,11 @@ function playground_text(playground, hidden = true) {
 	});
 
 	clipboardSnippets.on("success", function (e) {
-		e.clearSelection();
 		showTooltip(e.trigger, "Copied!");
+		setTimeout(() => {
+			hideTooltip(e.trigger);
+		}, 1000);
+		e.clearSelection();
 	});
 
 	clipboardSnippets.on("error", function (e) {
