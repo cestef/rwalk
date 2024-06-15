@@ -700,7 +700,9 @@ function playground_text(playground, hidden = true) {
 		text: function (trigger) {
 			hideTooltip(trigger);
 			let playground = trigger.closest("pre");
-			return playground_text(playground, false);
+			const text = playground_text(playground, false).trim();
+			// Remove trailing newline
+			return text.replace(/\n$/, "");
 		},
 	});
 
