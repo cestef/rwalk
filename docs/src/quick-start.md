@@ -7,7 +7,7 @@ A quick guide to get you started with `rwalk`. This tool's philosophy is to prov
 The easiest way to install `rwalk` is to use the pre-built binaries. You can also install it using `cargo`, the Rust package manager.
 The pre-built binaries are available for macOS, Linux and Windows and can be downloaded from the [releases page](https://github.com/cestef/rwalk/releases).
 
-### Using homebrew (recommended, macOS and Linux only)
+### Using homebrew (recommended)
 
 ```bash
 brew install cestef/tap/rwalk
@@ -19,7 +19,7 @@ brew install cestef/tap/rwalk
 cargo install rwalk
 ```
 
-or with `cargo-binstall`:
+or with [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall):
 
 ```bash
 cargo binstall rwalk
@@ -37,7 +37,7 @@ cargo install --path .
 
 ## Usage
 
-#### Modes
+### Modes
 
 The core concept of `rwalk` revolves around different **scanning modes**. Each of these modes is designed to provide a different way to scan a website. The available modes are:
 
@@ -47,7 +47,7 @@ The core concept of `rwalk` revolves around different **scanning modes**. Each o
 
 The mode can be specified using the `--mode` (`-m`) option. If not specified, the mode will be automatically detected based on the provided arguments. To read more about the modes, check the [modes documentation](./modes.md).
 
-#### Basic usage
+### Basic usage
 
 To get a list of all available options, you can run:
 
@@ -69,7 +69,7 @@ Where:
 - `[FILE:KEY]` are the wordlists to use for fuzzing. Each wordlist is identified by an optional key, which is used to reference it in some options. (`/path/to/wordlist:KEY`)
 - `[OPTIONS]` are the various options that can be used to customize the scan. 
 
-#### Examples
+## Examples
 
 In these examples, we will use the [`onelistforallmicro.txt`](https://raw.githubusercontent.com/six2dez/OneListForAll/main/onelistforallmicro.txt).
 You can download it using `curl`:
@@ -80,13 +80,14 @@ curl https://raw.githubusercontent.com/six2dez/OneListForAll/main/onelistforallm
 
 In most of our examples, [ffuf.me](http://ffuf.me) will be used as the target URL. A huge thanks to [BuildHackSecure](https://github.com/BuildHackSecure/ffufme) for providing this service.
 
-##### Recursive mode
+### Recursive mode
 
 ```
 rwalk http://ffuf.me/cd/recursion common.txt -d 3
 ```
+We are scanning the `/cd/recursion` path with a depth of 3.
 
-Should output:
+This should output:
 ```ansi
 [0;32m✓[0m [0;2m200[0m /cd/recursion ([0;2mdir[0m)[0m
 [0;2m└─ [0;38:2:1:255:165:0m✖[0m [0;2m403[0m /admin ([0;2mdir[0m)[0m
@@ -94,7 +95,7 @@ Should output:
 [0;2m      └─ [0;32m✓[0m [0;2m200[0m /96 ([0;2mtext/html[0m)[0m
 ```
 
-##### Classic mode
+### Classic mode
 
 For this example, we will try to find any path leading to a `development.log` or `class` file.
 
@@ -113,9 +114,32 @@ rwalk http://ffuf.me/cd/[0;32mW1[0m/[0;33mFILE[0m common.txt:[0;32mW1[0m f
 
 Note that the `W1` and `FILE` keys are used to reference the wordlists in the command.
 
-Should output:
+Expected output:
 ```ansi
 [0;38:2:1:255:165:0m⚠[0m [0;2m404[0m /cd ([0;2mdir[0m)[0m
 [0;2m├─ [0;32m✓[0m [0;2m200[0m /basic/class ([0;2mtext/html[0m)[0m
 [0;2m└─ [0;32m✓[0m [0;2m200[0m /basic/development.log ([0;2mtext/html[0m)[0m
+```
+
+### Spider mode
+
+```
+rwalk https://cstef.dev/ -m spider -d 3 --subdomains
+```
+
+By default, the spider mode will only follow links on the same domain. The `--subdomains` flag will make it follow links to subdomains as well. You can also use `--external` to follow links to external domains.
+
+```ansi
+[0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m
+[0;2m├─ [0m🔍 ctf.cstef.dev[0m
+[0;2m│  └─ [0;32m✓[0m [0;2m200[0m /api/login ([0;2mtext/html[0m)[0m
+[0;2m├─ [0m🔍 blog.cstef.dev[0m
+[0;2m│  └─ [0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m
+[0;2m└─ [0m🔍 cstef.dev[0m
+[0;2m   ├─ [0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m
+[0;2m   ├─ [0;32m✓[0m [0;2m200[0m /android-chrome-512x512.png ([0;2mimage/png[0m)[0m
+[0;2m   ├─ [0;32m✓[0m [0;2m200[0m /favicon.ico ([0;2mimage/vnd.microsoft.icon[0m)[0m
+[0;2m   └─ [0;32m✓[0m [0;2m200[0m /assets ([0;2mtext/css[0m)[0m
+[0;2m      ├─ [0;32m✓[0m [0;2m200[0m /index-81baf222.css ([0;2mtext/css[0m)[0m
+[0;2m      └─ [0;32m✓[0m [0;2m200[0m /index-d18fbe59.js ([0;2mapplication/javascript[0m)[0m
 ```
