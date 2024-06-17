@@ -65,9 +65,10 @@ rwalk example.com/api/[0;32mV[0m/[0;33mE[0m -w [0;32mversion.txt[0m:[0;32
 ```
 <code class="language-ansi">[0;32mversion.txt[0m</code> is associated with the key <code class="language-ansi">[0;32mV[0m</code>, and <code class="language-ansi">[0;33mendpoints.txt[0m</code> is associated with the key <code class="language-ansi">[0;33mE[0m</code>.
 
-<div class="note">
-    The default key is <code>$</code>.
-</div>
+```admonish info
+The default key is <code>$</code>.
+```
+
 
 **Tip:** You could generate the `version.txt` directly with the following command:
 
