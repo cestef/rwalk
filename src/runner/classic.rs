@@ -6,6 +6,7 @@ use std::{
 
 use crate::{
     cli::opts::Opts,
+    runner::filters::ScriptingResponse,
     utils::{
         constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
         tree::{Tree, TreeData, UrlType},
@@ -21,7 +22,9 @@ use reqwest::Client;
 use serde_json::json;
 use url::Url;
 
-use super::{filters::is_directory, scripting::run_scripts, wordlists::ParsedWordlist, Runner};
+use super::{
+    filters::utils::is_directory, scripting::run_scripts, wordlists::ParsedWordlist, Runner,
+};
 
 pub struct Classic {
     url: String,
@@ -75,6 +78,7 @@ impl Classic {
         progress: ProgressBar,
         tree: Arc<Mutex<Tree<TreeData>>>,
         opts: Opts,
+        engine: Arc<rhai::Engine>,
     ) -> Result<()> {
         for url in &chunk {
             let t1 = Instant::now();
@@ -105,7 +109,6 @@ impl Classic {
                             break;
                         }
                     }
-
                     // Check if the response is filtered (`true` means we keep it)
                     let filtered = super::filters::check(
                         &opts,
@@ -114,12 +117,13 @@ impl Classic {
                         t1.elapsed().as_millis(),
                         None,
                         &response,
+                        &engine,
                     );
 
                     if filtered {
                         // Parse what additional information should be shown
                         let additions =
-                            super::filters::parse_show(&opts, &text, &response, &progress);
+                            super::filters::parse_show(&opts, &text, &response, &progress, &engine);
 
                         progress.println(format!(
                             "{} {} {} {}{}",
@@ -223,7 +227,7 @@ impl Classic {
                             tree.root.clone(),
                         );
                     } else {
-                        super::filters::print_error(
+                        super::filters::utils::print_error(
                             &opts,
                             |msg| {
                                 progress.println(msg);
@@ -266,15 +270,25 @@ impl Runner for Classic {
         let mut handles = Vec::with_capacity(chunks.len());
 
         let client = super::client::build(&self.opts)?;
-
+        let mut engine = rhai::Engine::new();
+        engine.build_type::<ScriptingResponse>();
+        let engine_opts = self.opts.clone();
+        let engine_progress = progress.clone();
+        engine.on_print(move |s| {
+            if !engine_opts.quiet {
+                engine_progress.println(s);
+            }
+        });
+        let engine = Arc::new(engine);
         for chunk in &chunks {
             let chunk = chunk.to_vec();
             let client = client.clone();
             let progress = progress.clone();
             let tree = self.tree.clone();
             let opts = self.opts.clone();
+            let engine = engine.clone();
             let res = tokio::spawn(async move {
-                Self::process_chunk(chunk, client, progress, tree, opts).await
+                Self::process_chunk(chunk, client, progress, tree, opts, engine).await
             });
             handles.push(res);
         }

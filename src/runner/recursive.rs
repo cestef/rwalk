@@ -19,7 +19,10 @@ use crate::{
     },
 };
 
-use super::{filters::is_directory, scripting::run_scripts};
+use super::{
+    filters::{utils::is_directory, ScriptingResponse},
+    scripting::run_scripts,
+};
 
 pub struct Recursive {
     opts: Opts,
@@ -77,6 +80,16 @@ impl super::Runner for Recursive {
                     .clone();
 
                 let client = super::client::build(&self.opts)?;
+                let mut engine = rhai::Engine::new();
+                engine.build_type::<ScriptingResponse>();
+                let engine_opts = self.opts.clone();
+                let engine_progress = progress.clone();
+                engine.on_print(move |s| {
+                    if !engine_opts.quiet {
+                        engine_progress.println(s);
+                    }
+                });
+                let engine = Arc::new(engine);
                 for (i, chunk) in self.chunks.iter().enumerate() {
                     let tree = self.tree.clone();
                     let previous_node = previous_node.clone();
@@ -87,6 +100,7 @@ impl super::Runner for Recursive {
                     let opts = self.opts.clone();
                     let depth = depth.clone();
                     let root_progress = root_progress.clone();
+                    let engine = engine.clone();
                     let chunk_handle: JoinHandle<Result<()>> = tokio::spawn(async move {
                         let previous_node = previous_node.clone();
                         Self::process_chunk(
@@ -99,6 +113,7 @@ impl super::Runner for Recursive {
                             depth,
                             previous_node.clone(),
                             indexes,
+                            engine,
                             i,
                         )
                         .await
@@ -150,6 +165,7 @@ impl Recursive {
         depth: Arc<Mutex<usize>>,
         previous_node: Arc<Mutex<TreeNode<TreeData>>>,
         indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
+        engine: Arc<rhai::Engine>,
         i: usize,
     ) -> Result<()> {
         while indexes
@@ -199,6 +215,7 @@ impl Recursive {
                         }
                     }
                     let is_dir = is_directory(&opts, &response, text.clone(), &progress);
+
                     let filtered = super::filters::check(
                         &opts,
                         &progress,
@@ -206,11 +223,12 @@ impl Recursive {
                         t1.elapsed().as_millis(),
                         Some(*depth.lock()),
                         &response,
+                        &engine,
                     );
 
                     if filtered {
                         let additions =
-                            super::filters::parse_show(&opts, &text, &response, &progress);
+                            super::filters::parse_show(&opts, &text, &response, &progress, &engine);
 
                         root_progress.println(format!(
                             "{} {} {} {}{}",
@@ -321,7 +339,7 @@ impl Recursive {
                             ))?;
                         }
                     } else {
-                        super::filters::print_error(
+                        super::filters::utils::print_error(
                             &opts,
                             |msg| {
                                 root_progress.println(msg)?;

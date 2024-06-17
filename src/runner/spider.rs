@@ -1,6 +1,6 @@
 use super::{
     extract::{Document, LinkType},
-    filters::is_directory,
+    filters::{utils::is_directory, ScriptingResponse},
     Runner,
 };
 use crate::{
@@ -52,7 +52,16 @@ impl Runner for Spider {
                 .template(PROGRESS_TEMPLATE)?
                 .progress_chars(PROGRESS_CHARS),
         );
-
+        let mut engine = rhai::Engine::new();
+        engine.build_type::<ScriptingResponse>();
+        let engine_opts = self.opts.clone();
+        let engine_progress = pb.clone();
+        engine.on_print(move |s| {
+            if !engine_opts.quiet {
+                engine_progress.println(s);
+            }
+        });
+        let engine = Arc::new(engine);
         while current_depth < max_depth {
             let mut next_nodes = vec![];
             if current_nodes.is_empty() {
@@ -128,10 +137,12 @@ impl Runner for Spider {
                     elapsed.as_millis(),
                     Some(current_depth),
                     &response,
+                    &engine,
                 );
 
                 if filtered {
-                    let additions = super::filters::parse_show(&self.opts, &text, &response, &pb);
+                    let additions =
+                        super::filters::parse_show(&self.opts, &text, &response, &pb, &engine);
 
                     pb.println(format!(
                         "{} {} {} {}{}",
