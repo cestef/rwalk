@@ -22,10 +22,11 @@ jobs:
                   profile: minimal
                   toolchain: stable
                   override: true
-            - name: Rust Cache
-              uses: Swatinem/rust-cache@v2
+            - name: Install cargo-binstall
+              uses: cargo-bins/cargo-binstall@v1.7.1
+
             - name: Install mdbook
-              run: cargo install mdbook mdbook-admonish mdbook-emojicodes
+              run: cargo binstall mdbook mdbook-admonish mdbook-emojicodes -y
             - name: Build Book
               run: |
                   cd docs
