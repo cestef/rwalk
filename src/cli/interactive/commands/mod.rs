@@ -2,6 +2,7 @@ pub mod append;
 pub mod eval;
 pub mod get;
 pub mod list;
+pub mod load;
 pub mod misc;
 pub mod remove;
 pub mod run;

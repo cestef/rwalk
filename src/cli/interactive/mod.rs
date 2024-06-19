@@ -7,6 +7,7 @@ use commands::{
     eval::EvalCommand,
     get::GetCommand,
     list::ListCommand,
+    load::LoadCommand,
     misc::{ClearCommand, ExitCommand},
     remove::RemoveCommand,
     run::RunCommand,
@@ -73,6 +74,7 @@ pub async fn main_interactive(opts: Opts) -> Result<()> {
         Box::new(RunCommand),
         Box::new(ListCommand),
         Box::new(SaveCommand),
+        Box::new(LoadCommand),
     ];
     let state = State {
         opts,

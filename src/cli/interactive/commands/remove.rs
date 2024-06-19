@@ -24,6 +24,10 @@ impl Command for RemoveCommand {
         "Removes a value from an array"
     }
 
+    fn aliases(&self) -> Vec<&'static str> {
+        vec!["delete", "rm"]
+    }
+
     async fn run(
         &self,
         _rl: Arc<Mutex<DefaultEditor>>,
@@ -33,7 +37,7 @@ impl Command for RemoveCommand {
         _scope: Arc<Mutex<Scope<'_>>>,
     ) -> Result<()> {
         if args.len() != 2 {
-            println!("Usage: remove <key> <value>");
+            println!("Usage: remove <key> <value|index>");
             return Ok(());
         }
         let key = args[0];
@@ -41,21 +45,47 @@ impl Command for RemoveCommand {
         let mut state = state.lock().await;
         let current_value = get_field_by_name::<Opts, Value>(&state.opts, key)?;
         if let Value::Array(vec) = current_value {
-            let new_vec = vec
-                .into_iter()
-                .filter(|v| v != value)
-                .collect::<Vec<Value>>();
-            let new_value = Value::Array(new_vec);
-            let maybe_new_state =
-                set_field_by_name(&state.opts, key, &serde_json::to_string(&new_value)?);
-            match maybe_new_state {
-                Ok(new_state) => {
-                    state.opts = new_state;
-                    Ok(())
+            if let Ok(index) = value.parse::<usize>() {
+                if index >= vec.len() {
+                    println!("Index out of bounds");
+                    return Ok(());
                 }
-                Err(e) => {
-                    error!("Error setting value: {}", e);
-                    Ok(())
+                let new_vec = vec
+                    .into_iter()
+                    .enumerate()
+                    .filter(|(i, _)| i != &index)
+                    .map(|(_, v)| v)
+                    .collect::<Vec<Value>>();
+                let new_value = Value::Array(new_vec);
+                let maybe_new_state =
+                    set_field_by_name(&state.opts, key, &serde_json::to_string(&new_value)?);
+                match maybe_new_state {
+                    Ok(new_state) => {
+                        state.opts = new_state;
+                        Ok(())
+                    }
+                    Err(e) => {
+                        error!("Error setting value: {}", e);
+                        Ok(())
+                    }
+                }
+            } else {
+                let new_vec = vec
+                    .into_iter()
+                    .filter(|v| v != value)
+                    .collect::<Vec<Value>>();
+                let new_value = Value::Array(new_vec);
+                let maybe_new_state =
+                    set_field_by_name(&state.opts, key, &serde_json::to_string(&new_value)?);
+                match maybe_new_state {
+                    Ok(new_state) => {
+                        state.opts = new_state;
+                        Ok(())
+                    }
+                    Err(e) => {
+                        error!("Error setting value: {}", e);
+                        Ok(())
+                    }
                 }
             }
         } else {
