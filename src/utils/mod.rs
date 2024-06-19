@@ -16,6 +16,8 @@ pub mod structs;
 pub mod table;
 pub mod tree;
 
+pub static GIT_COMMIT_HASH: &str = env!("_GIT_INFO");
+
 pub fn get_emoji_for_status_code_colored(status_code: u16) -> String {
     let emoji = get_emoji_for_status_code(status_code);
     color_for_status_code(emoji, status_code)
@@ -258,6 +260,28 @@ pub fn save_to_file(
             Ok(())
         }
     }
+}
+
+pub fn version() -> String {
+    let author = clap::crate_authors!();
+
+    // let current_exe_path = PathBuf::from(clap::crate_name!()).display().to_string();
+    let config_dir_path = dirs::home_dir()
+        .map(|p| p.join(".config").join(clap::crate_name!()))
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| "Unknown".to_string())
+        .dimmed()
+        .bold();
+    let author = author.replace(':', ", ").dimmed().bold();
+    let hash = GIT_COMMIT_HASH.bold();
+    format!(
+        "\
+{hash}
+
+Authors: {author}
+
+Config directory: {config_dir_path}"
+    )
 }
 
 #[cfg(test)]

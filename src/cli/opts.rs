@@ -1,7 +1,8 @@
 use std::path::Path;
 
-use crate::utils::constants::{
-    DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT,
+use crate::utils::{
+    constants::{DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT},
+    version,
 };
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +16,7 @@ use merge::Merge;
 
 #[derive(Parser, Clone, Debug, Default, Serialize, Deserialize, Merge)]
 #[clap(
-    version,
+    version = version(),
     author = "cstef",
     about = "A blazing fast web directory scanner"
 )]
