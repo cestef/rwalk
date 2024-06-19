@@ -1,6 +1,7 @@
 use super::{
     extract::{Document, LinkType},
-    filters::{utils::is_directory, ScriptingResponse},
+    filters::utils::is_directory,
+    scripting::ScriptingResponse,
     Runner,
 };
 use crate::{
@@ -173,6 +174,7 @@ impl Runner for Spider {
                             .unwrap_or_default()
                             .to_string()
                     });
+                    let scripting_response = ScriptingResponse::from_response(response).await;
                     let data = TreeData {
                         depth: current_depth,
                         path: url.path().to_string(),
@@ -186,8 +188,13 @@ impl Runner for Spider {
                         },
                         status_code: status,
                         extra: json!(additions),
+                        response: if self.opts.capture {
+                            Some(scripting_response.clone())
+                        } else {
+                            None
+                        },
                     };
-                    run_scripts(&self.opts, &data, pb.clone())
+                    run_scripts(&self.opts, &data, Some(scripting_response), pb.clone())
                         .await
                         .map_err(|err| eyre!("Failed to run scripts on URL {}: {}", url, err))?;
                     visited.push(data);

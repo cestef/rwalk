@@ -298,6 +298,12 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     #[serde(default)]
     pub default_config: bool,
+
+    /// Capture the responses to be analyzed later in the interactive mode
+    #[clap(long, help_heading = Some("Interactive"), env, hide_env=true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub capture: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]

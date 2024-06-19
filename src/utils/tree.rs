@@ -10,7 +10,10 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     cli::opts::Opts,
-    runner::wordlists::{compute_checksum, ParsedWordlist},
+    runner::{
+        scripting::ScriptingResponse,
+        wordlists::{compute_checksum, ParsedWordlist},
+    },
     utils::get_emoji_for_status_code_colored,
     Save,
 };
@@ -20,7 +23,7 @@ pub struct TreeNode<T> {
     pub children: Vec<Arc<Mutex<TreeNode<T>>>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct TreeData {
     pub url: String,
     pub depth: usize,
@@ -28,6 +31,7 @@ pub struct TreeData {
     pub status_code: u16,
     pub extra: Value,
     pub url_type: UrlType,
+    pub response: Option<ScriptingResponse>,
 }
 
 #[export_module]
@@ -384,6 +388,7 @@ mod tests {
                 status_code: 200,
                 extra: Value::Null,
                 url_type: UrlType::Directory,
+                response: None,
             },
             children: vec![],
         };

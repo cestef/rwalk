@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use colored::Colorize;
 use log::warn;
 use rhai::plugin::*;
-use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use utils::is_directory;
 
@@ -15,6 +14,8 @@ use crate::{
         parse_range_input,
     },
 };
+
+use super::scripting::ScriptingResponse;
 
 pub mod utils;
 
@@ -449,12 +450,4 @@ pub fn parse_show(
     }
 
     additions
-}
-
-#[derive(Clone, CustomType)]
-pub struct ScriptingResponse {
-    pub status_code: u16,
-    pub headers: Dynamic,
-    pub body: String,
-    pub url: String,
 }

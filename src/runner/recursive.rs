@@ -19,10 +19,7 @@ use crate::{
     },
 };
 
-use super::{
-    filters::{utils::is_directory, ScriptingResponse},
-    scripting::run_scripts,
-};
+use super::{filters::utils::is_directory, scripting::run_scripts, scripting::ScriptingResponse};
 
 pub struct Recursive {
     opts: Opts,
@@ -267,11 +264,18 @@ impl Recursive {
                                         .unwrap_or_default()
                                         .to_string()
                                 });
-                            run_scripts(&opts, &data, progress.clone())
-                                .await
-                                .map_err(|err| {
-                                    eyre!("Failed to run scripts on URL {}: {}", url, err)
-                                })?;
+                            let scripting_response =
+                                ScriptingResponse::from_response(response).await;
+                            run_scripts(
+                                &opts,
+                                &data,
+                                Some(scripting_response.clone()),
+                                progress.clone(),
+                            )
+                            .await
+                            .map_err(|err| {
+                                eyre!("Failed to run scripts on URL {}: {}", url, err)
+                            })?;
                             tree.lock().insert(
                                 TreeData {
                                     url: url.clone(),
@@ -285,6 +289,11 @@ impl Recursive {
                                         UrlType::File(content_type)
                                     } else {
                                         UrlType::Unknown
+                                    },
+                                    response: if opts.capture {
+                                        Some(scripting_response)
+                                    } else {
+                                        None
                                     },
                                 },
                                 Some(previous_node.clone()),
@@ -314,7 +323,7 @@ impl Recursive {
                             .iter()
                             .any(|child| child.lock().data.path == *word)
                         {
-                            run_scripts(&opts, &data, progress.clone())
+                            run_scripts(&opts, &data, None, progress.clone())
                                 .await
                                 .map_err(|err| {
                                     eyre!("Failed to run scripts on URL {}: {}", url, err)
@@ -327,6 +336,7 @@ impl Recursive {
                                     status_code: 0,
                                     extra: json!([]),
                                     url_type: UrlType::Unknown,
+                                    response: None,
                                 },
                                 Some(previous_node.clone()),
                             );

@@ -10,7 +10,7 @@ use crate::{
 };
 use color_eyre::eyre::Result;
 
-use super::ScriptingResponse;
+use crate::runner::scripting::ScriptingResponse;
 
 pub fn print_error(
     opts: &Opts,

@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     cli::opts::Opts,
-    runner::filters::ScriptingResponse,
+    runner::scripting::ScriptingResponse,
     utils::{
         constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
         tree::{Tree, TreeData, UrlType},
@@ -166,6 +166,7 @@ impl Classic {
                                 .to_string()
                         });
                         let is_dir = is_directory(&opts, &response, text, &progress);
+                        let scripting_response = ScriptingResponse::from_response(response).await;
                         let data = TreeData {
                             url: url.clone(),
                             depth: 0,
@@ -182,8 +183,13 @@ impl Classic {
                             } else {
                                 UrlType::Unknown
                             },
+                            response: if opts.capture {
+                                Some(scripting_response.clone())
+                            } else {
+                                None
+                            },
                         };
-                        run_scripts(&opts, &data, progress.clone())
+                        run_scripts(&opts, &data, Some(scripting_response), progress.clone())
                             .await
                             .map_err(|err| {
                                 eyre!("Failed to run scripts on URL {}: {}", url, err)
@@ -211,21 +217,25 @@ impl Classic {
                             .data
                             .url
                             .clone();
+                        let data = TreeData {
+                            url: url.clone(),
+                            depth: 0,
+                            path: parsed
+                                .path()
+                                .to_string()
+                                .replace(Url::parse(&root_url)?.path().to_string().as_str(), ""),
+                            status_code: 0,
+                            extra: json!([]),
+                            url_type: UrlType::Unknown,
+                            response: None,
+                        };
+                        tree.insert(data.clone(), tree.root.clone());
 
-                        tree.insert(
-                            TreeData {
-                                url: url.clone(),
-                                depth: 0,
-                                path: parsed.path().to_string().replace(
-                                    Url::parse(&root_url)?.path().to_string().as_str(),
-                                    "",
-                                ),
-                                status_code: 0,
-                                extra: json!([]),
-                                url_type: UrlType::Unknown,
-                            },
-                            tree.root.clone(),
-                        );
+                        run_scripts(&opts, &data, None, progress.clone())
+                            .await
+                            .map_err(|err| {
+                                eyre!("Failed to run scripts on URL {}: {}", url, err)
+                            })?;
                     } else {
                         super::filters::utils::print_error(
                             &opts,

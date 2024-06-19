@@ -273,6 +273,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
                 status_code: 0,
                 extra: serde_json::Value::Null,
                 url_type: UrlType::Directory,
+                response: None,
             },
             None,
         );
