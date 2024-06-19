@@ -1,4 +1,4 @@
-# Options
+# Command-Line Help for `rwalk`
 
 This document contains the help content for the `rwalk` command-line program.
 

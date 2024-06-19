@@ -20,9 +20,13 @@ return false;
 ```
 
 You have access to the following variables:
+  
+| Variable   | Description                                                 | Type                                                                                                                                                          |
+| ---------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `response` | The response data (compact version of reqwest's `Response`) | <a href="https://docs.rs/rwalk/latest/rwalk/runner/filters/struct.ScriptingResponse.html"><code class="language-ansi">[0;32mScriptingResponse[0m</code></a> |
+| `opts`     | The options passed to `rwalk`                               | <a href="https://docs.rs/rwalk/latest/rwalk/cli/opts/struct.Opts.html"><code class="language-ansi">[0;32mOpts[0m</code></a>                                 |
 
-- `response` [ScriptingResponse](https://github.com/cestef/rwalk/tree/main/src/runner/filters.rs#L422): The response data (compact version of reqwest's `Response`)
-- `opts` [Opts](https://github.com/cestef/rwalk/tree/main/src/cli/opts.rs#L22): The options passed to `rwalk`.
+```ansi
 
 ## Filters
 
@@ -38,15 +42,27 @@ Here is an example of a custom filter script:
 
 ```rs
 // custom_filter.rhai
+
 if response.body.contains(input) {
     return true;
 }
 return false;
 ```
 
-
 You have access to the following variables:
 
-- `response` [ScriptingResponse](https://github.com/cestef/rwalk/tree/main/src/runner/filters.rs#L422): The response data (compact version of reqwest's `Response`)
-- `opts` [Opts](https://github.com/cestef/rwalk/tree/main/src/cli/opts.rs#L22): The options passed to `rwalk`.
-- `input` [String](https://rhai.rs/book/language/strings-chars.html#strings-and-characters): The argument passed to the filter.
+| Variable   | Description                                                 | Type                                                                                                                                                          |
+| ---------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `response` | The response data (compact version of reqwest's `Response`) | <a href="https://docs.rs/rwalk/latest/rwalk/runner/filters/struct.ScriptingResponse.html"><code class="language-ansi">[0;32mScriptingResponse[0m</code></a> |
+| `opts`     | The options passed to `rwalk`                               | <a href="https://docs.rs/rwalk/latest/rwalk/cli/opts/struct.Opts.html"><code class="language-ansi">[0;32mOpts[0m</code></a>                                 |
+| `input`    | The argument passed to the filter                           | <a href="https://rhai.rs/book/language/strings-chars.html#strings-and-characters"><code class="language-ansi">[0;33mString[0m</code></a>                    |
+## Interactive mode
+
+Scripting is available through the `eval` command in the interactive mode (`--interactive`, `-i`). You can use this to easily analyze the reponses or run custom logic. 
+
+Here are the available variables:
+
+| Variable | Description                                     | Type                                                                                                                                                 |
+| -------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tree`   | If the scan is complete, the tree of found URLs | <a href="https://docs.rs/rwalk/latest/rwalk/utils/tree/index.html"><code class="language-ansi">[0;32smTreeNode[0m\<[0;34mTreeData[0m></code></a> |
+| `opts`   | The options passed to `rwalk`                   | <a href="https://docs.rs/rwalk/latest/rwalk/cli/opts/struct.Opts.html"><code class="language-ansi">[0;32mOpts[0m</code></a>                        |

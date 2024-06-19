@@ -2,5 +2,6 @@
 
 - [Quick Start](./quick-start.md)
 - [Modes](./modes.md)
-- [Options](./options.md)
+- [Interactive mode](./interactive.md)
 - [Scripting](./scripting.md)
+- [Options](./options.md)

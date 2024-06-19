@@ -1,3 +1,7 @@
+table td {
+	padding: 8px 20px;
+}
+
 pre.shiki code {
 	overflow-x: scroll;
 	scrollbar-width: thin;
@@ -84,4 +88,12 @@ h6 {
 }
 .sidebar .sidebar-scrollbox {
 	padding: 10px 20px !important;
+}
+
+code {
+	white-space: nowrap;
+}
+
+pre code {
+	white-space: inherit;
 }

@@ -123,11 +123,12 @@ Expected output:
 
 ### Spider mode
 
+```ansi
+rwalk https://cstef.dev/ -m spider -d 3 [0;34m--subdomains[0m
 ```
-rwalk https://cstef.dev/ -m spider -d 3 --subdomains
+```admonish tip
+By default, the spider mode will only follow links on the same domain. The <code class="language-ansi">[0;34m--subdomains[0m</code> flag will make it follow links to subdomains as well. You can also use `--external` to follow links to external domains.
 ```
-
-By default, the spider mode will only follow links on the same domain. The `--subdomains` flag will make it follow links to subdomains as well. You can also use `--external` to follow links to external domains.
 
 ```ansi
 [0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m
