@@ -113,7 +113,7 @@ This character is the default, but it can be changed with the following format:
 rwalk https://example.com/W1 wordlist.txt:W1
 ```
 
-In this case, the `W1` string will be replaced by the first word in the wordlist.
+In this case, the `W1` will be replaced by the words in `wordlist.txt`.
 
 You can also use this to replace with multiple wordlists:
 
@@ -424,8 +424,6 @@ Authentication is also supported with `--proxy-auth`:
 rwalk https://example.com wordlist.txt --proxy http://pro.xy:8080 --proxy-auth username:password
 ```
 
-
-
 #### Passing parameters from a config <!-- omit in toc -->
 
 The configuration file located at `~/.config/rwalk/config.toml` will be loaded by default. You can also pass a custom configuration file with the `--config` flag:
@@ -436,15 +434,11 @@ rwalk https://example.com wordlist.txt --config myconfig.toml
 
 ## Examples
 
-
-
 ### Basic scan <!-- omit in toc -->
 
 ```bash
 rwalk https://example.com wordlist.txt
 ```
-
-
 
 ### Recursive scan <!-- omit in toc -->
 
@@ -454,23 +448,17 @@ rwalk https://example.com wordlist.txt -d 3
 
 > **Warning:** Recursive scans can take a long time and generate a lot of traffic. Use with caution.
 
-
-
 ### Custom headers/cookies <!-- omit in toc -->
 
 ```bash
 rwalk https://example.com wordlist.txt -H "X-Forwarded-For: 203.0.113.195" -c "session=1234567890"
 ```
 
-
-
 ### Follow redirects <!-- omit in toc -->
 
 ```bash
 rwalk https://example.com wordlist.txt -R 2
 ```
-
-
 
 ### Custom request body <!-- omit in toc -->
 
