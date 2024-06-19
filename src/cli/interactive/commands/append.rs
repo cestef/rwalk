@@ -25,6 +25,10 @@ impl Command for AppendCommand {
         "Appends a value to an array"
     }
 
+    fn aliases(&self) -> Vec<&'static str> {
+        vec!["add", "push"]
+    }
+
     async fn run(
         &self,
         _rl: Arc<Mutex<DefaultEditor>>,

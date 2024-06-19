@@ -38,6 +38,9 @@ unsafe impl Send for State {}
 pub trait Command: Debug {
     fn name(&self) -> &'static str;
     fn description(&self) -> &'static str;
+    fn aliases(&self) -> Vec<&'static str> {
+        vec![]
+    }
     async fn run(
         &self,
         rl: Arc<Mutex<DefaultEditor>>,
@@ -89,7 +92,7 @@ pub async fn main_interactive(opts: Opts) -> Result<()> {
                     continue;
                 }
                 let args = parts[1..].to_vec();
-                if cmd == "help" {
+                if cmd == "help" || cmd == "?" {
                     if args.is_empty() {
                         println!("Available commands:");
                         for cmd in commands.iter() {
@@ -107,7 +110,9 @@ pub async fn main_interactive(opts: Opts) -> Result<()> {
                         }
                     }
                 } else {
-                    let command = commands.iter().find(|c| c.name() == cmd);
+                    let command = commands
+                        .iter()
+                        .find(|c| c.name() == cmd || c.aliases().contains(&cmd));
                     match command {
                         Some(command) => {
                             // Free rl lock before running the command

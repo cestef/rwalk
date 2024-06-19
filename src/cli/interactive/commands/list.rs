@@ -20,6 +20,10 @@ impl Command for ListCommand {
         "Lists all fields"
     }
 
+    fn aliases(&self) -> Vec<&'static str> {
+        vec!["ls", "l"]
+    }
+
     async fn run(
         &self,
         _rl: Arc<Mutex<DefaultEditor>>,

@@ -23,6 +23,10 @@ impl Command for RunCommand {
         "Runs the current tree"
     }
 
+    fn aliases(&self) -> Vec<&'static str> {
+        vec!["r", "scan", "exec", "go"]
+    }
+
     async fn run(
         &self,
         _rl: Arc<Mutex<DefaultEditor>>,

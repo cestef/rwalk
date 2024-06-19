@@ -37,6 +37,10 @@ impl Command for EvalCommand {
         "Evaluates a script"
     }
 
+    fn aliases(&self) -> Vec<&'static str> {
+        vec!["e"]
+    }
+
     async fn run(
         &self,
         rl: Arc<Mutex<DefaultEditor>>,
