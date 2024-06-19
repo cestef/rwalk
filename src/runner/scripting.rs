@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::{
     cli::opts::Opts,
-    utils::tree::{tree, TreeData},
+    utils::tree::{tree_data, tree_node, TreeData},
 };
 use color_eyre::eyre::{eyre, Result};
 use colored::Colorize;
@@ -53,9 +53,12 @@ pub async fn run_scripts(
     progress: ProgressBar,
 ) -> Result<()> {
     let mut engine = Engine::new();
-    let tree_module = exported_module!(tree);
+    let tree_module = exported_module!(tree_node);
+    let tree_data_module = exported_module!(tree_data);
 
     engine.register_global_module(tree_module.into());
+    engine.register_global_module(tree_data_module.into());
+
     let mut root_scope = Scope::new();
     root_scope.push("data", data.clone());
     root_scope.push("opts", opts.clone());

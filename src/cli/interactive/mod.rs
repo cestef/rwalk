@@ -23,7 +23,7 @@ use tokio::sync::Mutex;
 
 use crate::{
     runner::scripting::ScriptingResponse,
-    utils::tree::{tree, TreeData, TreeNode},
+    utils::tree::{tree_data, tree_node, TreeData, TreeNode},
 };
 
 use super::opts::Opts;
@@ -61,8 +61,11 @@ pub async fn main_interactive(opts: Opts) -> Result<()> {
     let rl = Arc::new(Mutex::new(rl));
     let mut engine = Engine::new();
 
-    let tree_module = exported_module!(tree);
+    let tree_module = exported_module!(tree_node);
+    let tree_data_module = exported_module!(tree_data);
     engine.register_global_module(tree_module.into());
+    engine.register_global_module(tree_data_module.into());
+
     engine.build_type::<TreeData>();
     engine.build_type::<ScriptingResponse>();
     let engine = Arc::new(Mutex::new(engine));
