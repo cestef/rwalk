@@ -22,7 +22,7 @@ pub struct ScriptingResponse {
 }
 
 impl ScriptingResponse {
-    pub async fn from_response(response: Response) -> Self {
+    pub async fn from_response(response: Response, body: Option<String>) -> Self {
         let headers = response
             .headers()
             .iter()
@@ -37,7 +37,11 @@ impl ScriptingResponse {
             status_code: response.status().as_u16(),
             headers: headers.into(),
             url: response.url().as_str().to_string(),
-            body: response.text().await.unwrap_or_default(),
+            body: if let Some(body) = body {
+                body
+            } else {
+                response.text().await.unwrap_or_default()
+            },
         }
     }
 }

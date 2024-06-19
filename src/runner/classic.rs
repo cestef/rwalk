@@ -165,8 +165,9 @@ impl Classic {
                                 .unwrap_or_default()
                                 .to_string()
                         });
-                        let is_dir = is_directory(&opts, &response, text, &progress);
-                        let scripting_response = ScriptingResponse::from_response(response).await;
+                        let is_dir = is_directory(&opts, &response, text.clone(), &progress);
+                        let scripting_response =
+                            ScriptingResponse::from_response(response, Some(text)).await;
                         let data = TreeData {
                             url: url.clone(),
                             depth: 0,

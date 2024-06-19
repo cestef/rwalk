@@ -265,7 +265,7 @@ impl Recursive {
                                         .to_string()
                                 });
                             let scripting_response =
-                                ScriptingResponse::from_response(response).await;
+                                ScriptingResponse::from_response(response, Some(text)).await;
                             run_scripts(
                                 &opts,
                                 &data,

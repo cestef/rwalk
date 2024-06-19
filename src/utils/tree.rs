@@ -4,6 +4,7 @@ use log::{info, warn};
 use parking_lot::Mutex;
 use ptree::{print_tree, TreeItem};
 use rhai::plugin::*;
+use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::HashMap, sync::Arc};
@@ -23,7 +24,7 @@ pub struct TreeNode<T> {
     pub children: Vec<Arc<Mutex<TreeNode<T>>>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, CustomType)]
 pub struct TreeData {
     pub url: String,
     pub depth: usize,
@@ -31,46 +32,12 @@ pub struct TreeData {
     pub status_code: u16,
     pub extra: Value,
     pub url_type: UrlType,
+    #[rhai_type(skip)]
     pub response: Option<ScriptingResponse>,
 }
 
 #[export_module]
 pub mod tree {
-    #[rhai_fn(get = "url")]
-    pub fn get_url(data: &mut TreeData) -> String {
-        data.url.clone()
-    }
-
-    #[rhai_fn(get = "depth")]
-    pub fn depth(data: &mut TreeData) -> usize {
-        data.depth
-    }
-
-    #[rhai_fn(get = "path")]
-    pub fn path(data: &mut TreeData) -> String {
-        data.path.clone()
-    }
-
-    #[rhai_fn(get = "status_code")]
-    pub fn status_code(data: &mut TreeData) -> u16 {
-        data.status_code
-    }
-
-    #[rhai_fn(get = "extra")]
-    pub fn extra(data: &mut TreeData) -> Value {
-        data.extra.clone()
-    }
-
-    #[rhai_fn(get = "url_type")]
-    pub fn url_type(data: &mut TreeData) -> UrlType {
-        data.url_type.clone()
-    }
-
-    #[rhai_fn(get = "data")]
-    pub fn data(data: &mut TreeNode<TreeData>) -> TreeData {
-        data.data.clone()
-    }
-
     #[rhai_fn(get = "children")]
     pub fn children(data: &mut TreeNode<TreeData>) -> Dynamic {
         let mut children = Vec::new();
@@ -78,6 +45,19 @@ pub mod tree {
             children.push(child.lock().clone());
         }
         children.into()
+    }
+
+    #[rhai_fn(get = "data")]
+    pub fn data(data: &mut TreeNode<TreeData>) -> TreeData {
+        data.data.clone()
+    }
+    #[rhai_fn(get = "response")]
+    pub fn get_response(data: &mut TreeData) -> Dynamic {
+        if let Some(response) = &data.response {
+            Dynamic::from(response.clone())
+        } else {
+            Dynamic::UNIT
+        }
     }
 }
 

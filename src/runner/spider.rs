@@ -174,7 +174,8 @@ impl Runner for Spider {
                             .unwrap_or_default()
                             .to_string()
                     });
-                    let scripting_response = ScriptingResponse::from_response(response).await;
+                    let scripting_response =
+                        ScriptingResponse::from_response(response, Some(text.clone())).await;
                     let data = TreeData {
                         depth: current_depth,
                         path: url.path().to_string(),
