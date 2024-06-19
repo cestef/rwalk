@@ -10,6 +10,7 @@ use commands::{
     misc::{ClearCommand, ExitCommand},
     remove::RemoveCommand,
     run::RunCommand,
+    save::SaveCommand,
     set::SetCommand,
 };
 
@@ -71,6 +72,7 @@ pub async fn main_interactive(opts: Opts) -> Result<()> {
         Box::new(EvalCommand),
         Box::new(RunCommand),
         Box::new(ListCommand),
+        Box::new(SaveCommand),
     ];
     let state = State {
         opts,

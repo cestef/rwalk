@@ -20,6 +20,10 @@ impl Command for ExitCommand {
         "Exits the interactive shell"
     }
 
+    fn aliases(&self) -> Vec<&'static str> {
+        vec!["quit", "q"]
+    }
+
     async fn run(
         &self,
         _rl: Arc<Mutex<DefaultEditor>>,
@@ -42,6 +46,10 @@ impl Command for ClearCommand {
 
     fn description(&self) -> &'static str {
         "Clears the screen"
+    }
+
+    fn aliases(&self) -> Vec<&'static str> {
+        vec!["cls"]
     }
 
     async fn run(
