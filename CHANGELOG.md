@@ -1,3 +1,25 @@
+## v0.8.5 (2024-06-19)
+
+### Feat
+
+- better formatting for trees in scripting
+- include git hash in the `--version`
+- add `--capture` option to capture responses in the tree
+- add `load` interactive command
+- add `save` command in interactive mode to save the current config
+- add aliases for interactive commands
+- add scripting support for `--filter` and `--show`
+
+### Fix
+
+- make structs correctly available in interactive mode
+- `--capture` wasn't able to capture the body of the responses
+- remove comma separation for wordlists
+
+### Refactor
+
+- add a build script for git info + clap features
+
 ## v0.8.4 (2024-06-15)
 
 ### Feat
