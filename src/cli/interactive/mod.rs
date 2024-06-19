@@ -21,7 +21,10 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json::Value;
 use tokio::sync::Mutex;
 
-use crate::utils::tree::{tree, TreeData, TreeNode};
+use crate::{
+    runner::scripting::ScriptingResponse,
+    utils::tree::{tree, TreeData, TreeNode},
+};
 
 use super::opts::Opts;
 use color_eyre::eyre::{bail, Result};
@@ -60,6 +63,8 @@ pub async fn main_interactive(opts: Opts) -> Result<()> {
 
     let tree_module = exported_module!(tree);
     engine.register_global_module(tree_module.into());
+    engine.build_type::<TreeData>();
+    engine.build_type::<ScriptingResponse>();
     let engine = Arc::new(Mutex::new(engine));
     let scope = Scope::new();
     let scope = Arc::new(Mutex::new(scope));
