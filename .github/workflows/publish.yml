@@ -29,14 +29,13 @@ jobs:
                   profile: minimal
                   toolchain: stable
                   override: true
-            - run: cargo run -- --generate-markdown > HELP.md
-            - run: git add HELP.md
-            - run: git config --global user.email "action@github.run"
-            - run: git config --global user.name "GitHub Action"
-            - run: git commit -m "Update HELP.md" || true
-            - run: git pull origin main --rebase
-            - run: git push origin HEAD:refs/heads/main
-
-            - run: cargo publish --token ${CRATES_TOKEN} --no-verify
-              env:
-                  CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+            - run: |
+                  cargo run -- --generate-markdown > HELP.md
+                  cp HELP.md docs/pages/options.md
+                  git add HELP.md
+                  git config --global user.email "action@github.run"
+                  git config --global user.name "GitHub Action"
+                  git commit -m "Update HELP.md" || true
+                  git pull origin main --rebase
+                  git push origin HEAD:refs/heads/main
+            - run: cargo publish --token ${{ secrets.CRATES_TOKEN }} --no-verify

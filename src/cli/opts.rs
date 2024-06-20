@@ -18,7 +18,7 @@ use merge::Merge;
 #[clap(
     version = version(),
     author = "cstef",
-    about = "A blazing fast web directory scanner"
+    about = "A blazingly fast web directory scanner"
 )]
 pub struct Opts {
     /// Target URL
