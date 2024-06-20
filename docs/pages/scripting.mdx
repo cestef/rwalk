@@ -1,0 +1,67 @@
+# Scripting
+
+`rwalk` supports scripting with the [`rhai`](https://rhai.rs) scripting language. You can use scripting to implement custom directory detection functions, custom filters, or any other custom logic you need.
+
+## Directory detection
+
+You can provide a custom directory detection script to `rwalk` in the form of a `rhai` script. The script must return a boolean value indicating whether a path is a directory or not.
+
+It can be passed to `rwalk` using the `[38;5;9m--directory-script{:ansi}` (`--dr`) option.
+
+Here is an example of a custom directory detection script:
+
+```rs filename="custom_directory_detection.rhai" copy
+if response.headers.get("content-type") == "text/html" {
+    return true;
+}
+return false;
+```
+
+```ansi
+[38;5;5mrwalk[0m example.com [38;5;9m--directory-script [0;33mcustom_directory_detection.rhai[0m
+```
+
+You have access to the following variables:
+
+| Variable   | Description                                                 | Type                                                                                                          |
+| ---------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `response` | The response data (compact version of reqwest's `Response`) | [`[38;5;9mScriptingResponse[0m{:ansi}`](https://docs.rs/rwalk/latest/rwalk/runner/filters/struct.ScriptingResponse.html) |
+| `opts`     | The options passed to `rwalk`                               | [`[38;5;9mOpts[0m{:ansi}`](https://docs.rs/rwalk/latest/rwalk/cli/opts/struct.Opts.html)                                 |
+
+## Filters
+
+Custom filters can also be implemented using `rhai`. Filters must return a boolean value indicating whether a response should be kept or not.
+
+To pass a custom filter script to `rwalk`, use it's path with the `[38;5;9m--filter{:ansi}` (`-f`) option.
+
+```ansi
+[38;5;5mrwalk[0m example.com [38;5;9m--filter [0;33mcustom_filter.rhai[0m:[0;33margument[0m
+```
+
+Here is an example of a custom filter script:
+
+```rs filename="custom_filter.rhai" copy
+if response.body.contains(input) {
+    return true;
+}
+return false;
+```
+
+You have access to the following variables:
+
+| Variable   | Description                                                 | Type                                                                                                          |
+| ---------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `response` | The response data (compact version of reqwest's `Response`) | [`[38;5;9mScriptingResponse[0m{:ansi}`](https://docs.rs/rwalk/latest/rwalk/runner/filters/struct.ScriptingResponse.html) |
+| `opts`     | The options passed to `rwalk`                               | [`[38;5;9mOpts[0m{:ansi}`](https://docs.rs/rwalk/latest/rwalk/cli/opts/struct.Opts.html)                                 |
+| `input`    | The argument passed to the filter                           | [`[38;5;9mString[0m{:ansi}`](https://rhai.rs/book/language/strings-chars.html#strings-and-characters)                    |
+
+## Interactive mode
+
+Scripting is available through the `eval` command in the interactive mode (`--interactive`, `-i`). You can use this to easily analyze the reponses or run custom logic.
+
+Here are the available variables:
+
+| Variable | Description                                     | Type                                                                                    |
+| -------- | ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `tree`   | If the scan is complete, the tree of found URLs | [`[38;5;9mTreeNode[0m<[38;5;9mTreeData[0m>{:ansi}`](https://docs.rs/rwalk/latest/rwalk/utils/tree/index.html) |
+| `opts`   | The options passed to `rwalk`                   | [`[38;5;9mOpts[0m{:ansi}`](https://docs.rs/rwalk/latest/rwalk/cli/opts/struct.Opts.html)           |

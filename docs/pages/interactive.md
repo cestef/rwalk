@@ -1,6 +1,6 @@
 # Interactive mode
 
-The interactive mode allows you to prepare your scans step by step and analyze the results quickly. It is especially useful when you need to adjust the scan parameters on the fly. To start the interactive mode, simply run `rwalk` with the <code class="language-ansi">[0;34m--interactive[0m</code> (<code class="language-ansi">[0;34m-i[0m</code>) option.
+The interactive mode allows you to prepare your scans step by step and analyze the results quickly. It is especially useful when you need to adjust the scan parameters on the fly. To start the interactive mode, simply run `rwalk` with the `[0;34m--interactive[0m{:ansi}` (`[0;34m-i[0m{:ansi}`) option.
 
 ```ansi
 rwalk [0;34m-i[0m

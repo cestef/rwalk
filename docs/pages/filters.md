@@ -1,0 +1,78 @@
+# Filters
+
+You can either use filters for responses or wordlists. Filters are used to customize the behavior of `rwalk` by specifying which responses or words should be kept or discarded.
+
+## Response filters
+
+There are two types of response filters: **built-in filters** and [**custom filters**](./scripting.md#filters).
+
+### Built-in filters
+
+The following built-in filters are available:
+
+| Filter                                                              | Last Column Name                                |
+| ------------------------------------------------------------------- | ----------------------------------------------- |
+| `[0;34mtime[0m:<[0;32mRANGE[0m>{:ansi}`                         | Based on the response time                      |
+| `[0;34mstatus[0m:<[0;32mRANGE[0m>{:ansi}`                       | According to the status code                    |
+| `[0;34mcontains[0m:<[0;32mSTRING[0m>{:ansi}`                    | Retains responses containing the substring      |
+| `[0;34mstarts[0m:<[0;32mSTRING[0m>{:ansi}`                      | Retains responses starting with the string      |
+| `[0;34mends[0m:<[0;32mSTRING[0m>{:ansi}`                        | Retains responses ending with the string        |
+| `[0;34msize[0m:<[0;32mRANGE[0m>{:ansi}`                         | By response size                                |
+| `[0;34mhash[0m:<[0;32mHASH[0m>{:ansi}`                          | Matching the MD5 hash of the response           |
+| `[0;34mheader[0m:<[0;32mKEY[0m=[0;32mVALUE[0m>{:ansi}`        | By specific response headers                    |
+| `[0;34mjson[0m:<[0;32mPATH[0m=[0;32mVALUE[0m>{:ansi}`         | According to the JSON response                  |
+| `[0;34mdepth[0m:<[0;32mRANGE[0m>{:ansi}`                        | By the current depth                            |
+| `[0;34mtype[0m:<[0;32mTYPE[0m>{:ansi}`                          | According to the response type                  |
+| `[0;34mlines[0m:<[0;32mRANGE[0m>{:ansi}`                        | By the number of lines                          |
+| `[0;34msimilar[0m:<[0;32mVALUE[0m=[0;32mTHRESHOLD[0m>{:ansi}` | Based on similarity (percentage) to a string    |
+| `[0;34mregex[0m:<[0;32mPATTERN[0m>{:ansi}`                      | Matching a regular expression                   |
+| `[0;34murl[0m:<[0;32mSTRING[0m>{:ansi}`                         | Retains responses whose URL contains the string |
+
+### Displaying additional information
+
+In a typical recon scenario, you may want to display useful information about the responses. You can use the `--show` option to display additional information about the responses that match the current filters.
+
+The following additional information can be displayed:
+
+| Option                                          | Last Column Name                                                 |
+| ----------------------------------------------- | ---------------------------------------------------------------- |
+| `[0;34mtype[0m{:ansi}`                        | The response type (e.g., `text/html`, `application/json`, `dir`) |
+| `[0;34msize[0m{:ansi}`                        | The response size in bytes                                       |
+| `[0;34mhash[0m{:ansi}`                        | The MD5 hash of the response body                                |
+| `[0;34mheaders_size[0m{:ansi}`                | The size of the response headers in bytes                        |
+| `[0;34mheaders_hash[0m{:ansi}`                | The MD5 hash of the response headers                             |
+| `[0;34mbody[0m{:ansi}`                        | The response body                                                |
+| `[0;34mheaders[0m{:ansi}`                     | The response headers                                             |
+| `[0;34mcookies[0m{:ansi}`                     | The response cookies                                             |
+| `[0;34msimilar[0m:<[0;32mSTRING[0m>{:ansi}` | The similarity percentage to a string                            |
+
+## Wordlist filters
+
+Wordlist filters are used to filter the wordlists used in the scan. They allow you to specify which words should be used.
+
+<!-- - `starts`: _`<STRING>`_
+- `ends`: _`<STRING>`_
+- `contains`: _`<STRING>`_
+- `regex`: _`<REGEX>`_
+- `length`: _`<RANGE>`_ -->
+| Filter                                           | Description                          |
+| ------------------------------------------------ | ------------------------------------ |
+| `[0;34mstarts[0m:<[0;32mSTRING[0m>{:ansi}`   | Starting with the substring          |
+| `[0;34mends[0m:<[0;32mSTRING[0m>{:ansi}`     | Ending with the substring            |
+| `[0;34mcontains[0m:<[0;32mSTRING[0m>{:ansi}` | Containing the substring             |
+| `[0;34mregex[0m:<[0;32mREGEX[0m>{:ansi}`     | Matching the regex                   |
+| `[0;34mlength[0m:<[0;32mRANGE[0m>{:ansi}`    | Retains words with a specific length |
+
+## Types of ranges
+
+Ranges are used in filters and other options to specify a range of values. The following types of ranges are supported:
+| Format       | Python Equivalent                        |
+| ------------ | ---------------------------------------- |
+| `5`          | `x == 5{:py}`                            |
+| `5-10`       | `5 <= x <= 10{:py}`                      |
+| `5,10`       | `x == 5 or x == 10{:py}`                 |
+| `>5`         | `x > 5{:py}`                             |
+| `<5`         | `x < 5{:py}`                             |
+| `5,10,15`    | `x == 5 or x == 10 or x == 15{:py}`      |
+| `>5,10,15`   | `x > 5 or x == 10 or x == 15{:py}`       |
+| `5-10,15-20` | `(5 <= x <= 10) or (15 <= x <= 20){:py}` |

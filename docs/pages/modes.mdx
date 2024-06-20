@@ -1,3 +1,5 @@
+import { Callout } from "nextra/components";
+
 # Modes
 
 ## Recursive
@@ -19,15 +21,14 @@ example.com
 
 Recursive mode will start from `example.com` and check:
 
-- `example.com/about`
-- `example.com/about/team`
-- `example.com/about/team/member1`
-- `example.com/about/contact`
-- `example.com/products`
-- `example.com/products/product1`
-- `example.com/products/product2`
-- ...
-
+-   `example.com/about`
+-   `example.com/about/team`
+-   `example.com/about/team/member1`
+-   `example.com/about/contact`
+-   `example.com/products`
+-   `example.com/products/product1`
+-   `example.com/products/product2`
+-   ...
 
 ### Directory detection
 
@@ -51,32 +52,32 @@ else:
 
 If this algorithm is not enough for your use case, you can implement your own directory detection function in the [`rhai`](https://rhai.rs) scripting language. See [Scripting](scripting.md) for more information.
 
-        
 ## Classic
 
 Classic mode allows for template-based fuzzing. You provide a list of patterns to check, and `rwalk` will replace each pattern with the words from the wordlists.
 
 Each wordlist is identified by an optional key, which is used to reference it in the patterns.
 
+<Callout>The default key is `$`</Callout>
+
 For example, let's say you have two wordlists: `version.txt` and `endpoints.txt`. You want to find all paths that follow the pattern `/api/{version}/{endpoint}`. This can be achieved with the following command:
 
 ```ansi
-rwalk example.com/api/[0;32mV[0m/[0;33mE[0m -w [0;32mversion.txt[0m:[0;32mV[0m -w [0;33mendpoints.txt[0m:[0;33mE[0m
-```
-<code class="language-ansi">[0;32mversion.txt[0m</code> is associated with the key <code class="language-ansi">[0;32mV[0m</code>, and <code class="language-ansi">[0;33mendpoints.txt[0m</code> is associated with the key <code class="language-ansi">[0;33mE[0m</code>.
-
-```admonish info
-The default key is <code>$</code>.
+[38;5;5mrwalk[0m example.com/api/[0;32mV[0m/[0;33mE[0m -w [0;32mversion.txt[0m:[0;32mV[0m -w [0;33mendpoints.txt[0m:[0;33mE[0m
 ```
 
+`[0;32mversion.txt[0m{:ansi}` is associated with the key `[0;32mV[0m{:ansi}`, and `[0;33mendpoints.txt[0m{:ansi}` is associated with the key `[0;33mE[0m{:ansi}`.
 
-**Tip:** You could generate the `version.txt` directly with the following command:
+<Callout type="info">
+	**Tip:** You could generate the `version.txt` directly with the following command:
 
-```ansi
-[0;34mseq 1 10[0m | [0;34mxargs -I{} echo v{}[0m | rwalk example.com/api/[0;32mV[0m/[0;33mE[0m -w [0;32m-[0m:[0;32mV[0m -w [0;33mendpoints.txt[0m:[0;33mE[0m
-```
+	```ansi copy
+	[0;34mseq 1 10[0m | [0;34mxargs -I{} echo v{}[0m | rwalk example.com/api/[0;32m$[0m/[0;33mE[0m [0;33mendpoints.txt[0m:[0;33mE[0m [0;32m-[0m
+	```
+    
+    Using `[0;32m-[0m{:ansi}` as the wordlist path will make `rwalk` read from the standard input.
+</Callout>
 
-Using <code class="language-ansi">[0;32m-[0m</code> as the wordlist path will make `rwalk` read from the standard input.
 
 These keys can also be used to identify the wordlists in the options. If you want to apply some filtering to only one of the wordlists, you can use the key to reference it.
 
@@ -84,11 +85,11 @@ These keys can also be used to identify the wordlists in the options. If you wan
 rwalk example.com/api/[0;32mV[0m/[0;33mE[0m -w [0;32mversion.txt[0m:[0;32mV[0m -w [0;33mendpoints.txt[0m:[0;33mE[0m [0;34m--wf "[[0;33mE[0m[0;34m]length:>5"[0m
 ```
 
-Here, we are using <code class="language-ansi">[0;34m--wf[0m</code> (short for `--wordlist-filter`) to only keep the endpoints with at least 5 characters.
+Here, we are using `[0;34m--wf[0m{:ansi}` (short for `--wordlist-filter`) to only keep the endpoints with at least 5 characters.
 
 ## Spider
 
-Spider mode, aka crawling mode, starts from a given path and follows all links found until a certain depth. This is particularly useful for recon tasks to find all associated endpoints of a target. 
+Spider mode, aka crawling mode, starts from a given path and follows all links found until a certain depth. This is particularly useful for recon tasks to find all associated endpoints of a target.
 
 This is also the only mode that needs to be specified explicitly as it is impossible to detect automatically.
 
@@ -98,7 +99,7 @@ For example, to crawl the `cstef.dev` website with a depth of 4:
 rwalk cstef.dev [0;32m--mode spider [0;33m--depth 4 [0;34m--subdomains[0m
 ```
 
-The <code class="language-ansi">[0;34m--subdomains[0m</code> flag will also include subdomains in the crawl.
+The `[0;34m--subdomains[0m{:ansi}` flag will also include subdomains in the crawl.
 
 ```ansi
 [0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m

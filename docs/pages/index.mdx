@@ -1,6 +1,6 @@
-# Quick Start
+## Getting started
 
-A quick guide to get you started with `rwalk`. This tool's philosophy is to provide a simple and fast way to scan websites for files and directories.
+A quick guide to get you started right away with `rwalk`. This tool's philosophy is to provide a simple and fast way to scan websites for files and directories.
 
 ## Installation
 
@@ -9,19 +9,19 @@ The pre-built binaries are available for macOS, Linux and Windows and can be dow
 
 ### Using homebrew (recommended)
 
-```bash
+```bash copy
 brew install cestef/tap/rwalk
 ```
 
 ### Using cargo
 
-```bash
+```bash copy
 cargo install rwalk
 ```
 
 or with [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall):
 
-```bash
+```bash copy
 cargo binstall rwalk
 ```
 
@@ -29,7 +29,7 @@ This will directly download the binary from the latest release and install it in
 
 ### From source
 
-```bash
+```bash copy
 git clone https://github.com/cestef/rwalk
 cd rwalk
 cargo install --path .
@@ -41,9 +41,9 @@ cargo install --path .
 
 The core concept of `rwalk` revolves around different **scanning modes**. Each of these modes is designed to provide a different way to scan a website. The available modes are:
 
-- [`recursive`](./modes.md#recursive): Start from a given path and check each of its subdirectories
-- [`classic`](./modes.md#classic): Standard Fuzzing mode, where you provide a list of patterns to check
-- [`spider`](./modes.md#spider): Start from a given path and follow all links found until a certain depth
+-   [`recursive`](./modes.md#recursive): Start from a given path and check each of its subdirectories
+-   [`classic`](./modes.md#classic): Standard Fuzzing mode, where you provide a list of patterns to check
+-   [`spider`](./modes.md#spider): Start from a given path and follow all links found until a certain depth
 
 The mode can be specified using the `--mode` (`-m`) option. If not specified, the mode will be automatically detected based on the provided arguments. To read more about the modes, check the [modes documentation](./modes.md).
 
@@ -51,7 +51,7 @@ The mode can be specified using the `--mode` (`-m`) option. If not specified, th
 
 To get a list of all available options, you can run:
 
-```bash
+```bash copy
 rwalk --help
 ```
 
@@ -59,22 +59,22 @@ A markdown version of the help message is also available [here](./options.md).
 
 The basic syntax for running `rwalk` is as follows:
 
-```bash
-rwalk [OPTIONS] [URL] [FILE:KEY]...
+```ansi
+[0;35mrwalk [0;36m[OPTIONS][0m [0;33m[URL][0m [0;32m[FILE:KEY][0m...
 ```
 
 Where:
 
-- `[URL]` is the target URL (`http://example.com`)
-- `[FILE:KEY]` are the wordlists to use for fuzzing. Each wordlist is identified by an optional key, which is used to reference it in some options. (`/path/to/wordlist:KEY`)
-- `[OPTIONS]` are the various options that can be used to customize the scan. 
+-   ` [0;36m[OPTIONS]{:ansi}` are the various options that can be used to customize the scan.
+-   ` [0;33m[URL]{:ansi}` is the target URL (`http://example.com`)
+-   ` [0;32m[FILE:KEY]{:ansi}` are the wordlists to use for fuzzing. Each wordlist is identified by an optional key, which is used to reference it in some options. (`/path/to/wordlist:KEY`)
 
 ## Examples
 
 In these examples, we will use the [`onelistforallmicro.txt`](https://raw.githubusercontent.com/six2dez/OneListForAll/main/onelistforallmicro.txt).
 You can download it using `curl`:
 
-```bash
+```bash copy
 curl https://raw.githubusercontent.com/six2dez/OneListForAll/main/onelistforallmicro.txt -o common.txt
 ```
 
@@ -85,9 +85,11 @@ In most of our examples, [ffuf.me](http://ffuf.me) will be used as the target UR
 ```
 rwalk http://ffuf.me/cd/recursion common.txt -d 3
 ```
+
 We are scanning the `/cd/recursion` path with a depth of 3.
 
 This should output:
+
 ```ansi
 [0;32m✓[0m [0;2m200[0m /cd/recursion ([0;2mdir[0m)[0m
 [0;2m└─ [0;38:2:1:255:165:0m✖[0m [0;2m403[0m /admin ([0;2mdir[0m)[0m
@@ -101,7 +103,7 @@ For this example, we will try to find any path leading to a `development.log` or
 
 We will create a file named `files.txt` with the following content:
 
-```txt
+```txt copy
 development.log
 class
 ```
@@ -112,9 +114,10 @@ Then we can run:
 rwalk http://ffuf.me/cd/[0;32mW1[0m/[0;33mFILE[0m common.txt:[0;32mW1[0m files.txt:[0;33mFILE[0m
 ```
 
-Note that the `W1` and `FILE` keys are used to reference the wordlists in the command.
+Note that the `[0;32mW1{:ansi}` and `[0;33mFILE{:ansi}` keys are used to reference the wordlists in the command.
 
 Expected output:
+
 ```ansi
 [0;38:2:1:255:165:0m⚠[0m [0;2m404[0m /cd ([0;2mdir[0m)[0m
 [0;2m├─ [0;32m✓[0m [0;2m200[0m /basic/class ([0;2mtext/html[0m)[0m
@@ -126,8 +129,9 @@ Expected output:
 ```ansi
 rwalk https://cstef.dev/ -m spider -d 3 [0;34m--subdomains[0m
 ```
+
 ```admonish tip
-By default, the spider mode will only follow links on the same domain. The <code class="language-ansi">[0;34m--subdomains[0m</code> flag will make it follow links to subdomains as well. You can also use `--external` to follow links to external domains.
+By default, the spider mode will only follow links on the same domain. The `[0;34m--subdomains[0m{:ansi}` flag will make it follow links to subdomains as well. You can also use `--external` to follow links to external domains.
 ```
 
 ```ansi
