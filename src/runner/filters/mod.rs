@@ -172,13 +172,13 @@ pub fn check(
             }
             // similar:value:threshold 0-100
             "similar" | "similarity" => {
-                let split_index = filter.1.find(':');
+                let split_index = filter.1.find('=');
                 if let Some(split_index) = split_index {
                     let (value, threshold) = filter.1.split_at(split_index);
-                    let threshold = threshold.trim_start_matches(':');
+                    let threshold = threshold.trim_start_matches('=');
                     let threshold_range = parse_range_input(threshold);
                     if let Ok(range) = threshold_range {
-                        let value = value.trim_end_matches(':');
+                        let value = value.trim_end_matches('=');
                         let similarity = strsim::jaro_winkler(value, res_text);
                         check_range(&range, (similarity * 100.0) as usize) ^ negated
                     } else {
