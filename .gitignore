@@ -4,3 +4,4 @@
 config.toml
 Cargo.lock
 /assets/raw*.gif
+/docs-legacy

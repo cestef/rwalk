@@ -81,6 +81,6 @@ A blazing fast web directory scanner
 
 <small><i>
     This document was generated automatically by
-    <a href="https://crates.io/crates/clap-markdown"><code>clap-markdown</code></a>.
+    <a href="https://crates.io/crates/clap-markdown"><code>clap-markdown{:ansi}`</a>.
 </i></small>
 

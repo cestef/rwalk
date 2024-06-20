@@ -7,6 +7,9 @@ on:
 jobs:
     deploy:
         runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./docs
         permissions:
             contents: write # To push a branch
             pages: write # To push to a GitHub Pages site
@@ -16,27 +19,43 @@ jobs:
               with:
                   fetch-depth: 0
 
-            - name: Setup Rust
-              uses: actions-rs/toolchain@v1
+            - uses: pnpm/action-setup@v4
+              name: Install pnpm
               with:
-                  profile: minimal
-                  toolchain: stable
-                  override: true
-            - name: Install cargo-binstall
-              uses: cargo-bins/cargo-binstall@v1.7.1
+                  version: 8
+                  run_install: false
 
-            - name: Install mdbook
-              run: cargo binstall mdbook mdbook-admonish mdbook-emojicodes -y
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: "pnpm"
+                  cache-dependency-path: ./docs/pnpm-lock.yaml
+
+            - name: Get pnpm store directory
+              shell: bash
+              run: |
+                  echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+            - uses: actions/cache@v4
+              name: Setup pnpm cache
+              with:
+                  path: ${{ env.STORE_PATH }}
+                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pnpm-store-
+
+            - name: Install dependencies
+              run: pnpm install
             - name: Build Book
               run: |
-                  cd docs
-                  mdbook build
+                  pnpm build
             - name: Setup Pages
               uses: actions/configure-pages@v4
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v3
               with:
-                  path: "docs/book"
+                  path: "docs/out"
             - name: Deploy to GitHub Pages
               id: deployment
               uses: actions/deploy-pages@v4
