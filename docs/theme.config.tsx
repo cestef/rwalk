@@ -67,6 +67,9 @@ const config: DocsThemeConfig = {
 			</>
 		);
 	},
+	footer: {
+		component: () => <></>,
+	},
 };
 
 export default config;
