@@ -8,7 +8,7 @@ This document contains the help content for the `rwalk` command-line program.
 
 ## `rwalk`
 
-A blazing fast web directory scanner
+A blazingly fast web directory scanner
 
 **Usage:** `rwalk [OPTIONS] [URL] [FILE:KEY]...`
 
@@ -70,7 +70,7 @@ A blazing fast web directory scanner
 * `-a`, `--attributes <ATTRIBUTES>` — Attributes to be crawled in spider mode
 * `--scripts <SCRIPTS>` — Scripts to run after each request
 * `--ignore-scripts-errors` — Ignore scripts errors
-* `--completions <COMPLETIONS>`
+* `--completions <SHELL>` — Generate completions for the specified shell
 * `--open-config` — Open the config in the default editor (EDITOR)
 * `--default-config` — Print the default config in TOML format. Useful for debugging and creating your own config
 * `--capture` — Capture the responses to be analyzed later in the interactive mode
@@ -81,6 +81,6 @@ A blazing fast web directory scanner
 
 <small><i>
     This document was generated automatically by
-    <a href="https://crates.io/crates/clap-markdown"><code>clap-markdown{:ansi}`</a>.
+    <a href="https://crates.io/crates/clap-markdown"><code>clap-markdown</code></a>.
 </i></small>
 
