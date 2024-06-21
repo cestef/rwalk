@@ -5,6 +5,7 @@ authors = ["cstef"]
 description = "A blazing fast web directory scanner"
 license = "MIT"
 repository = "https://github.com/cestef/rwalk"
+documentation = "https://rwalk.cstef.dev"
 readme = "README.md"
 keywords = ["web", "directory", "scanner", "fuzzing", "bruteforce"]
 edition = "2021"
