@@ -1,0 +1,40 @@
+# Wordlists
+
+## Filters
+
+Wordlist filters are used to filter the wordlists used in the scan. They allow you to specify which words should be used.
+
+| Filter                                           | Description                          |
+| ------------------------------------------------ | ------------------------------------ |
+| `[0;34mstarts[0m:<[0;32mSTRING[0m>{:ansi}`   | Starting with the substring          |
+| `[0;34mends[0m:<[0;32mSTRING[0m>{:ansi}`     | Ending with the substring            |
+| `[0;34mcontains[0m:<[0;32mSTRING[0m>{:ansi}` | Containing the substring             |
+| `[0;34mregex[0m:<[0;32mREGEX[0m>{:ansi}`     | Matching the regex                   |
+| `[0;34mlength[0m:<[0;32mRANGE[0m>{:ansi}`    | Retains words with a specific length |
+
+## On-the-fly modification
+
+You can modify the wordlist _on-the-fly_ using the `--transform` option. This option allows you to apply a transformation to each word in the wordlist.
+
+The following transformations are available:
+
+| Transformation                                              | Description                                         |
+| ----------------------------------------------------------- | --------------------------------------------------- |
+| `[0;34mupper[0m{:ansi}`                                   | Converts the word to uppercase                      |
+| `[0;34mlower[0m{:ansi}`                                   | Converts the word to lowercase                      |
+| `[0;34mcapitalize[0m{:ansi}`                              | Converts the word to title case                     |
+| `[0;34mreverse[0m{:ansi}`                                 | Reverses the word                                   |
+| `[0;34mreplace[0m:<[0;32mOLD[0m=[0;32mNEW[0m>{:ansi}` | Replaces the substring `OLD` with `NEW` in the word |
+| `[0;34msuffix[0m:<[0;32mSTRING[0m>{:ansi}`              | Appends the string at the end of the word           |
+| `[0;34mprefix[0m:<[0;32mSTRING[0m>{:ansi}`              | Prepends the string at the beginning of the word    |
+| `[0;34mremove[0m:<[0;32mSTRING[0m>{:ansi}`              | Removes the substring from the word                 |
+
+## Reading from stdin
+
+You can read the wordlist from the standard input (stdin) using the `-` character. This allows you to pipe the output of another command into `rwalk`.
+
+For example, to use the output of `cat` as the wordlist, you can run:
+
+```bash
+cat wordlist.txt | rwalk example.com -
+```

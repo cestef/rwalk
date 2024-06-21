@@ -1,8 +1,5 @@
-# Filters
+# Response Filters
 
-You can either use filters for responses or wordlists. Filters are used to customize the behavior of `rwalk` by specifying which responses or words should be kept or discarded.
-
-## Response filters
 
 There are two types of response filters: **built-in filters** and [**custom filters**](./scripting.md#filters).
 
@@ -46,22 +43,6 @@ The following additional information can be displayed:
 | `[0;34mcookies[0m{:ansi}`                     | The response cookies                                             |
 | `[0;34msimilar[0m:<[0;32mSTRING[0m>{:ansi}` | The similarity percentage to a string                            |
 
-## Wordlist filters
-
-Wordlist filters are used to filter the wordlists used in the scan. They allow you to specify which words should be used.
-
-<!-- - `starts`: _`<STRING>`_
-- `ends`: _`<STRING>`_
-- `contains`: _`<STRING>`_
-- `regex`: _`<REGEX>`_
-- `length`: _`<RANGE>`_ -->
-| Filter                                           | Description                          |
-| ------------------------------------------------ | ------------------------------------ |
-| `[0;34mstarts[0m:<[0;32mSTRING[0m>{:ansi}`   | Starting with the substring          |
-| `[0;34mends[0m:<[0;32mSTRING[0m>{:ansi}`     | Ending with the substring            |
-| `[0;34mcontains[0m:<[0;32mSTRING[0m>{:ansi}` | Containing the substring             |
-| `[0;34mregex[0m:<[0;32mREGEX[0m>{:ansi}`     | Matching the regex                   |
-| `[0;34mlength[0m:<[0;32mRANGE[0m>{:ansi}`    | Retains words with a specific length |
 
 ## Types of ranges
 

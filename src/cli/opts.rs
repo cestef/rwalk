@@ -284,7 +284,8 @@ pub struct Opts {
     #[serde(default)]
     pub generate_markdown: bool,
 
-    #[clap(long)]
+    /// Generate completions for the specified shell
+    #[clap(long, value_name = "SHELL", env, hide_env = true)]
     #[serde(default)]
     pub completions: Option<String>,
 

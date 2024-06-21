@@ -1,3 +1,5 @@
+import { Callout } from "nextra/components"
+
 ## Getting started
 
 A quick guide to get you started right away with `rwalk`. This tool's philosophy is to provide a simple and fast way to scan websites for files and directories.
@@ -82,18 +84,18 @@ In most of our examples, [ffuf.me](http://ffuf.me) will be used as the target UR
 
 ### Recursive mode
 
-```
-rwalk http://ffuf.me/cd/recursion common.txt -d 3
+```ansi
+[0;35mrwalk[0m http://ffuf.me/cd/recursion common.txt [0;33m-d 3[0m
 ```
 
-We are scanning the `/cd/recursion` path with a depth of 3.
+We are scanning the `/cd/recursion` path with a depth of 3 (`[0;33m-d 3[0m{:ansi}`).
 
 This should output:
 
 ```ansi
 [0;32m✓[0m [0;2m200[0m /cd/recursion ([0;2mdir[0m)[0m
-[0;2m└─ [0;38:2:1:255:165:0m✖[0m [0;2m403[0m /admin ([0;2mdir[0m)[0m
-[0;2m   └─ [0;38:2:1:255:165:0m✖[0m [0;2m403[0m /users ([0;2mdir[0m)[0m
+[0;2m└─ [0;31m✖[0m [0;2m403[0m /admin ([0;2mdir[0m)[0m
+[0;2m   └─ [0;31m✖[0m [0;2m403[0m /users ([0;2mdir[0m)[0m
 [0;2m      └─ [0;32m✓[0m [0;2m200[0m /96 ([0;2mtext/html[0m)[0m
 ```
 
@@ -111,7 +113,7 @@ class
 Then we can run:
 
 ```ansi
-rwalk http://ffuf.me/cd/[0;32mW1[0m/[0;33mFILE[0m common.txt:[0;32mW1[0m files.txt:[0;33mFILE[0m
+[0;35mrwalk[0m http://ffuf.me/cd/[0;32mW1[0m/[0;33mFILE[0m common.txt:[0;32mW1[0m files.txt:[0;33mFILE[0m
 ```
 
 Note that the `[0;32mW1{:ansi}` and `[0;33mFILE{:ansi}` keys are used to reference the wordlists in the command.
@@ -119,7 +121,7 @@ Note that the `[0;32mW1{:ansi}` and `[0;33mFILE{:ansi}` keys are used to refer
 Expected output:
 
 ```ansi
-[0;38:2:1:255:165:0m⚠[0m [0;2m404[0m /cd ([0;2mdir[0m)[0m
+[38;5;178m⚠[0m [0;2m404[0m /cd ([0;2mdir[0m)[0m
 [0;2m├─ [0;32m✓[0m [0;2m200[0m /basic/class ([0;2mtext/html[0m)[0m
 [0;2m└─ [0;32m✓[0m [0;2m200[0m /basic/development.log ([0;2mtext/html[0m)[0m
 ```
@@ -127,12 +129,13 @@ Expected output:
 ### Spider mode
 
 ```ansi
-rwalk https://cstef.dev/ -m spider -d 3 [0;34m--subdomains[0m
+[0;35mrwalk[0m https://cstef.dev/ -m spider -d 3 [0;34m--subdomains[0m
 ```
 
-```admonish tip
-By default, the spider mode will only follow links on the same domain. The `[0;34m--subdomains[0m{:ansi}` flag will make it follow links to subdomains as well. You can also use `--external` to follow links to external domains.
-```
+
+<Callout>
+    By default, the spider mode will only follow links on the same domain. The `[0;34m--subdomains[0m{:ansi}` flag will make it follow links to subdomains as well. You can also use `--external` to follow links to external domains.
+</Callout>
 
 ```ansi
 [0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m

@@ -82,7 +82,7 @@ For example, let's say you have two wordlists: `version.txt` and `endpoints.txt`
 These keys can also be used to identify the wordlists in the options. If you want to apply some filtering to only one of the wordlists, you can use the key to reference it.
 
 ```ansi
-rwalk example.com/api/[0;32mV[0m/[0;33mE[0m -w [0;32mversion.txt[0m:[0;32mV[0m -w [0;33mendpoints.txt[0m:[0;33mE[0m [0;34m--wf "[[0;33mE[0m[0;34m]length:>5"[0m
+[0;35mrwalk[0m example.com/api/[0;32mV[0m/[0;33mE[0m -w [0;32mversion.txt[0m:[0;32mV[0m -w [0;33mendpoints.txt[0m:[0;33mE[0m [0;34m--wf "[[0;33mE[0m[0;34m]length:>5"[0m
 ```
 
 Here, we are using `[0;34m--wf[0m{:ansi}` (short for `--wordlist-filter`) to only keep the endpoints with at least 5 characters.
@@ -96,7 +96,7 @@ This is also the only mode that needs to be specified explicitly as it is imposs
 For example, to crawl the `cstef.dev` website with a depth of 4:
 
 ```ansi
-rwalk cstef.dev [0;32m--mode spider [0;33m--depth 4 [0;34m--subdomains[0m
+[0;35mrwalk[0m cstef.dev [0;32m--mode spider [0;33m--depth 4 [0;34m--subdomains[0m
 ```
 
 The `[0;34m--subdomains[0m{:ansi}` flag will also include subdomains in the crawl.
