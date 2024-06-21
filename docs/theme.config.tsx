@@ -61,7 +61,7 @@ const config: DocsThemeConfig = {
 					property="og:description"
 					content={
 						frontMatter.description ||
-						"A fast, lightweight and flexible web fuzzing tool"
+						"A blazingly fast, lightweight and flexible web fuzzing tool"
 					}
 				/>
 			</>
