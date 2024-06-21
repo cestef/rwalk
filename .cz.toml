@@ -6,3 +6,4 @@ version_provider = "cargo"
 update_changelog_on_bump = true
 major_version_zero = true
 version_files = ["Cargo.toml"]
+changelog_start_rev = "v0.7.3"
