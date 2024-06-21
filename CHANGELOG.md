@@ -1,3 +1,15 @@
+## v0.8.6 (2024-06-21)
+
+### Fix
+
+- implement ser + deser for keyvals to correctly parse the config
+- create config file on `--open-config` if it doesn't exist
+
+### Refactor
+
+- change `--filter` multi-value delimiter to `;`
+- use `=` instead of `:` for similar filter split
+
 ## v0.8.5 (2024-06-19)
 
 ### Feat
