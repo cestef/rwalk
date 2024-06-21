@@ -356,6 +356,64 @@ impl Serialize for Wordlist {
     }
 }
 
+// deserialize keyorkeyval
+
+impl<'de> Deserialize<'de> for KeyOrKeyVal<String, String> {
+    fn deserialize<D>(deserializer: D) -> Result<KeyOrKeyVal<String, String>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let parts = s.split(':').collect::<Vec<_>>();
+        if parts.len() == 1 {
+            Ok(KeyOrKeyVal(parts[0].to_string(), None))
+        } else {
+            Ok(KeyOrKeyVal(
+                parts[0].to_string(),
+                Some(parts[1].to_string()),
+            ))
+        }
+    }
+}
+
+impl Serialize for KeyOrKeyVal<String, String> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        format!(
+            "{}{}",
+            self.0,
+            if let Some(v) = &self.1 {
+                format!(":{}", v)
+            } else {
+                "".to_string()
+            }
+        )
+        .serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for KeyVal<String, String> {
+    fn deserialize<D>(deserializer: D) -> Result<KeyVal<String, String>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let parts = s.split(':').collect::<Vec<_>>();
+        Ok(KeyVal(parts[0].to_string(), parts[1].to_string()))
+    }
+}
+
+impl Serialize for KeyVal<String, String> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        format!("{}:{}", self.0, self.1).serialize(serializer)
+    }
+}
+
 impl Opts {
     pub async fn from_path<T>(path: T) -> Result<Self>
     where

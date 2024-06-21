@@ -5,11 +5,10 @@ use clap::{
     builder::TypedValueParser,
     error::{ContextKind, ContextValue, ErrorKind},
 };
-use serde::{Deserialize, Serialize};
 use tabled::Tabled;
 use url::Url;
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize, Tabled)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Tabled)]
 pub struct KeyVal<T: Display, U: Display>(
     #[tabled(rename = "Key")] pub T,
     #[tabled(rename = "Value")] pub U,
@@ -61,7 +60,7 @@ impl TypedValueParser for KeyValParser {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct KeyOrKeyVal<T: Display, U: Display>(pub T, pub Option<U>);
 
 impl Display for KeyOrKeyVal<String, String> {
