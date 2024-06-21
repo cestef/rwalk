@@ -50,6 +50,11 @@ async fn main() -> Result<()> {
             },
             |e| Ok(PathBuf::from(e)),
         )?;
+        if !path.exists() {
+            // Create the file if it doesn't exist
+            tokio::fs::write(&path, "").await?;
+            log::debug!("Created config file: {}", path.display());
+        }
         log::debug!("Opening config file: {}", path.display());
         utils::open_file(&path)?;
         process::exit(0);
