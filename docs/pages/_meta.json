@@ -1,3 +1,12 @@
 {
-	"index": "Quick Start"
+	"index": "Quick Start",
+	"modes": "Modes",
+	"responses": "Responses",
+	"wordlists": "Wordlists",
+	"configuration": "Configuration",
+	"interactive": "Interactive Mode",
+	"scripting": "Scripting",
+	"options": "Options",
+	"completions": "Completions",
+	"faq": "FAQ"
 }
