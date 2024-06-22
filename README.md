@@ -7,7 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/cestef/rwalk)](https://github.com/cestef/rwalk/releases/latest)
 
 A blazingly fast web directory scanner written in Rust. It's like [dirsearch](https://github.com/maurosoria/dirsearch) but faster and with less features.
-It is designed to be fast in [**recursive scans**](#recursive-scan) and to be able to handle large wordlists.
+It is designed to be fast in [**recursive scans**](https://rwalk.cstef.dev/modes) and to be able to handle large wordlists.
 
 Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features such as **parameter fuzzing**, **header discovery**, etc.
 
