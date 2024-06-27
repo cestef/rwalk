@@ -91,6 +91,11 @@ You can then save the configuration to the file:
 ```ansi
 [0mConfiguration saved to [0;1m/Users/cstef/.config/rwalk/config.toml[0m
 ```
+<Callout type="warning">
+    **Warning**: When saving from interactive mode, the configuration file's `interactive` field is set to `true`. 
+    This means that the next time you run `rwalk`, the interactive mode will be enabled.
+    To prevent this, you need to manually set the `interactive` field to `false{:rust}`.
+</Callout>
 
 ## Examples
 

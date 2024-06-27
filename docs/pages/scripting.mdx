@@ -10,7 +10,7 @@ It can be passed to `rwalk` using the `[38;5;9m--directory-script{:ansi}` (`--d
 
 Here is an example of a custom directory detection script:
 
-```rs filename="custom_directory_detection.rhai" copy
+```rh filename="custom_directory_detection.rhai" copy
 if response.headers.get("content-type") == "text/html" {
     return true;
 }
@@ -40,7 +40,7 @@ To pass a custom filter script to `rwalk`, use it's path with the `[38;5;9m--fi
 
 Here is an example of a custom filter script:
 
-```rs filename="custom_filter.rhai" copy
+```rh filename="custom_filter.rhai" copy
 if response.body.contains(input) {
     return true;
 }
