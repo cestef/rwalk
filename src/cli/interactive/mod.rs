@@ -96,51 +96,57 @@ pub async fn main_interactive(opts: Opts) -> Result<()> {
 
         match readline {
             Ok(line) => {
-                let line = line.clone();
-                rll.add_history_entry(line.as_str())?;
-                let parts = line.split(' ').collect::<Vec<_>>();
-                let cmd = parts[0];
-                if cmd.is_empty() {
-                    continue;
-                }
-                let args = parts[1..].to_vec();
-                if cmd == "help" || cmd == "?" {
-                    if args.is_empty() {
-                        println!("Available commands:");
-                        for cmd in commands.iter() {
-                            println!("  {:<10} {}", cmd.name().bold(), cmd.description().dimmed());
+                // Split the lines by newlines and run each line
+                rll.add_history_entry(line.clone())?;
+                // Free rl lock before running the command
+                drop(rll);
+                for line in line.split('\n') {
+                    let parts = line.split(' ').collect::<Vec<_>>();
+                    let cmd = parts[0];
+                    if cmd.is_empty() {
+                        continue;
+                    }
+                    let args = parts[1..].to_vec();
+                    if cmd == "help" || cmd == "?" {
+                        if args.is_empty() {
+                            println!("Available commands:");
+                            for cmd in commands.iter() {
+                                println!(
+                                    "  {:<10} {}",
+                                    cmd.name().bold(),
+                                    cmd.description().dimmed()
+                                );
+                            }
+                        } else {
+                            let cmd = commands.iter().find(|c| c.name() == args[0]);
+                            match cmd {
+                                Some(cmd) => {
+                                    println!("{}: {}", cmd.name().bold(), cmd.description());
+                                }
+                                None => {
+                                    println!("Command not found: {}", args[0]);
+                                }
+                            }
                         }
                     } else {
-                        let cmd = commands.iter().find(|c| c.name() == args[0]);
-                        match cmd {
-                            Some(cmd) => {
-                                println!("{}: {}", cmd.name().bold(), cmd.description());
+                        let command = commands
+                            .iter()
+                            .find(|c| c.name() == cmd || c.aliases().contains(&cmd));
+                        match command {
+                            Some(command) => {
+                                command
+                                    .run(
+                                        rl.clone(),
+                                        args,
+                                        state.clone(),
+                                        engine.clone(),
+                                        scope.clone(),
+                                    )
+                                    .await?;
                             }
                             None => {
-                                println!("Command not found: {}", args[0]);
+                                println!("Unknown command: {}", cmd);
                             }
-                        }
-                    }
-                } else {
-                    let command = commands
-                        .iter()
-                        .find(|c| c.name() == cmd || c.aliases().contains(&cmd));
-                    match command {
-                        Some(command) => {
-                            // Free rl lock before running the command
-                            drop(rll);
-                            command
-                                .run(
-                                    rl.clone(),
-                                    args,
-                                    state.clone(),
-                                    engine.clone(),
-                                    scope.clone(),
-                                )
-                                .await?;
-                        }
-                        None => {
-                            println!("Unknown command: {}", cmd);
                         }
                     }
                 }
