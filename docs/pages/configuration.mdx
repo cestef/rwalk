@@ -60,6 +60,38 @@ default_config = false
 capture = false
 ```
 
+## Configuration in [Interactive mode](interactive.mdx)
+
+The interactive mode allows you to configure the tool interactively. You can set the configuration options by selecting them from the list.
+
+```bash copy
+rwalk --interactive
+```
+
+```ansi copy
+[0;35mset[0m url [0;32m"https://google.com"[0m
+[0;35mset[0m wordlists [0m[[0;32m"common.txt"[0m][0m
+[0;35mlist[0m
+```
+
+```ansi
+[0;30m// ...[0m
+[0;1murl[0m [0;30m··················[0m = [0;32m"https://google.com"[0m
+[0;30m// ...[0m
+[0;1mwordlists[0m [0;30m············[0m = [0m[[0;32m"common.txt"[0m][0m
+[0;30m// ...[0m
+```
+
+You can then save the configuration to the file:
+
+```ansi copy
+[0;35msave[0m
+```
+
+```ansi
+[0mConfiguration saved to [0;1m/Users/cstef/.config/rwalk/config.toml[0m
+```
+
 ## Examples
 
 Let's say you want to use the same wordlist every time you run `rwalk`. You can add the following to your configuration file:
