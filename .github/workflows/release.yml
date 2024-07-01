@@ -83,7 +83,7 @@ jobs:
               with:
                   homebrew_owner: cestef
                   homebrew_tap: homebrew-tap
-                  formula_folder: formula
+                  formula_folder: Formula
                   github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
                   commit_owner: homebrew-releaser
                   commit_email: homebrew-releaser@cstef.dev
