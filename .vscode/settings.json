@@ -1,1 +1,4 @@
-{ "rust-analyzer.check.command": "clippy" }
+{
+	"rust-analyzer.check.command": "clippy",
+	"biome.lspBin": "docs/node_modules/@biomejs/biome/bin/biome"
+}
