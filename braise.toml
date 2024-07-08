@@ -1,0 +1,13 @@
+#:schema https://raw.githubusercontent.com/cestef/braise/main/schema/braise.schema.json
+
+[run]
+command = "cargo run --quiet --"
+description = "Run the program"
+
+[bench]
+command = "hyperfine \"rwalk {env(URL:http://ffuf.me/cd/basic)} {env(FILE:common.txt)} -t {env(THREADS:100)}\" \"ffuf -u {env(URL:http://ffuf.me/cd/basic)/FUZZ} -w {env(FILE:common.txt)} -t {env(THREADS:100)}\" \"dirsearch -u {env(URL:http://ffuf.me/cd/basic)} -w {env(FILE:common.txt)} -t {env(THREADS:100)}\""
+description = "Run the benchmarks against ffuf and dirsearch"
+
+[test]
+command = "cargo nextest run"
+description = ""
