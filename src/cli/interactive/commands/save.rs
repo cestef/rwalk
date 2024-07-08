@@ -7,6 +7,7 @@ use crate::{
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use colored::Colorize;
+use log::debug;
 use rhai::{Engine, Scope};
 use rustyline::DefaultEditor;
 use tokio::sync::Mutex;
@@ -44,6 +45,7 @@ impl Command for SaveCommand {
             println!("Could not determine home directory");
             return Ok(());
         };
+        debug!("Saving configuration to {}", output.to_string_lossy());
         let content = toml::to_string_pretty(&state.opts)?;
         // If the file already exists, prompt the user to confirm overwriting it
         if output.exists() {
@@ -56,6 +58,11 @@ impl Command for SaveCommand {
             if !YES.contains(&response.trim().to_lowercase().as_str()) {
                 println!("Aborted");
                 return Ok(());
+            }
+        } else {
+            // Create the parent directories if they don't exist
+            if let Some(parent) = output.parent() {
+                tokio::fs::create_dir_all(parent).await?;
             }
         }
         tokio::fs::write(&output, content).await?;
