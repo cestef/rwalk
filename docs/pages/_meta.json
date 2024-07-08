@@ -1,13 +1,11 @@
 {
-	"index": "Quick Start",
-	"modes": "Modes",
-	"responses": "Responses",
-	"wordlists": "Wordlists",
-	"resuming": "Saving and Resuming Scans",
-	"configuration": "Configuration",
-	"interactive": "Interactive Mode",
-	"scripting": "Scripting",
-	"options": "Options",
-	"completions": "Completions",
-	"faq": "FAQ"
+	"index": {
+		"title": "Introduction",
+		"type": "page",
+		"display": "hidden"
+	},
+	"docs": {
+		"type": "page",
+		"title": "Docs"
+	}
 }
