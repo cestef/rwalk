@@ -449,7 +449,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
                     ((match mode {
                         Mode::Recursive =>
                             words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
-                                * *current_depth.lock(),
+                                * tree.lock().depth(),
                         Mode::Classic => {
                             words.iter().fold(0, |acc, (_, v)| acc + v.words.len())
                         }

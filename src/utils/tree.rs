@@ -211,6 +211,30 @@ impl<T> Tree<T> {
             previous_node = Some(self.insert(data, previous_node));
         }
     }
+
+    /// Get the total depth of the tree
+    ///
+    /// # Returns
+    ///
+    /// The total depth of the tree
+    ///
+    pub fn depth(&self) -> usize {
+        Self::depth_recursive(&self.root)
+    }
+
+    fn depth_recursive(node: &Option<Arc<Mutex<TreeNode<T>>>>) -> usize {
+        if let Some(node) = node {
+            let mut max_depth = 0;
+            for child in &node.lock().children {
+                let depth = Self::depth_recursive(&Some(child.clone()));
+                if depth > max_depth {
+                    max_depth = depth;
+                }
+            }
+            return max_depth + 1;
+        }
+        0
+    }
 }
 
 impl TreeItem for TreeNode<String> {
