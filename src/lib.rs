@@ -490,7 +490,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
     // Wait for the abort signal if aborted has been set
     if aborted.load(Ordering::Relaxed) {
         while rx.try_recv().is_err() {
-            // Sleep for a short time to avoid busy waiting
+            // Sleep for a short time to avoid busy waiting and hogging the CPU
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
     }

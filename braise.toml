@@ -1,4 +1,6 @@
 #:schema https://raw.githubusercontent.com/cestef/braise/main/schema/braise.schema.json
+quiet = 1
+default = "run"
 
 [run]
 command = "cargo run --quiet --"

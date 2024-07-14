@@ -306,6 +306,12 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     #[serde(default)]
     pub capture: bool,
+
+    /// Skip all confirmation prompts
+    #[clap(short, long, help_heading = Some("Interactive"), env, hide_env=true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub yes: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]

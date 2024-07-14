@@ -16,6 +16,11 @@ pub fn init_logger() {
             "hyper_util::client::legacy::connect::dns",
             log::LevelFilter::Warn,
         )
+        .filter_module("rustyline::keymap", log::LevelFilter::Warn)
+        .filter_module("rustyline::undo", log::LevelFilter::Warn)
+        .filter_module("rustyline::edit", log::LevelFilter::Warn)
+        .filter_module("rustyline::tty::unix", log::LevelFilter::Warn)
+        .filter_module("rustyline::tty::unix::termios_", log::LevelFilter::Warn)
         .format(|buf, record| {
             let mut style = buf.style();
             match record.level() {

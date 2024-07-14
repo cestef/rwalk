@@ -36,7 +36,7 @@ impl Command for SaveCommand {
         _engine: Arc<Mutex<Engine>>,
         _scope: Arc<Mutex<Scope<'_>>>,
     ) -> Result<()> {
-        let state = state.lock().await;
+        let mut state = state.lock().await;
         let output = if args.len() == 1 {
             PathBuf::from(args[0])
         } else if let Some(home) = dirs::home_dir() {
@@ -46,9 +46,22 @@ impl Command for SaveCommand {
             return Ok(());
         };
         debug!("Saving configuration to {}", output.to_string_lossy());
+        if state.opts.interactive && !state.opts.yes {
+            let mut rl = rl.lock().await;
+            let response = rl.readline(&format!(
+                "{}: Interactive mode is set to {}. {}. Keep this setting? [y/N]: ",
+                "Warning".yellow().bold(),
+                "true".bold(),
+                "This will make rwalk open in interactive mode by default".underline(),
+            ))?;
+            const YES: [&str; 2] = ["y", "yes"];
+            if !YES.contains(&response.trim().to_lowercase().as_str()) {
+                state.opts.interactive = false;
+            }
+        }
         let content = toml::to_string_pretty(&state.opts)?;
         // If the file already exists, prompt the user to confirm overwriting it
-        if output.exists() {
+        if output.exists() && !state.opts.yes {
             let mut rl = rl.lock().await;
             let response = rl.readline(&format!(
                 "File {} already exists. Overwrite? [y/N]: ",
