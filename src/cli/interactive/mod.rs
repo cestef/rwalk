@@ -106,7 +106,11 @@ pub async fn main_interactive(opts: Opts) -> Result<()> {
                     if cmd.is_empty() {
                         continue;
                     }
-                    let args = parts[1..].to_vec();
+                    let args = parts[1..]
+                        .to_vec()
+                        .iter()
+                        .filter_map(|s| if s.is_empty() { None } else { Some(*s) })
+                        .collect::<Vec<_>>();
                     if cmd == "help" || cmd == "?" {
                         if args.is_empty() {
                             println!("Available commands:");
