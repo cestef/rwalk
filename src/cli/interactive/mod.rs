@@ -21,9 +21,9 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json::Value;
 use tokio::sync::Mutex;
 
-use crate::{
-    runner::scripting::ScriptingResponse,
-    utils::tree::{tree_data, tree_node, TreeData, TreeNode},
+use crate::utils::{
+    scripting::{tree_data, tree_node, ScriptingResponse},
+    tree::{TreeData, TreeNode},
 };
 
 use super::opts::Opts;

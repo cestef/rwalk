@@ -1,9 +1,9 @@
+use crate::utils::tree::UrlType;
+use crate::utils::tree::{TreeData, TreeNode};
+use rhai::plugin::*;
 use std::collections::BTreeMap;
 
-use crate::{
-    cli::opts::Opts,
-    utils::tree::{tree_data, tree_node, TreeData},
-};
+use crate::cli::opts::Opts;
 use color_eyre::eyre::{eyre, Result};
 use colored::Colorize;
 use indicatif::ProgressBar;
@@ -12,6 +12,63 @@ use reqwest::Response;
 use rhai::TypeBuilder;
 use rhai::{exported_module, CustomType, Dynamic, Engine, Scope};
 use serde::{Deserialize, Serialize};
+
+#[export_module]
+pub mod tree_node {
+
+    #[rhai_fn(get = "children")]
+    pub fn children(data: &mut TreeNode<TreeData>) -> Dynamic {
+        let mut children = Vec::new();
+        for child in &data.children {
+            children.push(child.lock().clone());
+        }
+        children.into()
+    }
+
+    #[rhai_fn(get = "data")]
+    pub fn data(data: &mut TreeNode<TreeData>) -> TreeData {
+        data.data.clone()
+    }
+
+    #[rhai_fn(global)]
+    pub fn to_string(data: &mut TreeNode<TreeData>) -> String {
+        format!(
+            "TreeNode {{ data: {}, children: [{}] }}",
+            tree_data::to_string(&mut data.data),
+            data.children.len()
+        )
+    }
+}
+
+#[export_module]
+pub mod tree_data {
+
+    #[rhai_fn(global)]
+    pub fn to_string(data: &mut TreeData) -> String {
+        format!(
+            "TreeData {{ url: {}, depth: {}, path: {}, status_code: {}, url_type: {:?}, extra: {:?} }}",
+            data.url,
+            data.depth,
+            data.status_code,
+            data.path,
+            match &data.url_type {
+                UrlType::Directory => "dir",
+                UrlType::File(ext) => ext,
+                UrlType::Unknown => "unknown",
+                UrlType::None => "",
+            },
+            data.extra
+        )
+    }
+    #[rhai_fn(get = "response")]
+    pub fn get_response(data: &mut TreeData) -> Dynamic {
+        if let Some(response) = &data.response {
+            Dynamic::from(response.clone())
+        } else {
+            Dynamic::UNIT
+        }
+    }
+}
 
 #[derive(Clone, CustomType, Serialize, Deserialize, Debug, Default)]
 pub struct ScriptingResponse {

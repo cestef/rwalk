@@ -12,10 +12,9 @@ use crate::{
         check_range,
         constants::{ERROR, WARNING},
         parse_range_input,
+        scripting::ScriptingResponse,
     },
 };
-
-use super::scripting::ScriptingResponse;
 
 pub mod utils;
 

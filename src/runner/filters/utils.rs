@@ -6,11 +6,12 @@ use rhai::plugin::*;
 
 use crate::{
     cli::opts::Opts,
-    utils::constants::{ERROR, WARNING},
+    utils::{
+        constants::{ERROR, WARNING},
+        scripting::ScriptingResponse,
+    },
 };
 use color_eyre::eyre::Result;
-
-use crate::runner::scripting::ScriptingResponse;
 
 pub fn print_error(
     opts: &Opts,

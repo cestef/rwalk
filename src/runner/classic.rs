@@ -6,9 +6,9 @@ use std::{
 
 use crate::{
     cli::opts::Opts,
-    runner::scripting::ScriptingResponse,
     utils::{
         constants::{ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
+        scripting::{run_scripts, ScriptingResponse},
         tree::{Tree, TreeData, UrlType},
     },
 };
@@ -22,9 +22,7 @@ use reqwest::Client;
 use serde_json::json;
 use url::Url;
 
-use super::{
-    filters::utils::is_directory, scripting::run_scripts, wordlists::ParsedWordlist, Runner,
-};
+use super::{filters::utils::is_directory, wordlists::ParsedWordlist, Runner};
 
 pub struct Classic {
     url: String,

@@ -15,11 +15,12 @@ use crate::{
     cli::opts::Opts,
     utils::{
         constants::{DEFAULT_DEPTH, ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
+        scripting::{run_scripts, ScriptingResponse},
         tree::{Tree, TreeData, TreeNode, UrlType},
     },
 };
 
-use super::{filters::utils::is_directory, scripting::run_scripts, scripting::ScriptingResponse};
+use super::filters::utils::is_directory;
 
 pub struct Recursive {
     opts: Opts,

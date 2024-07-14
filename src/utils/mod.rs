@@ -11,7 +11,9 @@ use self::constants::DEFAULT_FILE_TYPE;
 
 pub mod constants;
 pub mod display;
+pub mod extract;
 pub mod logger;
+pub mod scripting;
 pub mod structs;
 pub mod table;
 pub mod tree;

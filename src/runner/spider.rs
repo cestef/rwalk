@@ -1,17 +1,13 @@
-use super::{
-    extract::{Document, LinkType},
-    filters::utils::is_directory,
-    scripting::ScriptingResponse,
-    Runner,
-};
+use super::{filters::utils::is_directory, Runner};
 use crate::{
     cli::opts::Opts,
     utils::{
         constants::{DEFAULT_DEPTH, ERROR, PROGRESS_CHARS, PROGRESS_TEMPLATE, SUCCESS, WARNING},
-        tree::{Tree, TreeData, UrlType},
+        extract::{Document, LinkType},
+        scripting::{run_scripts, ScriptingResponse},
+        tree::{Tree, TreeData, TreeNode, UrlType},
     },
 };
-use crate::{runner::scripting::run_scripts, utils::tree::TreeNode};
 use color_eyre::eyre::eyre;
 use color_eyre::eyre::{Context, Ok, Result};
 use colored::Colorize;
