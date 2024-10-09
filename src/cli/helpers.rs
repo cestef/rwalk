@@ -137,6 +137,20 @@ pub fn parse_url(s: &str) -> Result<String, String> {
     }
 }
 
+pub fn parse_host(s: &str) -> Result<String, String> {
+    let url = Url::parse(&format!("http://{}", s));
+
+    match url {
+        Ok(url) => {
+            if url.host().is_none() {
+                return Err("Invalid host".to_string());
+            }
+            Ok(url.host_str().unwrap().to_string())
+        }
+        Err(_) => Err("Invalid host".to_string()),
+    }
+}
+
 pub fn parse_header(s: &str) -> Result<String, String> {
     // key: value
     let parts = s.split(':').collect::<Vec<_>>();

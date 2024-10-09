@@ -7,7 +7,7 @@ use crate::utils::{
 use serde::{Deserialize, Serialize};
 
 use super::helpers::{
-    parse_cookie, parse_header, parse_method, parse_url, parse_wordlist, KeyOrKeyVal,
+    parse_cookie, parse_header, parse_host, parse_method, parse_url, parse_wordlist, KeyOrKeyVal,
     KeyOrKeyValParser, KeyVal, KeyValParser,
 };
 use clap::Parser;
@@ -160,7 +160,14 @@ pub struct Opts {
     pub insecure: bool,
 
     /// Distribute the requests to multiple hosts
-    #[clap(long, env, hide_env = true, value_delimiter = ',')]
+    #[clap(
+        long,
+        env,
+        hide_env = true,
+        value_delimiter = ',',
+        visible_alias = "distribute",
+        value_parser = parse_host
+    )]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
     pub distributed: Vec<String>,
