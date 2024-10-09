@@ -32,7 +32,7 @@ jobs:
             - run: |
                   cargo run -- --generate-markdown > HELP.md
                   cp HELP.md docs/pages/options.md
-                  git add HELP.md
+                  git add HELP.md docs/pages/options.md
                   git config --global user.email "action@github.run"
                   git config --global user.name "GitHub Action"
                   git commit -m "Update HELP.md" || true
