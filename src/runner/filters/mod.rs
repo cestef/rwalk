@@ -72,9 +72,9 @@ pub fn check(
                 let status_code = response.status().as_u16();
                 check_range(&parse_range_input(&filter.1).unwrap(), status_code as usize) ^ negated
             }
-            "contains" => !res_text.contains(&filter.1) ^ negated,
-            "starts" => !res_text.starts_with(&filter.1) ^ negated,
-            "ends" => !res_text.ends_with(&filter.1) ^ negated,
+            "contains" => res_text.contains(&filter.1) ^ negated,
+            "starts" => res_text.starts_with(&filter.1) ^ negated,
+            "ends" => res_text.ends_with(&filter.1) ^ negated,
             "regex" => regex::Regex::new(&filter.1).unwrap().is_match(res_text) ^ negated,
             "length" | "size" => {
                 check_range(&parse_range_input(&filter.1).unwrap(), res_text.len()) ^ negated
@@ -348,7 +348,7 @@ pub fn parse_show(
                     key: "headers_hash".to_string(),
                     value: format!(
                         "{:x}",
-                        md5::compute(&response.headers().iter().fold(
+                        md5::compute(response.headers().iter().fold(
                             String::new(),
                             |acc, (key, value)| {
                                 format!("{}{}: {}\n", acc, key, value.to_str().unwrap())
