@@ -1,3 +1,23 @@
+## v0.8.7 (2024-10-09)
+
+### Feat
+
+- add confirmation prompt before saving a configuration file that has interactive mode enabled + add `--yes` to skip prompts
+- run lines one by one in interactive mode in case you paste multiple
+
+### Fix
+
+- opts table was displaying wordlist filter for transform
+- zero chunk size error when filtered wordlist was very small
+- contains,starts,ends filters were inverted
+- filter empty args in interactive mode
+- reported average in recursive mode when the recursion stops earlier than expected
+- create parent dirs in interactive save
+
+### Refactor
+
+- move util files to utils
+
 ## v0.8.6 (2024-06-21)
 
 ### Fix
