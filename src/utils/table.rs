@@ -151,8 +151,8 @@ pub fn build_opts_table(
     }
 
     if !opts.transform.is_empty() {
-        let mut wordlist_filters_builder = Builder::default();
-        wordlist_filters_builder.push_record(vec!["Wordlist", "Filter", "Value"]);
+        let mut wordlist_transforms_builder = Builder::default();
+        wordlist_transforms_builder.push_record(vec!["Wordlist", "Transform", "Value"]);
         for KeyOrKeyVal(k, v) in &opts.transform {
             // can be [key]filter=value or filter=value
             let (key, filter) = if k.starts_with('[') {
@@ -164,15 +164,15 @@ pub fn build_opts_table(
                 ("*", k.to_string())
             };
 
-            wordlist_filters_builder.push_record(vec![
+            wordlist_transforms_builder.push_record(vec![
                 key,
                 &filter,
                 &(v.as_ref().unwrap_or(&"".to_string()).bold().to_string()),
             ]);
         }
         builder.push_record(vec![
-            "Wordlist Filters",
-            &wordlist_filters_builder
+            "Wordlist Transforms",
+            &wordlist_transforms_builder
                 .build()
                 .with(Style::modern_rounded())
                 .to_string(),
