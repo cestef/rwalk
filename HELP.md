@@ -74,6 +74,7 @@ A blazingly fast web directory scanner
 * `--open-config` — Open the config in the default editor (EDITOR)
 * `--default-config` — Print the default config in TOML format. Useful for debugging and creating your own config
 * `--capture` — Capture the responses to be analyzed later in the interactive mode
+* `-y`, `--yes` — Skip all confirmation prompts
 
 
 
