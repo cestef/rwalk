@@ -95,13 +95,6 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
     // Parse wordlists into a HashMap associating each wordlist key to its contents
     let mut words = runner::wordlists::parse(&opts.wordlists).await?;
 
-    // Get the number of threads to use, default to 10 times the number of cores
-    let threads = opts
-        .threads
-        .unwrap_or(num_cpus::get() * 10)
-        .max(1)
-        .min(words.iter().fold(0, |acc, (_, v)| acc + v.words.len()));
-
     let mut url = opts.url.clone().unwrap();
 
     // Check if the URL contains any of the replace keywords
@@ -192,6 +185,13 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
 
     runner::wordlists::deduplicate(&mut words);
 
+    // Get the number of threads to use, default to 10 times the number of cores
+    let threads = opts
+        .threads
+        .unwrap_or(num_cpus::get() * 10)
+        .max(1)
+        .min(words.iter().fold(0, |acc, (_, v)| acc + v.words.len()));
+
     if !opts.quiet {
         println!(
             "{}",
@@ -206,7 +206,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
             before.to_string().bold().blue(),
             after.to_string().bold().blue(),
             ((before - after) as f64 / before as f64 * 100.0)
-                .round()
+                .trunc()
                 .to_string()
                 .bold()
                 .green()
