@@ -159,6 +159,12 @@ pub struct Opts {
     #[serde(default)]
     pub insecure: bool,
 
+    /// Distribute the requests to multiple hosts
+    #[clap(long, env, hide_env = true, value_delimiter = ',')]
+    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[serde(default)]
+    pub distributed: Vec<String>,
+
     /// Show response additional body information
     #[clap(
         long,

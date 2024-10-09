@@ -78,10 +78,24 @@ impl Classic {
         opts: Opts,
         engine: Arc<rhai::Engine>,
     ) -> Result<()> {
-        for url in &chunk {
+        for (index, url) in chunk.iter().enumerate() {
+            let mut url = url.clone();
             let t1 = Instant::now();
+            if !opts.distributed.is_empty() {
+                let current = index % (opts.distributed.len() + 1);
+                if current != 0 {
+                    let host_for_this_request = &opts.distributed[current - 1];
 
-            let request = super::client::build_request(&opts, url, &client)?;
+                    let parsed_url = url::Url::parse(&url)?;
+                    url = format!(
+                        "{}://{}{}",
+                        parsed_url.scheme(),
+                        host_for_this_request,
+                        parsed_url.path()
+                    );
+                }
+            }
+            let request = super::client::build_request(&opts, &url, &client)?;
 
             let response = client.execute(request).await;
 
@@ -145,7 +159,7 @@ impl Classic {
                             })
                         ));
 
-                        let parsed = Url::parse(url)?;
+                        let parsed = Url::parse(&url)?;
                         let mut tree = tree.lock().clone();
                         let root_url = tree
                             .root
@@ -206,7 +220,7 @@ impl Classic {
                             url,
                             format!("{}ms", t1.elapsed().as_millis().to_string().bold()).dimmed()
                         ));
-                        let parsed = Url::parse(url)?;
+                        let parsed = Url::parse(&url)?;
                         let mut tree = tree.lock().clone();
                         let root_url = tree
                             .root
@@ -242,7 +256,7 @@ impl Classic {
                                 progress.println(msg);
                                 Ok(())
                             },
-                            url,
+                            &url,
                             err,
                         )?;
                     }

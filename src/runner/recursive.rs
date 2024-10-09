@@ -181,6 +181,20 @@ impl Recursive {
             let data = previous_node.lock().data.clone();
 
             let mut url = data.url.clone();
+            if !opts.distributed.is_empty() {
+                let current = index % (opts.distributed.len() + 1);
+                if current != 0 {
+                    let host_for_this_request = &opts.distributed[current - 1];
+
+                    let parsed_url = url::Url::parse(&url)?;
+                    url = format!(
+                        "{}://{}{}",
+                        parsed_url.scheme(),
+                        host_for_this_request,
+                        parsed_url.path()
+                    );
+                }
+            }
             match url.ends_with('/') {
                 true => url.push_str(&word),
                 false => url.push_str(&format!("/{}", word)),
