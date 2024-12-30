@@ -1,3 +1,10 @@
+## v0.8.8 (2024-12-31)
+
+### Feat
+
+- add host validation in `--distributed`
+- add `--distributed` to allow scanning multiple similar hosts at the same time
+
 ## v0.8.7 (2024-10-09)
 
 ### Feat
