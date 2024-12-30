@@ -2,7 +2,6 @@
 .DS_Store
 .rwalk.json
 config.toml
-Cargo.lock
 /assets/raw*.gif
 /docs-legacy
 README-legacy.md
