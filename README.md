@@ -18,6 +18,14 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 
 ## Quick Installation
 
+### On [Nix](https://nixos.org)
+```bash
+# without flakes:
+nix-env -iA nixpkgs.rwalk
+# with flakes:
+nix profile install nixpkgs#rwalk
+```
+
 ### From [homebrew](https://brew.sh) <!-- omit in toc -->
 
 ```bash
