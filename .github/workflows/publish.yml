@@ -31,7 +31,7 @@ jobs:
                   override: true
             - run: |
                   cargo run -- --generate-markdown > HELP.md
-                  cp HELP.md docs/pages/options.md
+                  cp HELP.md docs/pages/docs/options.md
                   git add HELP.md docs/pages/options.md
                   git config --global user.email "action@github.run"
                   git config --global user.name "GitHub Action"
