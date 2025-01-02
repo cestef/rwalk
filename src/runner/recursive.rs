@@ -205,7 +205,23 @@ impl Recursive {
             let t1 = Instant::now();
 
             let response = client.execute(request).await;
-
+            if let Some(ref wait) = opts.wait {
+                let (min, max) = wait.split_once('-').unwrap_or_default();
+                let min = min.parse::<f32>().unwrap_or(0.0);
+                let max = max.parse::<f32>().unwrap_or(0.0);
+                if max > 0.0 {
+                    let sleep_duration =
+                        Duration::from_secs_f32(rand::random::<f32>() * (max - min) + min);
+                    tokio::time::sleep(sleep_duration).await;
+                } else {
+                    progress.println(format!(
+                        "{} {} {}",
+                        WARNING.to_string().yellow(),
+                        "Invalid wait option".bold(),
+                        "Ignoring wait option".dimmed()
+                    ));
+                }
+            }
             if let Some(throttle) = opts.throttle {
                 if throttle > 0 {
                     let elapsed = t1.elapsed();

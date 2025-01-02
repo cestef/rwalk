@@ -82,6 +82,7 @@ color-eyre = "0.6.3"
 strip-ansi-escapes = "0.2.0"
 human-panic = "2.0.0"
 async-trait = "0.1.80"
+rand = "0.8.5"
 
 # Strip the debug symbols from the binary
 [profile.release]

@@ -98,7 +98,23 @@ impl Classic {
             let request = super::client::build_request(&opts, &url, &client)?;
 
             let response = client.execute(request).await;
-
+            if let Some(ref wait) = opts.wait {
+                let (min, max) = wait.split_once('-').unwrap_or_default();
+                let min = min.parse::<u64>().unwrap_or(0);
+                let max = max.parse::<u64>().unwrap_or(0);
+                if max > 0 {
+                    let sleep_duration =
+                        Duration::from_secs(min + rand::random::<u64>() % (max - min));
+                    tokio::time::sleep(sleep_duration).await;
+                } else {
+                    progress.println(format!(
+                        "{} {} {}",
+                        WARNING.to_string().yellow(),
+                        "Invalid wait option".bold(),
+                        "Ignoring wait option".dimmed()
+                    ));
+                }
+            }
             if let Some(throttle) = opts.throttle {
                 if throttle > 0 {
                     let elapsed = t1.elapsed();
@@ -108,6 +124,7 @@ impl Classic {
                     }
                 }
             }
+
             match response {
                 Ok(mut response) => {
                     let status_code = response.status().as_u16();

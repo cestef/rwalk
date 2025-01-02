@@ -2208,6 +2208,7 @@ dependencies = [
  "num_cpus",
  "parking_lot",
  "ptree",
+ "rand",
  "regex",
  "reqwest",
  "rhai",

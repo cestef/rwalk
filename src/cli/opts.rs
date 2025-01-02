@@ -325,6 +325,10 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     #[serde(default)]
     pub yes: bool,
+
+    /// Random wait time range in seconds between requests, e.g. 0.5-1.5
+    #[clap(long, help_heading = Some("Requests"), env, hide_env=true)]
+    pub wait: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
