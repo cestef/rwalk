@@ -412,6 +412,25 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, ParsedWordli
                     }
                 }
             }
+            "encode" => {
+                for ParsedWordlist { words, .. } in
+                    wordlists.iter_mut().filter_map(|(key, value)| {
+                        if let Some(ref specifier) = wordlist_specifier {
+                            if specifier == key {
+                                Some(value)
+                            } else {
+                                None
+                            }
+                        } else {
+                            Some(value)
+                        }
+                    })
+                {
+                    words.iter_mut().for_each(|word| {
+                        *word = urlencoding::encode(word).to_string();
+                    });
+                }
+            }
             _ => {}
         }
     }

@@ -206,7 +206,7 @@ pub struct Opts {
     #[serde(default)]
     pub keep_save: bool,
 
-    /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace"
+    /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace", "encode"
     #[clap(short='T', long, help_heading = Some("Wordlists"), env, hide_env=true, value_parser(KeyOrKeyValParser), value_delimiter = ',')]
     #[merge(strategy = merge::vec::overwrite_empty)]
     #[serde(default)]
