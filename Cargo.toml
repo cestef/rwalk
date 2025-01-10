@@ -1,0 +1,16 @@
+[package]
+name = "rwalk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.23", features = ["derive"] }
+
+crossbeam = { version = "0.8.4", features = ["crossbeam-queue"] }
+eyre = "0.6.12"
+num-traits = "0.2.19"
+num_cpus = "1.16.0"
+papaya = "0.1.7"
+reqwest = { version = "0.12.12", features = ["json"] }
+serde = { version = "1.0.217", features = ["derive"] }
+tokio = { version = "1.42.0", features = ["full"] }
