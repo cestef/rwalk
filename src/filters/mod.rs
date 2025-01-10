@@ -58,7 +58,7 @@ macro_rules! create_filter_registry {
 
         type FilterConstructor = fn(&str) -> Result<Box<dyn Filter<$item_type>>>;
 
-        static $static_name: Lazy<HashMap<&'static str, FilterConstructor>> = Lazy::new(|| {
+        static REGISTRY: Lazy<HashMap<&'static str, FilterConstructor>> = Lazy::new(|| {
             let mut registry = HashMap::new();
 
             $(
@@ -72,6 +72,23 @@ macro_rules! create_filter_registry {
 
             registry
         });
+
+
+        pub struct $static_name;
+
+        impl $static_name {
+            pub fn construct(name: &str, arg: &str) -> Result<Box<dyn Filter<$item_type>>> {
+                match REGISTRY.get(name) {
+                    Some(constructor) => constructor(arg),
+                    None => Err(crate::error!("Unknown filter: {}", name)),
+                }
+            }
+
+            pub fn list() -> HashSet<&'static str> {
+                REGISTRY.keys().copied().collect()
+            }
+        }
+
     };
 }
 

@@ -1,7 +1,7 @@
 use super::Filter;
 use crate::filters::expression::{Evaluator, FilterExpr, Parser};
 use crate::types::IntRange;
-use crate::worker::utils::SendableResponse;
+use crate::worker::utils::RwalkResponse;
 use crate::Result;
 
 type Range = IntRange<usize>;
@@ -14,8 +14,8 @@ pub struct LengthFilter {
 #[derive(Debug)]
 struct LengthValueParser;
 
-impl Filter<SendableResponse> for LengthFilter {
-    fn filter(&self, item: &SendableResponse) -> bool {
+impl Filter<RwalkResponse> for LengthFilter {
+    fn filter(&self, item: &RwalkResponse) -> bool {
         LengthEvaluator.evaluate(&self.expr, item)
     }
 
@@ -27,7 +27,7 @@ impl Filter<SendableResponse> for LengthFilter {
         &["l"]
     }
 
-    fn construct(arg: &str) -> Result<Box<dyn Filter<SendableResponse>>>
+    fn construct(arg: &str) -> Result<Box<dyn Filter<RwalkResponse>>>
     where
         Self: Sized,
     {
@@ -44,8 +44,8 @@ impl Filter<SendableResponse> for LengthFilter {
 #[derive(Debug)]
 struct LengthEvaluator;
 
-impl Evaluator<SendableResponse, Range> for LengthEvaluator {
-    fn evaluate(&self, expr: &FilterExpr<Range>, item: &SendableResponse) -> bool {
+impl Evaluator<RwalkResponse, Range> for LengthEvaluator {
+    fn evaluate(&self, expr: &FilterExpr<Range>, item: &RwalkResponse) -> bool {
         match expr {
             FilterExpr::And(left, right) => self.evaluate(left, item) && self.evaluate(right, item),
             FilterExpr::Or(left, right) => self.evaluate(left, item) || self.evaluate(right, item),

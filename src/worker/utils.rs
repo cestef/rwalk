@@ -21,13 +21,13 @@ pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer
 }
 
 #[derive(Debug, Clone)]
-pub struct SendableResponse {
+pub struct RwalkResponse {
     pub status: u16,
     pub headers: papaya::HashMap<String, String>,
     pub body: Option<String>,
 }
 
-impl SendableResponse {
+impl RwalkResponse {
     pub async fn from_response(response: reqwest::Response, parse_body: bool) -> Result<Self> {
         let status = response.status().as_u16();
         let headers = response

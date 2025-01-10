@@ -4,7 +4,7 @@ use crate::{
         Filter,
     },
     types::IntRange,
-    worker::utils::SendableResponse,
+    worker::utils::RwalkResponse,
     Result,
 };
 
@@ -13,8 +13,8 @@ pub struct StatusFilter {
     expr: FilterExpr<IntRange<u16>>,
 }
 
-impl Filter<SendableResponse> for StatusFilter {
-    fn filter(&self, item: &SendableResponse) -> bool {
+impl Filter<RwalkResponse> for StatusFilter {
+    fn filter(&self, item: &RwalkResponse) -> bool {
         StatusEvaluator.evaluate(&self.expr, item)
     }
 
@@ -26,7 +26,7 @@ impl Filter<SendableResponse> for StatusFilter {
         &["s", "code"]
     }
 
-    fn construct(arg: &str) -> Result<Box<dyn Filter<SendableResponse>>>
+    fn construct(arg: &str) -> Result<Box<dyn Filter<RwalkResponse>>>
     where
         Self: Sized,
     {
@@ -43,8 +43,8 @@ impl Filter<SendableResponse> for StatusFilter {
 #[derive(Debug)]
 struct StatusEvaluator;
 
-impl Evaluator<SendableResponse, IntRange<u16>> for StatusEvaluator {
-    fn evaluate(&self, expr: &FilterExpr<IntRange<u16>>, item: &SendableResponse) -> bool {
+impl Evaluator<RwalkResponse, IntRange<u16>> for StatusEvaluator {
+    fn evaluate(&self, expr: &FilterExpr<IntRange<u16>>, item: &RwalkResponse) -> bool {
         match expr {
             FilterExpr::And(left, right) => self.evaluate(left, item) && self.evaluate(right, item),
             FilterExpr::Or(left, right) => self.evaluate(left, item) || self.evaluate(right, item),

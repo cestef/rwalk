@@ -82,8 +82,7 @@ pub async fn run(opts: Opts) -> Result<()> {
                 let start = time::Instant::now();
                 let res = client.get(opts.url.join(&task)?).send().await?;
 
-                let response =
-                    worker::utils::SendableResponse::from_response(res, needs_body).await?;
+                let response = worker::utils::RwalkResponse::from_response(res, needs_body).await?;
 
                 if filterer.all(&response) {
                     println!("{} ({:?})", task, start.elapsed());
