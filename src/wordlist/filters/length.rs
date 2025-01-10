@@ -1,7 +1,6 @@
 use super::Filter;
 use crate::filters::expression::{Evaluator, FilterExpr, Parser};
 use crate::types::IntRange;
-use crate::worker::utils::SendableResponse;
 use crate::Result;
 
 type Range = IntRange<usize>;
@@ -14,8 +13,8 @@ pub struct LengthFilter {
 #[derive(Debug)]
 struct LengthValueParser;
 
-impl Filter<SendableResponse> for LengthFilter {
-    fn filter(&self, item: &SendableResponse) -> bool {
+impl Filter<String> for LengthFilter {
+    fn filter(&self, item: &String) -> bool {
         LengthEvaluator.evaluate(&self.expr, item)
     }
 
@@ -27,7 +26,7 @@ impl Filter<SendableResponse> for LengthFilter {
         &["l"]
     }
 
-    fn construct(arg: &str) -> Result<Box<dyn Filter<SendableResponse>>>
+    fn construct(arg: &str) -> Result<Box<dyn Filter<String>>>
     where
         Self: Sized,
     {
@@ -44,19 +43,13 @@ impl Filter<SendableResponse> for LengthFilter {
 #[derive(Debug)]
 struct LengthEvaluator;
 
-impl Evaluator<SendableResponse, Range> for LengthEvaluator {
-    fn evaluate(&self, expr: &FilterExpr<Range>, item: &SendableResponse) -> bool {
+impl Evaluator<String, Range> for LengthEvaluator {
+    fn evaluate(&self, expr: &FilterExpr<Range>, item: &String) -> bool {
         match expr {
             FilterExpr::And(left, right) => self.evaluate(left, item) && self.evaluate(right, item),
             FilterExpr::Or(left, right) => self.evaluate(left, item) || self.evaluate(right, item),
             FilterExpr::Not(expr) => !self.evaluate(expr, item),
-            FilterExpr::Value(range) => {
-                if let Some(body) = &item.body {
-                    range.contains(body.len() as usize)
-                } else {
-                    false
-                }
-            }
+            FilterExpr::Value(range) => range.contains(item.len()),
             FilterExpr::Raw(_) => unreachable!(), // Should not happen after parsing
         }
     }

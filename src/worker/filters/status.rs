@@ -1,8 +1,12 @@
-use super::expression::{Evaluator, FilterExpr, Parser};
-use super::Filter;
-use crate::types::IntRange;
-use crate::worker::utils::SendableResponse;
-use crate::Result;
+use crate::{
+    filters::{
+        expression::{Evaluator, FilterExpr, Parser},
+        Filter,
+    },
+    types::IntRange,
+    worker::utils::SendableResponse,
+    Result,
+};
 
 #[derive(Debug, Clone)]
 pub struct StatusFilter {

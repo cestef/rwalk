@@ -1,21 +1,20 @@
 #![allow(dead_code)]
 
-use cli::Opts;
-use constants::DEFAULT_FILTERS;
+use std::{collections::HashMap, sync::Arc, time};
+
 use crossbeam::deque::{Injector, Worker};
 use tokio::task::JoinHandle;
 
-use std::{collections::HashMap, sync::Arc, time};
-
+use cli::Opts;
+use constants::DEFAULT_RESPONSE_FILTERS;
+use filters::Filtrerer;
 use wordlist::Wordlist;
-use worker::{
-    filters::{registry::DefaultFilterRegistry, Filtrerer},
-    utils::find_task,
-};
+use worker::{filters::ResponseFilterRegistry, utils::find_task};
 
 pub mod cli;
 pub mod constants;
 pub mod error;
+pub mod filters;
 pub mod types;
 pub mod wordlist;
 pub mod worker;
@@ -29,7 +28,7 @@ pub async fn run(opts: Opts) -> Result<()> {
     let mut wordlists = vec![];
 
     for path in &opts.wordlists {
-        let mut wordlist = Wordlist::from_path(&path).await?;
+        let mut wordlist = Wordlist::from_path(path).await?;
         wordlist.dedup();
         wordlists.push(wordlist);
     }
@@ -50,7 +49,7 @@ pub async fn run(opts: Opts) -> Result<()> {
 
     let mut handles: Vec<JoinHandle<Result<()>>> = vec![];
 
-    let filters = DEFAULT_FILTERS
+    let response_filters = DEFAULT_RESPONSE_FILTERS
         .iter()
         .map(|(k, v)| (k.to_string(), v.to_string()))
         .chain(
@@ -60,12 +59,12 @@ pub async fn run(opts: Opts) -> Result<()> {
         )
         .collect::<HashMap<_, _>>()
         .into_iter()
-        .map(|(k, v)| DefaultFilterRegistry::construct(&k, &v))
+        .map(|(k, v)| ResponseFilterRegistry::construct(&k, &v))
         .collect::<Result<Vec<_>>>()?;
 
-    println!("Using filters: {:?}", filters);
+    println!("Using response filters: {:?}", response_filters);
 
-    let filterer = Filtrerer::new(filters);
+    let filterer = Filtrerer::new(response_filters);
 
     let client = reqwest::Client::new();
 

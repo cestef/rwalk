@@ -1,57 +1,32 @@
-use crate::Result;
-use std::{fmt::Debug, sync::Arc};
-
-pub mod expression;
 pub mod length;
-pub mod registry;
 pub mod status;
 
-#[derive(Debug, Clone)]
-pub struct Filtrerer<T> {
-    filters: Arc<Vec<Box<dyn Filter<T>>>>,
-}
+use crate::{
+    error::RwalkError,
+    filters::{create_filter_registry, Filter},
+    worker::utils::SendableResponse,
+    Result,
+};
+use once_cell::sync::Lazy;
+use std::collections::{HashMap, HashSet};
 
-unsafe impl<T> Send for Filtrerer<T> where Box<dyn Filter<T>>: Send {}
-unsafe impl<T> Sync for Filtrerer<T> where Box<dyn Filter<T>>: Sync {}
+create_filter_registry!(
+    RESPONSE_FILTER_REGISTRY,
+    SendableResponse,
+    [status::StatusFilter, length::LengthFilter]
+);
 
-pub trait Filter<T>: Debug + Send + Sync {
-    fn filter(&self, item: &T) -> bool;
-    fn name() -> &'static str
-    where
-        Self: Sized;
-    fn aliases() -> &'static [&'static str]
-    where
-        Self: Sized,
-    {
-        &[]
-    }
-    fn needs_body(&self) -> bool {
-        false
-    }
-    fn construct(arg: &str) -> Result<Box<dyn Filter<T>>>
-    where
-        Self: Sized;
-}
+pub struct ResponseFilterRegistry;
 
-impl<T> Filtrerer<T> {
-    pub fn new<I>(filters: I) -> Self
-    where
-        I: IntoIterator<Item = Box<dyn Filter<T>>>,
-    {
-        Self {
-            filters: Arc::new(filters.into_iter().collect()),
+impl ResponseFilterRegistry {
+    pub fn construct(name: &str, arg: &str) -> Result<Box<dyn Filter<SendableResponse>>> {
+        match RESPONSE_FILTER_REGISTRY.get(name) {
+            Some(constructor) => constructor(arg),
+            None => Err(crate::error!("Unknown filter: {}", name)),
         }
     }
 
-    pub fn all(&self, item: &T) -> bool {
-        self.filters.iter().all(|f| f.filter(item))
-    }
-
-    pub fn any(&self, item: &T) -> bool {
-        self.filters.iter().any(|f| f.filter(item))
-    }
-
-    pub fn needs_body(&self) -> bool {
-        self.filters.iter().any(|f| f.needs_body())
+    pub fn list() -> HashSet<&'static str> {
+        RESPONSE_FILTER_REGISTRY.keys().copied().collect()
     }
 }
