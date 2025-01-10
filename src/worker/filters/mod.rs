@@ -16,5 +16,11 @@ use std::collections::{HashMap, HashSet};
 create_filter_registry!(
     ResponseFilterRegistry,
     RwalkResponse,
-    [status::StatusFilter, length::LengthFilter]
+    [
+        status::StatusFilter,
+        length::LengthFilter,
+        starts::StartsFilter,
+        ends::EndsFilter,
+        contains::ContainsFilter
+    ]
 );

@@ -2,8 +2,10 @@ use crate::Result;
 use crossbeam::deque::Injector;
 
 use papaya::HashSet;
+use transformation::Transformer;
 
 pub mod filters;
+pub mod processor;
 pub mod transformation;
 
 pub struct Wordlist(Vec<String>);
@@ -13,6 +15,12 @@ impl Wordlist {
         let content = tokio::fs::read_to_string(path).await?;
         let words = content.lines().map(|s| s.to_string()).collect::<Vec<_>>();
         Ok(Self(words))
+    }
+
+    pub fn transform(&mut self, transformer: &Transformer<String>) {
+        for word in &mut self.0 {
+            transformer.apply(word);
+        }
     }
 
     pub fn dedup(&mut self) {
