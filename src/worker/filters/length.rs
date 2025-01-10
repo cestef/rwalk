@@ -5,17 +5,20 @@ use crate::worker::utils::SendableResponse;
 use crate::Result;
 
 #[derive(Debug, Clone)]
-pub struct StatusFilter {
+pub struct LengthFilter {
     expr: FilterExpr<IntRange<u16>>,
 }
 
-impl Filter<SendableResponse> for StatusFilter {
+#[derive(Debug)]
+struct LengthValueParser;
+
+impl Filter<SendableResponse> for LengthFilter {
     fn filter(&self, item: &SendableResponse) -> bool {
-        StatusEvaluator.evaluate(&self.expr, item)
+        LengthEvaluator.evaluate(&self.expr, item)
     }
 
     fn name() -> &'static str {
-        "status"
+        "length"
     }
 
     fn aliases() -> &'static [&'static str] {
@@ -32,20 +35,26 @@ impl Filter<SendableResponse> for StatusFilter {
         // Transform raw expressions into IntRange expressions
         let expr = raw_expr.try_map(|raw: String| raw.parse())?;
 
-        Ok(Box::new(StatusFilter { expr }))
+        Ok(Box::new(LengthFilter { expr }))
     }
 }
 
 #[derive(Debug)]
-struct StatusEvaluator;
+struct LengthEvaluator;
 
-impl Evaluator<SendableResponse, IntRange<u16>> for StatusEvaluator {
+impl Evaluator<SendableResponse, IntRange<u16>> for LengthEvaluator {
     fn evaluate(&self, expr: &FilterExpr<IntRange<u16>>, item: &SendableResponse) -> bool {
         match expr {
             FilterExpr::And(left, right) => self.evaluate(left, item) && self.evaluate(right, item),
             FilterExpr::Or(left, right) => self.evaluate(left, item) || self.evaluate(right, item),
             FilterExpr::Not(expr) => !self.evaluate(expr, item),
-            FilterExpr::Value(range) => range.contains(item.status),
+            FilterExpr::Value(range) => {
+                if let Some(body) = &item.body {
+                    range.contains(body.len() as u16)
+                } else {
+                    false
+                }
+            }
             FilterExpr::Raw(_) => unreachable!(), // Should not happen after parsing
         }
     }

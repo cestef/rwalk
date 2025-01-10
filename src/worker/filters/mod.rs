@@ -1,8 +1,10 @@
-pub mod status;
-
+use crate::Result;
 use std::{fmt::Debug, sync::Arc};
 
-use eyre::Result;
+pub mod expression;
+pub mod length;
+pub mod registry;
+pub mod status;
 
 #[derive(Debug, Clone)]
 pub struct Filtrerer<T> {
@@ -14,9 +16,17 @@ unsafe impl<T> Sync for Filtrerer<T> where Box<dyn Filter<T>>: Sync {}
 
 pub trait Filter<T>: Debug + Send + Sync {
     fn filter(&self, item: &T) -> bool;
-    fn name(&self) -> &'static str;
-    fn aliases(&self) -> &[&'static str] {
+    fn name() -> &'static str
+    where
+        Self: Sized;
+    fn aliases() -> &'static [&'static str]
+    where
+        Self: Sized,
+    {
         &[]
+    }
+    fn needs_body(&self) -> bool {
+        false
     }
     fn construct(arg: &str) -> Result<Box<dyn Filter<T>>>
     where
@@ -39,5 +49,9 @@ impl<T> Filtrerer<T> {
 
     pub fn any(&self, item: &T) -> bool {
         self.filters.iter().any(|f| f.filter(item))
+    }
+
+    pub fn needs_body(&self) -> bool {
+        self.filters.iter().any(|f| f.needs_body())
     }
 }

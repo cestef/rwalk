@@ -1,7 +1,6 @@
-use std::iter;
-
+use crate::Result;
 use crossbeam::deque::{Injector, Stealer, Worker};
-use eyre::Result;
+use std::iter;
 
 pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer<T>]) -> Option<T> {
     // Pop a task from the local queue, if not empty.
@@ -25,18 +24,23 @@ pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer
 pub struct SendableResponse {
     pub status: u16,
     pub headers: papaya::HashMap<String, String>,
-    pub body: String,
+    pub body: Option<String>,
 }
 
 impl SendableResponse {
-    pub async fn from_response(response: reqwest::Response) -> Result<Self> {
+    pub async fn from_response(response: reqwest::Response, parse_body: bool) -> Result<Self> {
         let status = response.status().as_u16();
         let headers = response
             .headers()
             .iter()
             .filter_map(|(k, v)| Some((k.as_str().to_string(), v.to_str().ok()?.to_string())))
             .collect();
-        let body = response.text().await.unwrap_or_default();
+
+        let body = if parse_body {
+            Some(response.text().await?)
+        } else {
+            None
+        };
 
         Ok(Self {
             status,

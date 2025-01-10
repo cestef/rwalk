@@ -1,6 +1,7 @@
+use crate::Result;
 use crossbeam::deque::Injector;
-use eyre::Result;
-use std::collections::HashSet;
+
+use papaya::HashSet;
 
 pub mod transformation;
 
@@ -14,8 +15,8 @@ impl Wordlist {
     }
 
     pub fn dedup(&mut self) {
-        let mut seen = HashSet::new();
-        self.0.retain(|word| seen.insert(word.clone()));
+        let seen = HashSet::new();
+        self.0.retain(|word| seen.pin().insert(word.clone()));
     }
 
     pub fn inject(&self, injector: &Injector<String>) {
