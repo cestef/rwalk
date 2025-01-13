@@ -8,8 +8,6 @@ use tokio::{
     time::{sleep, Instant as TokioInstant},
 };
 
-use super::constants::{THROTTLE_ERROR_THRESHOLD, THROTTLE_WINDOW_SIZE_SEC};
-
 pub struct DynamicThrottler {
     // Current requests per second limit
     current_rps: AtomicU64,
@@ -34,7 +32,13 @@ pub struct DynamicThrottler {
 }
 
 impl DynamicThrottler {
-    pub fn new(min_rps: u64, max_rps: u64, worker_count: usize) -> Self {
+    pub fn new(
+        min_rps: u64,
+        max_rps: u64,
+        worker_count: usize,
+        window_size_millis: u64,
+        error_treshold: f64,
+    ) -> Self {
         Self {
             current_rps: AtomicU64::new(max_rps),
             min_rps,
@@ -42,8 +46,8 @@ impl DynamicThrottler {
             error_count: AtomicUsize::new(0),
             success_count: AtomicUsize::new(0),
             last_adjustment: Arc::new(Mutex::new(Instant::now())),
-            window_size: Duration::from_secs(THROTTLE_WINDOW_SIZE_SEC),
-            error_threshold: THROTTLE_ERROR_THRESHOLD,
+            window_size: Duration::from_millis(window_size_millis),
+            error_threshold: error_treshold,
             last_request: Arc::new(Mutex::new(TokioInstant::now())),
             worker_count,
         }

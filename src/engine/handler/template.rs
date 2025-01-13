@@ -29,7 +29,7 @@ impl ResponseHandler for TemplateHandler {
     }
 
     fn init(&self, pool: &WorkerPool) -> Result<()> {
-        let urls = self.generate_urls(&pool.wordlists, &pool.base_url.to_string())?;
+        let urls = self.generate_urls(&pool.wordlists, &pool.config.base_url.to_string())?;
 
         // Push URLs to queue in parallel chunks
         urls.par_chunks(1000).for_each(|chunk| {

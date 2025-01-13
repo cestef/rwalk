@@ -45,7 +45,7 @@ impl ResponseHandler for RecursiveHandler {
         // Process initial wordlists in parallel
         pool.wordlists.par_iter().try_for_each(|wordlist| {
             let pool = Arc::clone(&pool);
-            wordlist.inject_into(&pool.global_queue, &pool.base_url)
+            wordlist.inject_into(&pool.global_queue, &pool.config.base_url)
         })?;
 
         Ok(())

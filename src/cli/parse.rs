@@ -1,5 +1,5 @@
 use crate::{
-    error::{error, syntax_error, RwalkError, SyntaxError},
+    error::{syntax_error, SyntaxError},
     utils::constants::DEFAULT_WORDLIST_KEY,
     Result,
 };

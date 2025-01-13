@@ -14,12 +14,12 @@ impl FromStr for EngineMode {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "recursive" => Ok(EngineMode::Recursive),
-            "template" => Ok(EngineMode::Template),
+            "recursive" | "r" => Ok(EngineMode::Recursive),
+            "template" | "t" => Ok(EngineMode::Template),
             _ => Err(syntax_error!(
                 (0, s.len()),
                 s,
-                "Invalid engine mode: '{}'",
+                "Invalid engine mode: '{}', available: 'recursive', 'template'",
                 s
             )),
         }
