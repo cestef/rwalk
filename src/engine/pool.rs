@@ -3,9 +3,7 @@ use crate::{
     error::Result,
     filters::Filterer,
     types::EngineMode,
-    utils::{
-        constants::DEFAULT_RESPONSE_FILTERS, throttle::DynamicThrottler, ticker::RequestTicker,
-    },
+    utils::{constants::DEFAULT_RESPONSE_FILTERS, throttle::DynamicThrottler},
     wordlist::Wordlist,
     worker::{
         filters::ResponseFilterRegistry,
@@ -98,15 +96,9 @@ impl WorkerPool {
 
         let workers = self.create_workers();
         let stealers = workers.iter().map(|w| w.stealer()).collect::<Vec<_>>();
-        let ticker = RequestTicker::new(5);
-        let handles = self.spawn_workers(workers, stealers, results.clone(), ticker.clone())?;
 
-        tokio::spawn(async move {
-            loop {
-                println!("{:.2} reqs/s", ticker.get_rate());
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-            }
-        });
+        let handles = self.spawn_workers(workers, stealers, results.clone())?;
+
         for handle in handles {
             handle.await??;
         }
@@ -123,7 +115,6 @@ impl WorkerPool {
         workers: Vec<Worker<String>>,
         stealers: Vec<Stealer<String>>,
         results: Arc<HashMap<String, RwalkResponse>>,
-        ticker: Arc<RequestTicker>,
     ) -> Result<Vec<JoinHandle<Result<()>>>> {
         let handler: Box<dyn ResponseHandler> = match self.mode {
             EngineMode::Recursive => Box::new(RecursiveHandler::construct(self.filterer.clone())),
@@ -143,9 +134,9 @@ impl WorkerPool {
                 let handler = handler.clone();
                 let filterer = self.filterer.clone();
                 let results = results.clone();
-                let ticker = ticker.clone();
                 let self_ = self.clone();
                 let throttler = self.throttler.clone();
+
                 tokio::spawn(async move {
                     while let Some(task) = utils::find_task(&worker, &global, &stealers) {
                         if let Some(throttler) = throttler.as_ref() {
@@ -170,7 +161,6 @@ impl WorkerPool {
                             handler.handle(rwalk_response.clone(), &self_)?;
                             results.insert(rwalk_response.url.to_string(), rwalk_response);
                         }
-                        ticker.tick();
                     }
                     Ok(())
                 })
