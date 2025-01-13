@@ -25,7 +25,7 @@ pub trait Transform<T>: Debug {
     {
         &[]
     }
-    fn construct(arg: Option<&str>) -> crate::Result<Box<dyn Transform<T>>>
+    fn construct(arg: Option<&str>) -> Result<Box<dyn Transform<T>>>
     where
         Self: Sized;
 }

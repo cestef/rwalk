@@ -1,21 +1,17 @@
 #![allow(dead_code)]
 
-use std::collections::HashMap;
-
-use engine::Engine;
+use engine::WorkerPool as Engine;
 
 use cli::Opts;
-use constants::DEFAULT_RESPONSE_FILTERS;
-use filters::Filtrerer;
 
-use worker::filters::ResponseFilterRegistry;
+use utils::{constants, error, tree, types};
+
+use wordlist::processor::WordlistProcessor;
 
 pub mod cli;
-pub mod constants;
 pub mod engine;
-pub mod error;
 pub mod filters;
-pub mod types;
+pub mod utils;
 pub mod wordlist;
 pub mod worker;
 
@@ -23,22 +19,21 @@ pub(crate) use error::error;
 pub use error::Result;
 
 pub async fn run(opts: Opts) -> Result<()> {
-    let response_filters = DEFAULT_RESPONSE_FILTERS
-        .iter()
-        .map(|(k, v)| (k.to_string(), v.to_string()))
-        .chain(
-            opts.filters
-                .iter()
-                .map(|(k, v)| (k.to_string(), v.to_string())),
-        )
-        .collect::<HashMap<_, _>>()
-        .into_iter()
-        .map(|(k, v)| ResponseFilterRegistry::construct(&k, &v))
-        .collect::<Result<Vec<_>>>()?;
+    // Process wordlists
+    let processor = WordlistProcessor::new(&opts);
+    let wordlists = processor.process_wordlists().await?;
 
-    println!("Using response filters: {:?}", response_filters);
+    println!(
+        "Using wordlists: {:?}",
+        wordlists
+            .iter()
+            .map(|w| (w.key.clone(), w.len()))
+            .collect::<Vec<_>>()
+    );
 
-    let filterer = Filtrerer::new(response_filters);
-    let engine = Engine::new(opts, filterer);
-    engine.run().await
+    let engine = Engine::from_opts(opts, wordlists)?;
+    let results = engine.run().await?;
+
+    tree::display_url_tree(&results);
+    Ok(())
 }

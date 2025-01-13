@@ -1,12 +1,18 @@
-use tokio::task::JoinSet;
-
 use crate::{
     cli::Opts,
-    error::Result,
+    error::{Result, RwalkError},
     wordlist::{
         transformation::{Transformer, WordlistTransformerRegistry},
         Wordlist,
     },
+};
+use dashmap::{DashMap, DashSet};
+
+use std::sync::Arc;
+use tokio::{
+    fs::File,
+    io::{AsyncBufReadExt, BufReader},
+    task::JoinSet,
 };
 
 pub struct WordlistProcessor<'a> {
@@ -19,47 +25,78 @@ impl<'a> WordlistProcessor<'a> {
     }
 
     pub async fn process_wordlists(&self) -> Result<Vec<Wordlist>> {
-        let transformer = self.create_transformer()?;
         let mut set = JoinSet::new();
+        let mut merged = Vec::with_capacity(self.opts.wordlists.len());
+        let shared_words = Arc::new(DashMap::new());
 
-        self.spawn_wordlist_tasks(&mut set, &transformer);
-        self.collect_results(set).await
+        // Process wordlists concurrently
+        for (path, key) in &self.opts.wordlists {
+            let path = path.clone();
+            let key = key.clone();
+            let transformer = Arc::new(self.create_transformer(&key)?);
+            let shared_words = Arc::clone(&shared_words);
+
+            set.spawn(async move {
+                let wordlist =
+                    Self::process_single_wordlist(path, key, &transformer, &shared_words).await?;
+                Ok::<Wordlist, RwalkError>(wordlist)
+            });
+        }
+
+        // Collect results
+        while let Some(result) = set.join_next().await {
+            let wordlist = result??;
+            if !wordlist.is_empty() {
+                merged.push(wordlist);
+            }
+        }
+
+        Ok(merged)
     }
 
-    fn create_transformer(&self) -> Result<Transformer<String>> {
+    async fn process_single_wordlist(
+        path: String,
+        key: String,
+        transformer: &Transformer<String>,
+        shared_words: &DashMap<String, DashSet<String>>,
+    ) -> Result<Wordlist> {
+        let file = File::open(&path).await?;
+        let reader = BufReader::new(file);
+        let mut lines = reader.lines();
+
+        let mut words = Vec::new();
+
+        while let Some(line) = lines.next_line().await? {
+            if !line.trim().is_empty() {
+                let mut word = line;
+                transformer.apply(&mut word);
+
+                // Only add if not seen before for this key
+                if shared_words
+                    .entry(key.clone())
+                    .or_insert_with(DashSet::new)
+                    .insert(word.clone())
+                {
+                    words.push(word);
+                }
+            }
+        }
+
+        Ok(Wordlist { words, key })
+    }
+
+    fn create_transformer(&self, wordlist_key: &str) -> Result<Transformer<String>> {
         let transformers = self
             .opts
             .transforms
             .iter()
-            .map(|(name, arg)| WordlistTransformerRegistry::construct(name, arg.as_deref()))
+            .filter(|(keys, _, _)| {
+                // Apply if no keys specified or if this wordlist's key is in the set
+                keys.is_empty() || keys.contains(wordlist_key)
+            })
+            .map(|(_, name, arg)| WordlistTransformerRegistry::construct(name, arg.as_deref()))
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Transformer::new(transformers))
-    }
-
-    fn spawn_wordlist_tasks(
-        &self,
-        set: &mut JoinSet<Result<Wordlist>>,
-        transformer: &Transformer<String>,
-    ) {
-        for path in &self.opts.wordlists {
-            let path = path.clone();
-            let transformer = transformer.clone();
-
-            set.spawn(async move {
-                let mut wordlist = Wordlist::from_path(&path).await?;
-                wordlist.dedup();
-                wordlist.transform(&transformer);
-                Ok(wordlist)
-            });
-        }
-    }
-
-    async fn collect_results(&self, mut set: JoinSet<Result<Wordlist>>) -> Result<Vec<Wordlist>> {
-        let mut wordlists = Vec::new();
-        while let Some(result) = set.join_next().await {
-            wordlists.push(result??);
-        }
-        Ok(wordlists)
     }
 }

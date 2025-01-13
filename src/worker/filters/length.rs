@@ -52,7 +52,7 @@ impl Evaluator<RwalkResponse, Range> for LengthEvaluator {
             FilterExpr::Not(expr) => !self.evaluate(expr, item),
             FilterExpr::Value(range) => {
                 if let Some(body) = &item.body {
-                    range.contains(body.len() as usize)
+                    range.contains(body.len())
                 } else {
                     false
                 }

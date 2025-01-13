@@ -1,5 +1,7 @@
 use crate::Result;
 use crossbeam::deque::{Injector, Stealer, Worker};
+use dashmap::DashMap as HashMap;
+use reqwest::StatusCode;
 use std::iter;
 
 pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer<T>]) -> Option<T> {
@@ -22,14 +24,21 @@ pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer
 
 #[derive(Debug, Clone)]
 pub struct RwalkResponse {
-    pub status: u16,
-    pub headers: papaya::HashMap<String, String>,
+    pub status: StatusCode,
+    pub headers: HashMap<String, String>,
     pub body: Option<String>,
+    pub url: reqwest::Url,
+    pub time: std::time::Duration,
 }
 
 impl RwalkResponse {
-    pub async fn from_response(response: reqwest::Response, parse_body: bool) -> Result<Self> {
-        let status = response.status().as_u16();
+    pub async fn from_response(
+        response: reqwest::Response,
+        parse_body: bool,
+        start: std::time::Instant,
+    ) -> Result<Self> {
+        let status = response.status();
+        let url = response.url().clone();
         let headers = response
             .headers()
             .iter()
@@ -46,6 +55,78 @@ impl RwalkResponse {
             status,
             headers,
             body,
+            url,
+            time: start.elapsed(),
         })
     }
+}
+
+pub fn is_directory(response: &RwalkResponse) -> bool {
+    if let Some(content_type) = response.headers.get(reqwest::header::CONTENT_TYPE.as_str()) {
+        if let Some(body) = &response.body {
+            if content_type.starts_with("text/html") {
+                if is_html_directory(body) {
+                    // println!("{} is HTML", response.url);
+
+                    return true;
+                }
+            }
+        }
+    }
+    if response.status.is_redirection() {
+        // status code is 3xx
+        match response.headers.get(reqwest::header::LOCATION.as_str()) {
+            // and has a Location header
+            Some(loc) => {
+                // get absolute redirect Url based on the already known base url
+                // println!("Location header: {:?}", loc);
+
+                if let Ok(abs_url) = response.url.join(&loc) {
+                    if format!("{}/", response.url) == abs_url.as_str() {
+                        // if current response's Url + / == the absolute redirection
+                        // location, we've found a directory suitable for recursion
+                        // println!("found directory suitable for recursion: {}", response.url);
+                        return true;
+                    }
+                }
+            }
+            None => {
+                // println!(
+                //     "expected Location header, but none was found: {:?}",
+                //     response
+                // );
+                return false;
+            }
+        }
+    } else if response.status.is_success()
+        || matches!(
+            response.status,
+            StatusCode::FORBIDDEN | StatusCode::UNAUTHORIZED // 403, 401 ; a little bit of a hack but it works most of the time
+        )
+    {
+        // status code is 2xx or 403, need to check if it ends in /
+
+        if response.url.as_str().ends_with('/') {
+            // println!("{} is directory suitable for recursion", response.url);
+            return true;
+        } else {
+            // println!("{} is not a directory", response.url);
+            return false;
+        }
+    }
+
+    false
+}
+
+const HTML_DIRECTORY_INDICATORS: [&str; 4] = [
+    "index of",
+    "nginx directory listing",
+    "directory listing -- /",
+    "directory listing for /",
+];
+
+pub fn is_html_directory(body: &str) -> bool {
+    return HTML_DIRECTORY_INDICATORS
+        .iter()
+        .any(|&indicator| body.contains(&indicator.to_lowercase()));
 }

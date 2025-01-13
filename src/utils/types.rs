@@ -1,8 +1,30 @@
 use num_traits::PrimInt;
 use std::{fmt::Display, str::FromStr};
 
-use crate::error::syntax_error;
-use crate::error::{RwalkError, SyntaxError};
+use crate::error::{syntax_error, RwalkError, SyntaxError};
+
+#[derive(Debug, Clone, Copy)]
+pub enum EngineMode {
+    Recursive,
+    Template,
+}
+
+impl FromStr for EngineMode {
+    type Err = RwalkError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "recursive" => Ok(EngineMode::Recursive),
+            "template" => Ok(EngineMode::Template),
+            _ => Err(syntax_error!(
+                (0, s.len()),
+                s,
+                "Invalid engine mode: '{}'",
+                s
+            )),
+        }
+    }
+}
 
 #[derive(Clone, Copy)]
 pub struct IntRange<T>
@@ -44,11 +66,7 @@ where
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Handle empty string
         if s.is_empty() {
-            return Err(RwalkError::from(syntax_error!(
-                (0, 0),
-                s,
-                "Empty range expression"
-            )));
+            return Err(syntax_error!((0, 0), s, "Empty range expression"));
         }
 
         let parts: Vec<&str> = s.split('-').collect();
@@ -60,12 +78,12 @@ where
                 '>' | '<' => {
                     let value_str = &parts[0][1..];
                     if value_str.is_empty() {
-                        return Err(RwalkError::from(syntax_error!(
+                        return Err(syntax_error!(
                             (1, 1),
                             s,
                             "Missing value after '{}' operator",
                             first_char
-                        )));
+                        ));
                     }
 
                     match value_str.parse::<T>() {
@@ -74,22 +92,22 @@ where
                             '<' => Ok(IntRange::new(T::min_value(), value - T::one())),
                             _ => unreachable!(),
                         },
-                        Err(_) => Err(RwalkError::from(syntax_error!(
+                        Err(_) => Err(syntax_error!(
                             (1, value_str.len()),
                             s,
                             "Invalid numeric value: '{}'",
                             value_str
-                        ))),
+                        )),
                     }
                 }
                 _ => match parts[0].parse() {
                     Ok(value) => Ok(IntRange::new(value, value)),
-                    Err(_) => Err(RwalkError::from(syntax_error!(
+                    Err(_) => Err(syntax_error!(
                         (0, parts[0].len()),
                         s,
                         "Invalid numeric value: '{}'",
                         parts[0]
-                    ))),
+                    )),
                 },
             }
         } else if parts.len() == 2 {
@@ -97,45 +115,45 @@ where
             let start = match parts[0].parse() {
                 Ok(v) => v,
                 Err(_) => {
-                    return Err(RwalkError::from(syntax_error!(
+                    return Err(syntax_error!(
                         (0, parts[0].len()),
                         s,
                         "Invalid start value: '{}'",
                         parts[0]
-                    )))
+                    ))
                 }
             };
 
             let end = match parts[1].parse() {
                 Ok(v) => v,
                 Err(_) => {
-                    return Err(RwalkError::from(syntax_error!(
+                    return Err(syntax_error!(
                         (parts[0].len() + 1, parts[1].len()),
                         s,
                         "Invalid end value: '{}'",
                         parts[1]
-                    )))
+                    ))
                 }
             };
 
             if start > end {
-                return Err(RwalkError::from(syntax_error!(
+                return Err(syntax_error!(
                     (0, s.len()),
                     s,
                     "Start value {} cannot be greater than end value {}",
                     start,
                     end
-                )));
+                ));
             }
 
             Ok(IntRange::new(start, end))
         } else {
             // Handle invalid format with too many hyphens
-            Err(RwalkError::from(syntax_error!(
+            Err(syntax_error!(
                 (0, s.len()),
                 s,
                 "Invalid range format: too many hyphens"
-            )))
+            ))
         }
     }
 }

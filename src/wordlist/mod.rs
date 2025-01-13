@@ -1,44 +1,52 @@
 use crate::Result;
 use crossbeam::deque::Injector;
 
-use papaya::HashSet;
+use rayon::iter::{IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
 use transformation::Transformer;
+use url::Url;
 
 pub mod filters;
 pub mod processor;
 pub mod transformation;
 
-pub struct Wordlist(Vec<String>);
-
+#[derive(Debug, Clone)]
+pub struct Wordlist {
+    pub words: Vec<String>,
+    pub key: String,
+}
 impl Wordlist {
-    pub async fn from_path(path: &str) -> Result<Self> {
-        let content = tokio::fs::read_to_string(path).await?;
-        let words = content.lines().map(|s| s.to_string()).collect::<Vec<_>>();
-        Ok(Self(words))
+    pub fn new(key: String) -> Self {
+        Self {
+            words: Vec::with_capacity(1024), // Pre-allocate reasonable default capacity
+            key,
+        }
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        self.words.extend(other.words);
     }
 
     pub fn transform(&mut self, transformer: &Transformer<String>) {
-        for word in &mut self.0 {
+        self.words.par_iter_mut().for_each(|word| {
             transformer.apply(word);
-        }
+        });
     }
 
-    pub fn dedup(&mut self) {
-        let seen = HashSet::new();
-        self.0.retain(|word| seen.pin().insert(word.clone()));
-    }
-
-    pub fn inject(&self, injector: &Injector<String>) {
-        for word in &self.0 {
-            injector.push(word.clone());
-        }
+    pub fn inject_into(&self, injector: &Injector<String>, url: &Url) -> Result<()> {
+        let base_url = url.clone();
+        self.words.par_iter().try_for_each(|word| {
+            let mut url = base_url.clone();
+            url.path_segments_mut().unwrap().pop_if_empty().push(word);
+            injector.push(url.to_string());
+            Ok(())
+        })
     }
 
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.words.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.words.is_empty()
     }
 }

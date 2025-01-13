@@ -4,12 +4,12 @@ use std::{fmt::Debug, sync::Arc};
 pub mod expression;
 
 #[derive(Debug, Clone)]
-pub struct Filtrerer<T> {
+pub struct Filterer<T> {
     filters: Arc<Vec<Box<dyn Filter<T>>>>,
 }
 
-unsafe impl<T> Send for Filtrerer<T> where Box<dyn Filter<T>>: Send {}
-unsafe impl<T> Sync for Filtrerer<T> where Box<dyn Filter<T>>: Sync {}
+unsafe impl<T> Send for Filterer<T> where Box<dyn Filter<T>>: Send {}
+unsafe impl<T> Sync for Filterer<T> where Box<dyn Filter<T>>: Sync {}
 
 pub trait Filter<T>: Debug + Send + Sync {
     fn filter(&self, item: &T) -> bool;
@@ -30,7 +30,7 @@ pub trait Filter<T>: Debug + Send + Sync {
         Self: Sized;
 }
 
-impl<T> Filtrerer<T> {
+impl<T> Filterer<T> {
     pub fn new<I>(filters: I) -> Self
     where
         I: IntoIterator<Item = Box<dyn Filter<T>>>,

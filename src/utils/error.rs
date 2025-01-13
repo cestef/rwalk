@@ -49,11 +49,11 @@ macro_rules! error {
 
 macro_rules! syntax_error {
     ($span:expr, $src:expr, $($arg:tt)*) => {
-        SyntaxError {
+        (SyntaxError {
             span: $span.into(),
             src: $src.to_string(),
             message: format!($($arg)*),
-        }
+        }).into()
     };
 }
 

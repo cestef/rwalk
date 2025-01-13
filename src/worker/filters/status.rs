@@ -49,7 +49,7 @@ impl Evaluator<RwalkResponse, IntRange<u16>> for StatusEvaluator {
             FilterExpr::And(left, right) => self.evaluate(left, item) && self.evaluate(right, item),
             FilterExpr::Or(left, right) => self.evaluate(left, item) || self.evaluate(right, item),
             FilterExpr::Not(expr) => !self.evaluate(expr, item),
-            FilterExpr::Value(range) => range.contains(item.status),
+            FilterExpr::Value(range) => range.contains(item.status.as_u16()),
             FilterExpr::Raw(_) => unreachable!(), // Should not happen after parsing
         }
     }

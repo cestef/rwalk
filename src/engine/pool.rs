@@ -1,23 +1,35 @@
+use crate::{
+    cli::Opts,
+    error::Result,
+    filters::Filterer,
+    types::EngineMode,
+    utils::{constants::DEFAULT_RESPONSE_FILTERS, ticker::RequestTicker},
+    wordlist::Wordlist,
+    worker::{
+        filters::ResponseFilterRegistry,
+        utils::{self, RwalkResponse},
+    },
+};
+
 use crossbeam::deque::{Injector, Stealer, Worker};
+use dashmap::DashMap as HashMap;
 use reqwest::Client;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
+
 use url::Url;
 
-use crate::{
-    error::Result,
-    filters::Filtrerer,
-    worker::utils::{self, RwalkResponse},
-};
+use super::handler::{recursive::RecursiveHandler, template::TemplateHandler, ResponseHandler};
 
-use super::handler::ResponseHandler;
-
+#[derive(Clone)]
 pub struct WorkerPool {
-    threads: usize,
-    global_queue: Arc<Injector<String>>,
-    client: Client,
-    base_url: Url,
-    filterer: Filtrerer<RwalkResponse>,
+    pub(crate) threads: usize,
+    pub(crate) global_queue: Arc<Injector<String>>,
+    pub(crate) client: Client,
+    pub(crate) base_url: Url,
+    pub(crate) filterer: Filterer<RwalkResponse>,
+    pub(crate) mode: EngineMode,
+    pub(crate) wordlists: Arc<Vec<Wordlist>>,
 }
 
 impl WorkerPool {
@@ -26,7 +38,9 @@ impl WorkerPool {
         global_queue: Arc<Injector<String>>,
         client: Client,
         base_url: Url,
-        filterer: Filtrerer<RwalkResponse>,
+        filterer: Filterer<RwalkResponse>,
+        mode: EngineMode,
+        wordlists: Vec<Wordlist>,
     ) -> Self {
         Self {
             threads,
@@ -34,19 +48,56 @@ impl WorkerPool {
             client,
             base_url,
             filterer,
+            mode,
+            wordlists: Arc::new(wordlists),
         }
     }
 
-    pub async fn run(&self) -> Result<()> {
+    fn create_filterer(opts: &Opts) -> Result<Filterer<RwalkResponse>> {
+        let response_filters = DEFAULT_RESPONSE_FILTERS
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .chain(
+                opts.filters
+                    .iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string())),
+            )
+            .collect::<HashMap<_, _>>()
+            .into_iter()
+            .map(|(k, v)| ResponseFilterRegistry::construct(&k, &v))
+            .collect::<Result<Vec<_>>>()?;
+        Ok(Filterer::new(response_filters))
+    }
+
+    pub fn from_opts(opts: Opts, wordlists: Vec<Wordlist>) -> Result<Self> {
+        let global_queue = Arc::new(Injector::new());
+        let client = Client::new();
+        let base_url = opts.url.clone();
+
+        Ok(Self::new(
+            opts.threads,
+            global_queue,
+            client,
+            base_url,
+            Self::create_filterer(&opts)?,
+            opts.mode,
+            wordlists,
+        ))
+    }
+
+    pub async fn run(self) -> Result<Arc<HashMap<String, RwalkResponse>>> {
+        let results = Arc::new(HashMap::<String, RwalkResponse>::new());
+
         let workers = self.create_workers();
         let stealers = workers.iter().map(|w| w.stealer()).collect::<Vec<_>>();
-        let handles = self.spawn_workers(workers, stealers);
+        let ticker = RequestTicker::new(5);
+        let handles = self.spawn_workers(workers, stealers, results.clone(), ticker.clone())?;
 
         for handle in handles {
             handle.await??;
         }
 
-        Ok(())
+        Ok(results)
     }
 
     fn create_workers(&self) -> Vec<Worker<String>> {
@@ -54,31 +105,49 @@ impl WorkerPool {
     }
 
     fn spawn_workers(
-        &self,
+        self,
         workers: Vec<Worker<String>>,
         stealers: Vec<Stealer<String>>,
-    ) -> Vec<JoinHandle<Result<()>>> {
-        let needs_body = self.filterer.needs_body();
+        results: Arc<HashMap<String, RwalkResponse>>,
+        ticker: Arc<RequestTicker>,
+    ) -> Result<Vec<JoinHandle<Result<()>>>> {
+        let handler: Box<dyn ResponseHandler> = match self.mode {
+            EngineMode::Recursive => Box::new(RecursiveHandler::construct(self.filterer.clone())),
+            EngineMode::Template => Box::new(TemplateHandler::construct(self.filterer.clone())),
+        };
+        let handler = Arc::new(handler);
 
-        let handler = ResponseHandler::new(self.filterer.clone(), needs_body);
-        workers
+        handler.init(&self)?;
+
+        let needs_body = self.filterer.needs_body();
+        Ok(workers
             .into_iter()
             .map(|worker| {
                 let global = self.global_queue.clone();
                 let stealers = stealers.clone();
                 let client = self.client.clone();
-                let base_url = self.base_url.clone();
                 let handler = handler.clone();
-
+                let filterer = self.filterer.clone();
+                let results = results.clone();
+                let ticker = ticker.clone();
+                let self_ = self.clone();
                 tokio::spawn(async move {
                     while let Some(task) = utils::find_task(&worker, &global, &stealers) {
                         let start = std::time::Instant::now();
-                        let res = client.get(base_url.join(&task)?).send().await?;
-                        handler.handle_response(res, task, start).await?;
+                        let res = client.get(task).send().await?;
+                        let rwalk_response =
+                            RwalkResponse::from_response(res, needs_body, start).await?;
+
+                        if filterer.all(&rwalk_response) {
+                            println!("{}", rwalk_response.url);
+                            handler.handle(rwalk_response.clone(), &self_)?;
+                            results.insert(rwalk_response.url.to_string(), rwalk_response);
+                        }
+                        ticker.tick();
                     }
                     Ok(())
                 })
             })
-            .collect()
+            .collect())
     }
 }
