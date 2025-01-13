@@ -1,3 +1,6 @@
+use rayon::prelude::*;
+use std::sync::Arc;
+
 use crate::{
     engine::WorkerPool,
     filters::Filterer,
@@ -13,14 +16,22 @@ pub struct RecursiveHandler {
 
 impl ResponseHandler for RecursiveHandler {
     fn handle(&self, response: RwalkResponse, pool: &WorkerPool) -> Result<()> {
-        if !is_directory(&response) {
-            for wordlist in pool.wordlists.iter() {
-                wordlist.inject_into(&pool.global_queue, &response.url)?;
-            }
+        // If it's a directory and passes filters, we should recursively scan it
+        if is_directory(&response) {
+            let pool = Arc::new(pool);
+            let response = Arc::new(response);
+
+            // Process wordlists in parallel
+            pool.wordlists.par_iter().try_for_each(|wordlist| {
+                let pool = Arc::clone(&pool);
+                let response = Arc::clone(&response);
+                wordlist.inject_into(&pool.global_queue, &response.url)
+            })?;
         }
 
         Ok(())
     }
+
     fn construct(filterer: Filterer<RwalkResponse>) -> Self
     where
         Self: Sized,
@@ -29,9 +40,14 @@ impl ResponseHandler for RecursiveHandler {
     }
 
     fn init(&self, pool: &WorkerPool) -> Result<()> {
-        for wordlist in pool.wordlists.iter() {
-            wordlist.inject_into(&pool.global_queue, &pool.base_url)?;
-        }
+        let pool = Arc::new(pool);
+
+        // Process initial wordlists in parallel
+        pool.wordlists.par_iter().try_for_each(|wordlist| {
+            let pool = Arc::clone(&pool);
+            wordlist.inject_into(&pool.global_queue, &pool.base_url)
+        })?;
+
         Ok(())
     }
 }

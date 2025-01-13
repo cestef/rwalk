@@ -20,4 +20,6 @@ pub struct Opts {
     pub transforms: Vec<(HashSet<String>, String, Option<String>)>,
     #[clap(short, long, default_value = "recursive")]
     pub mode: EngineMode,
+    #[clap(short, long,value_parser = parse::parse_throttle)]
+    pub throttle: Option<(u64, u64)>,
 }

@@ -3,7 +3,9 @@ use crate::{
     error::Result,
     filters::Filterer,
     types::EngineMode,
-    utils::{constants::DEFAULT_RESPONSE_FILTERS, ticker::RequestTicker},
+    utils::{
+        constants::DEFAULT_RESPONSE_FILTERS, throttle::DynamicThrottler, ticker::RequestTicker,
+    },
     wordlist::Wordlist,
     worker::{
         filters::ResponseFilterRegistry,
@@ -30,6 +32,7 @@ pub struct WorkerPool {
     pub(crate) filterer: Filterer<RwalkResponse>,
     pub(crate) mode: EngineMode,
     pub(crate) wordlists: Arc<Vec<Wordlist>>,
+    throttler: Option<Arc<DynamicThrottler>>,
 }
 
 impl WorkerPool {
@@ -41,6 +44,8 @@ impl WorkerPool {
         filterer: Filterer<RwalkResponse>,
         mode: EngineMode,
         wordlists: Vec<Wordlist>,
+        rps: Option<(u64, u64)>,
+        worker_count: usize,
     ) -> Self {
         Self {
             threads,
@@ -50,6 +55,7 @@ impl WorkerPool {
             filterer,
             mode,
             wordlists: Arc::new(wordlists),
+            throttler: rps.map(|rps| Arc::new(DynamicThrottler::new(rps.0, rps.1, worker_count))),
         }
     }
 
@@ -82,6 +88,8 @@ impl WorkerPool {
             Self::create_filterer(&opts)?,
             opts.mode,
             wordlists,
+            opts.throttle,
+            opts.threads,
         ))
     }
 
@@ -93,6 +101,12 @@ impl WorkerPool {
         let ticker = RequestTicker::new(5);
         let handles = self.spawn_workers(workers, stealers, results.clone(), ticker.clone())?;
 
+        tokio::spawn(async move {
+            loop {
+                println!("{:.2} reqs/s", ticker.get_rate());
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            }
+        });
         for handle in handles {
             handle.await??;
         }
@@ -131,13 +145,26 @@ impl WorkerPool {
                 let results = results.clone();
                 let ticker = ticker.clone();
                 let self_ = self.clone();
+                let throttler = self.throttler.clone();
                 tokio::spawn(async move {
                     while let Some(task) = utils::find_task(&worker, &global, &stealers) {
+                        if let Some(throttler) = throttler.as_ref() {
+                            throttler.wait_for_request().await;
+                        }
+
                         let start = std::time::Instant::now();
                         let res = client.get(task).send().await?;
+
+                        if let Some(throttler) = throttler.as_ref() {
+                            if res.status().is_server_error() || res.status() == 429 {
+                                throttler.record_error();
+                            } else {
+                                throttler.record_success();
+                            }
+                        }
+
                         let rwalk_response =
                             RwalkResponse::from_response(res, needs_body, start).await?;
-
                         if filterer.all(&rwalk_response) {
                             println!("{}", rwalk_response.url);
                             handler.handle(rwalk_response.clone(), &self_)?;

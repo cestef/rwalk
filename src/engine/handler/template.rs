@@ -1,7 +1,13 @@
-use itertools::Itertools;
+use rayon::prelude::*;
+use std::sync::Arc;
 
 use crate::{
-    engine::WorkerPool, filters::Filterer, wordlist::Wordlist, worker::utils::RwalkResponse, Result,
+    engine::WorkerPool,
+    error::{error, RwalkError},
+    filters::Filterer,
+    wordlist::Wordlist,
+    worker::utils::RwalkResponse,
+    Result,
 };
 
 use super::ResponseHandler;
@@ -11,9 +17,10 @@ pub struct TemplateHandler {
 }
 
 impl ResponseHandler for TemplateHandler {
-    fn handle(&self, response: RwalkResponse, pool: &WorkerPool) -> Result<()> {
+    fn handle(&self, _response: RwalkResponse, _pool: &WorkerPool) -> Result<()> {
         Ok(())
     }
+
     fn construct(filterer: Filterer<RwalkResponse>) -> Self
     where
         Self: Sized,
@@ -22,36 +29,81 @@ impl ResponseHandler for TemplateHandler {
     }
 
     fn init(&self, pool: &WorkerPool) -> Result<()> {
-        let urls = self.generate_urls(&pool.wordlists, pool.base_url.to_string());
+        let urls = self.generate_urls(&pool.wordlists, &pool.base_url.to_string())?;
 
-        for url in urls {
-            pool.global_queue.push(url);
-        }
+        // Push URLs to queue in parallel chunks
+        urls.par_chunks(1000).for_each(|chunk| {
+            for url in chunk {
+                pool.global_queue.push(url.clone());
+            }
+        });
+
         Ok(())
     }
 }
 
 impl TemplateHandler {
-    /// Generate all possible URLs using a cartesian product of the wordlists
-    fn generate_urls(&self, wordlists: &Vec<Wordlist>, url: String) -> Vec<String> {
-        let products = wordlists
+    fn generate_urls(&self, wordlists: &Vec<Wordlist>, base_url: &str) -> Result<Vec<String>> {
+        // Find all template markers and their positions in the URL
+        let template_positions: Vec<_> = base_url.match_indices('$').map(|(pos, _)| pos).collect();
+
+        if template_positions.is_empty() {
+            return Ok(vec![base_url.to_string()]);
+        }
+
+        // Get the wordlist that corresponds to the '$' marker
+        let wordlist = wordlists
             .iter()
-            .map(|w| {
-                w.words
-                    .iter()
-                    .map(|word| (w.key.clone(), word.clone()))
+            .find(|w| w.key == "$")
+            .ok_or_else(|| error!("No wordlist found for template marker '$'"))?;
+
+        let wordlist = Arc::new(wordlist);
+        let base_url = Arc::new(base_url.to_string());
+        let template_positions = Arc::new(template_positions);
+
+        // Calculate total combinations
+        let total_combinations = wordlist.words.len().pow(template_positions.len() as u32);
+
+        // Split work into chunks
+        let chunk_size = (total_combinations / rayon::current_num_threads()).max(1);
+
+        // Generate URLs in parallel
+        let urls: Vec<String> = (0..total_combinations)
+            .into_par_iter()
+            .chunks(chunk_size)
+            .flat_map(|chunk| {
+                let wordlist = Arc::clone(&wordlist);
+                let base_url = Arc::clone(&base_url);
+                let template_positions = Arc::clone(&template_positions);
+
+                chunk
+                    .into_iter()
+                    .map(move |i| {
+                        let mut combination = Vec::new();
+                        let mut n = i;
+
+                        for _ in 0..template_positions.len() {
+                            let word_idx = n % wordlist.words.len();
+                            combination.push(&wordlist.words[word_idx]);
+                            n /= wordlist.words.len();
+                        }
+
+                        let mut url = (*base_url).clone();
+                        let mut offset = 0;
+
+                        for (pos, word) in template_positions.iter().zip(combination) {
+                            let pos = *pos + offset;
+                            url.replace_range(pos..pos + 1, word);
+                            offset += word.len() - 1;
+                        }
+
+                        url
+                    })
                     .collect::<Vec<_>>()
             })
-            .multi_cartesian_product()
-            .collect::<Vec<_>>();
-        let mut urls = vec![];
-        for product in &products {
-            let mut url = url.clone();
-            for (k, v) in product {
-                url = url.replace(k, v);
-            }
-            urls.push(url);
-        }
-        urls
+            .collect();
+
+        println!("Generated {} URLs", urls.len());
+        Ok(urls)
     }
 }

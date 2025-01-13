@@ -26,6 +26,10 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::url_error))]
     #[error(transparent)]
     UrlError(#[from] url::ParseError),
+
+    #[diagnostic(code(rwalk::parse_error))]
+    #[error(transparent)]
+    ParseError(#[from] std::num::ParseIntError),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]
