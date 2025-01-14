@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{engine::Task, Result};
 use crossbeam::deque::Injector;
 
 use rayon::iter::{IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
@@ -32,12 +32,12 @@ impl Wordlist {
         });
     }
 
-    pub fn inject_into(&self, injector: &Injector<String>, url: &Url) -> Result<()> {
+    pub fn inject_into(&self, injector: &Injector<Task>, url: &Url, depth: usize) -> Result<()> {
         let base_url = url.clone();
         self.words.par_iter().try_for_each(|word| {
             let mut url = base_url.clone();
             url.path_segments_mut().unwrap().pop_if_empty().push(word);
-            injector.push(url.to_string());
+            injector.push(Task::new(url.to_string(), depth));
             Ok(())
         })
     }

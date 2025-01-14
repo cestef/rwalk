@@ -18,26 +18,26 @@ use std::sync::Arc;
 use tokio::task::JoinHandle;
 use url::Url;
 
-use super::handler::{recursive::RecursiveHandler, template::TemplateHandler, ResponseHandler};
-
-// New type for thread count
-#[derive(Clone, Copy)]
-pub struct ThreadCount(pub usize);
+use super::{
+    handler::{recursive::RecursiveHandler, template::TemplateHandler, ResponseHandler},
+    Task,
+};
 
 // Configuration struct
 #[derive(Clone)]
 pub struct PoolConfig {
-    pub threads: ThreadCount,
+    pub threads: usize,
     pub base_url: Url,
     pub mode: EngineMode,
     pub rps: Option<(u64, u64)>,
     pub window: u64,
     pub error_threshold: f64,
+    pub retries: usize,
 }
 
 // Worker configuration
 #[derive(Clone)]
-struct WorkerConfig {
+pub struct WorkerConfig {
     client: Client,
     filterer: Filterer<RwalkResponse>,
     handler: Arc<Box<dyn ResponseHandler>>,
@@ -48,15 +48,15 @@ struct WorkerConfig {
 #[derive(Clone)]
 pub struct WorkerPool {
     pub(crate) config: PoolConfig,
-    worker_config: WorkerConfig,
-    pub(crate) global_queue: Arc<Injector<String>>,
+    pub(crate) worker_config: WorkerConfig,
+    pub(crate) global_queue: Arc<Injector<Task>>,
     pub(crate) wordlists: Arc<Vec<Wordlist>>,
 }
 
 impl WorkerPool {
     pub fn new(
         config: PoolConfig,
-        global_queue: Arc<Injector<String>>,
+        global_queue: Arc<Injector<Task>>,
         client: Client,
         filterer: Filterer<RwalkResponse>,
         wordlists: Vec<Wordlist>,
@@ -77,7 +77,7 @@ impl WorkerPool {
                 Arc::new(DynamicThrottler::new(
                     min,
                     max,
-                    config.threads.0,
+                    config.threads,
                     config.window,
                     config.error_threshold,
                 ))
@@ -95,12 +95,13 @@ impl WorkerPool {
 
     pub fn from_opts(opts: Opts, wordlists: Vec<Wordlist>) -> Result<Self> {
         let config = PoolConfig {
-            threads: ThreadCount(opts.threads),
+            threads: opts.threads,
             base_url: opts.url.clone(),
             mode: opts.mode,
             rps: opts.throttle,
             window: opts.window,
             error_threshold: opts.error_threshold,
+            retries: opts.retries,
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -140,16 +141,16 @@ impl WorkerPool {
         Ok(results)
     }
 
-    fn create_workers(&self) -> Vec<Worker<String>> {
-        (0..self.config.threads.0)
+    fn create_workers(&self) -> Vec<Worker<Task>> {
+        (0..self.config.threads)
             .map(|_| Worker::new_fifo())
             .collect()
     }
 
     fn spawn_workers(
         self,
-        workers: Vec<Worker<String>>,
-        stealers: Vec<Stealer<String>>,
+        workers: Vec<Worker<Task>>,
+        stealers: Vec<Stealer<Task>>,
         results: HashMap<String, RwalkResponse>,
     ) -> Result<Vec<JoinHandle<Result<()>>>> {
         self.worker_config.handler.init(&self)?;
@@ -166,8 +167,8 @@ impl WorkerPool {
     }
     async fn worker(
         self,
-        worker: Worker<String>,
-        stealers: Vec<Stealer<String>>,
+        worker: Worker<Task>,
+        stealers: Vec<Stealer<Task>>,
         results: HashMap<String, RwalkResponse>,
     ) -> Result<()> {
         while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
@@ -186,19 +187,37 @@ impl WorkerPool {
         Ok(())
     }
 
-    async fn process_request(&self, task: &str) -> Result<RwalkResponse> {
+    async fn process_request(&self, task: &Task) -> Result<RwalkResponse> {
         let start = std::time::Instant::now();
-        let res = self.worker_config.client.get(task).send().await?;
-
+        let res = self
+            .worker_config
+            .client
+            .get(task.url.clone())
+            .send()
+            .await?;
+        let should_be_throttled = res.status().is_server_error() || res.status() == 429;
         if let Some(throttler) = self.worker_config.throttler.as_ref() {
-            if res.status().is_server_error() || res.status() == 429 {
+            if should_be_throttled {
                 throttler.record_error();
             } else {
                 throttler.record_success();
             }
         }
 
-        RwalkResponse::from_response(res, self.worker_config.needs_body, start).await
+        if should_be_throttled {
+            if task.retry < self.config.retries {
+                let mut task = task.clone();
+                task.retry();
+                self.global_queue.push(task);
+            } else {
+                println!(
+                    "Failed to fetch {} after {} retries",
+                    task.url, self.config.retries
+                );
+            }
+        }
+
+        RwalkResponse::from_response(res, self.worker_config.needs_body, start, task.depth).await
     }
 }
 

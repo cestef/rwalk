@@ -2,7 +2,7 @@ use rayon::prelude::*;
 use std::sync::Arc;
 
 use crate::{
-    engine::WorkerPool,
+    engine::{Task, WorkerPool},
     error::{error, RwalkError},
     filters::Filterer,
     wordlist::Wordlist,
@@ -32,9 +32,9 @@ impl ResponseHandler for TemplateHandler {
         let urls = self.generate_urls(&pool.wordlists, &pool.config.base_url.to_string())?;
 
         // Push URLs to queue in parallel chunks
-        urls.par_chunks(1000).for_each(|chunk| {
+        urls.par_chunks(pool.config.threads).for_each(|chunk| {
             for url in chunk {
-                pool.global_queue.push(url.clone());
+                pool.global_queue.push(Task::new(url.to_string(), 0));
             }
         });
 

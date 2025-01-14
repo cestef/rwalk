@@ -24,3 +24,4 @@ tracing-indicatif = "0.3.8"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 futures = "0.3.31"
 rayon = "1.10.0"
+async-recursion = "1.1.1"

@@ -93,10 +93,6 @@ impl DynamicThrottler {
         let total = errors + successes;
 
         if total == 0 {
-            println!(
-                "No requests in the last {} seconds",
-                self.window_size.as_secs()
-            );
             return;
         }
 

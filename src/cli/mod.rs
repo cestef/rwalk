@@ -5,7 +5,11 @@ use url::Url;
 
 pub mod parse;
 
-use crate::{constants::THREADS_PER_CORE, types::EngineMode};
+use crate::{
+    constants::THREADS_PER_CORE,
+    types::EngineMode,
+    utils::constants::{DEFAULT_THROTTLE_ERROR_THRESHOLD, DEFAULT_THROTTLE_WINDOW_SIZE_MILLIS},
+};
 
 #[derive(Debug, Parser, Clone)]
 pub struct Opts {
@@ -28,10 +32,16 @@ pub struct Opts {
     /// Request rate limit in requests per second, [lower:]upper
     #[clap(long, value_parser = parse::parse_throttle, visible_alias = "rps")]
     pub throttle: Option<(u64, u64)>,
-    /// Duration of the window to calculate error rate for throttling
-    #[clap(short, long, default_value = "5")]
+    /// Duration of the window in milliseconds to calculate error rate for throttling
+    #[clap(short, long, default_value_t = DEFAULT_THROTTLE_WINDOW_SIZE_MILLIS)]
     pub window: u64,
     /// Error rate threshold for throttling
-    #[clap(long, default_value = "0.5", visible_alias = "et")]
+    #[clap(long, default_value_t = DEFAULT_THROTTLE_ERROR_THRESHOLD, visible_alias = "et")]
     pub error_threshold: f64,
+    /// Maximum depth in recursive mode
+    #[clap(short, long, default_value = "3")]
+    pub depth: usize,
+    /// Maximum retries for failed requests
+    #[clap(short, long, default_value = "3", visible_alias = "retry")]
+    pub retries: usize,
 }

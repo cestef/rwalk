@@ -29,6 +29,7 @@ pub struct RwalkResponse {
     pub body: Option<String>,
     pub url: reqwest::Url,
     pub time: std::time::Duration,
+    pub depth: usize,
 }
 
 impl RwalkResponse {
@@ -36,6 +37,7 @@ impl RwalkResponse {
         response: reqwest::Response,
         parse_body: bool,
         start: std::time::Instant,
+        depth: usize,
     ) -> Result<Self> {
         let status = response.status();
         let url = response.url().clone();
@@ -57,6 +59,7 @@ impl RwalkResponse {
             body,
             url,
             time: start.elapsed(),
+            depth,
         })
     }
 }
