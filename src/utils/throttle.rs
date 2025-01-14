@@ -39,8 +39,9 @@ impl DynamicThrottler {
         window_size_millis: u64,
         error_treshold: f64,
     ) -> Self {
+        let middle = (min_rps + max_rps) / 2;
         Self {
-            current_rps: AtomicU64::new(max_rps),
+            current_rps: AtomicU64::new(middle),
             min_rps,
             max_rps,
             error_count: AtomicUsize::new(0),
