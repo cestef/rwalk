@@ -18,7 +18,7 @@ pub struct Opts {
     #[clap(value_parser = parse_wordlist)]
     pub wordlists: Vec<(String, String)>,
     /// Number of threads to use, defaults to num. of cores * 10
-    #[clap(short = 'T', long, default_value_t = num_cpus::get() * THREADS_PER_CORE)]
+    #[clap(short = 'T', long, default_value_t = (num_cpus::get() * THREADS_PER_CORE) - 2)]
     pub threads: usize,
     /// List of filters to apply to responses, name:value
     #[clap(short, long, value_parser = parse_keyval, value_delimiter = ';', visible_alias = "filter")]

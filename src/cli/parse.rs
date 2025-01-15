@@ -67,16 +67,34 @@ pub fn parse_wordlist(s: &str) -> Result<(String, String)> {
     Ok(res)
 }
 
-// <min>:<max> -> (min, max) or <max> -> (0, max)
+enum Throttle {
+    Range(u64, u64),
+    Auto,
+}
+
+// auto or <min>:<max> -> (min, max) or <max> -> (0, max)
 pub fn parse_throttle(s: &str) -> Result<(u64, u64)> {
-    let parts: Vec<&str> = s.split(':').collect();
-    if parts.len() == 1 {
-        let max = parts[0].parse()?;
-        return Ok((1, max));
-    } else if parts.len() == 2 {
-        let min = parts[0].parse()?;
-        let max = parts[1].parse()?;
-        return Ok((min, max));
+    match s {
+        "auto" => Ok((1, 3000)),
+        _ => {
+            let (min, max) = parse_throttle_range(s)?;
+            Ok((min, max))
+        }
     }
-    Err(syntax_error!((0, s.len()), s, "Expected exactly one ':'"))
+}
+
+fn parse_throttle_range(s: &str) -> Result<(u64, u64)> {
+    let parts: Vec<&str> = s.split(':').collect();
+    match parts.len() {
+        1 => {
+            let max = parts[0].parse()?;
+            Ok((1, max))
+        }
+        2 => {
+            let min = parts[0].parse()?;
+            let max = parts[1].parse()?;
+            Ok((min, max))
+        }
+        _ => Err(syntax_error!((0, s.len()), s, "Expected at most one ':'")),
+    }
 }

@@ -92,7 +92,7 @@ impl WorkerPool {
             worker_config,
             global_queue,
             wordlists: Arc::new(wordlists),
-            ticker: RequestTicker::new(1),
+            ticker: RequestTicker::new(5),
         })
     }
 
@@ -146,15 +146,16 @@ impl WorkerPool {
         let workers = self.create_workers();
         let stealers = workers.iter().map(|w| w.stealer()).collect::<Vec<_>>();
 
-        let ticker = self.ticker.clone();
+        // let ticker = self.ticker.clone();
         let handles = self.spawn_workers(workers, stealers, results.clone())?;
 
-        tokio::spawn(async move {
-            loop {
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                println!("RPS: {}", ticker.get_rate());
-            }
-        });
+        // tokio::spawn(async move {
+        //     loop {
+        //         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        //         println!("RPS: {}", ticker.get_rate());
+        //     }
+        // });
+
         for handle in handles {
             handle.await??;
         }
@@ -200,7 +201,7 @@ impl WorkerPool {
             let response = self.process_request(&task).await?;
 
             if self.worker_config.filterer.all(&response) {
-                println!("{}", response.url);
+                // println!("{}", response.url);
                 self.worker_config.handler.handle(response.clone(), &self)?;
                 results.insert(response.url.to_string(), response);
             }
@@ -218,7 +219,8 @@ impl WorkerPool {
             .get(task.url.clone())
             .send()
             .await?;
-        let should_be_throttled = res.status().is_server_error() || res.status() == 429;
+        let should_be_throttled =
+            res.status().is_server_error() || res.status() == 429 || start.elapsed().as_secs() > 10;
 
         if let Some(throttler) = self.worker_config.throttler.as_ref() {
             if should_be_throttled {
