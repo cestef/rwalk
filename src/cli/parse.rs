@@ -72,7 +72,7 @@ pub fn parse_throttle(s: &str) -> Result<(u64, u64)> {
     let parts: Vec<&str> = s.split(':').collect();
     if parts.len() == 1 {
         let max = parts[0].parse()?;
-        return Ok((0, max));
+        return Ok((1, max));
     } else if parts.len() == 2 {
         let min = parts[0].parse()?;
         let max = parts[1].parse()?;

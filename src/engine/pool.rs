@@ -3,7 +3,9 @@ use crate::{
     error::Result,
     filters::Filterer,
     types::EngineMode,
-    utils::{constants::DEFAULT_RESPONSE_FILTERS, throttle::DynamicThrottler},
+    utils::{
+        constants::DEFAULT_RESPONSE_FILTERS, throttle::DynamicThrottler, ticker::RequestTicker,
+    },
     wordlist::Wordlist,
     worker::{
         filters::ResponseFilterRegistry,
@@ -51,6 +53,7 @@ pub struct WorkerPool {
     pub(crate) worker_config: WorkerConfig,
     pub(crate) global_queue: Arc<Injector<Task>>,
     pub(crate) wordlists: Arc<Vec<Wordlist>>,
+    pub ticker: Arc<RequestTicker>,
 }
 
 impl WorkerPool {
@@ -77,7 +80,6 @@ impl WorkerPool {
                 Arc::new(DynamicThrottler::new(
                     min,
                     max,
-                    config.threads,
                     config.window,
                     config.error_threshold,
                 ))
@@ -90,6 +92,7 @@ impl WorkerPool {
             worker_config,
             global_queue,
             wordlists: Arc::new(wordlists),
+            ticker: RequestTicker::new(1),
         })
     }
 
@@ -105,10 +108,21 @@ impl WorkerPool {
         };
 
         let global_queue = Arc::new(Injector::new());
-        let client = Client::new();
+        let client = Self::create_client(&opts)?;
         let filterer = Self::create_filterer(&opts)?;
 
         Self::new(config, global_queue, client, filterer, wordlists)
+    }
+
+    fn create_client(opts: &Opts) -> Result<Client> {
+        let mut builder = Client::builder();
+        if opts.http1 {
+            builder = builder.http1_only();
+        }
+        if opts.http2 {
+            builder = builder.http2_prior_knowledge();
+        }
+        Ok(builder.build()?)
     }
 
     fn create_filterer(opts: &Opts) -> Result<Filterer<RwalkResponse>> {
@@ -132,8 +146,15 @@ impl WorkerPool {
         let workers = self.create_workers();
         let stealers = workers.iter().map(|w| w.stealer()).collect::<Vec<_>>();
 
+        let ticker = self.ticker.clone();
         let handles = self.spawn_workers(workers, stealers, results.clone())?;
 
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                println!("RPS: {}", ticker.get_rate());
+            }
+        });
         for handle in handles {
             handle.await??;
         }
@@ -175,7 +196,7 @@ impl WorkerPool {
             if let Some(throttler) = self.worker_config.throttler.as_ref() {
                 throttler.wait_for_request().await;
             }
-
+            // println!("Processing {}", task.url);
             let response = self.process_request(&task).await?;
 
             if self.worker_config.filterer.all(&response) {
@@ -188,6 +209,8 @@ impl WorkerPool {
     }
 
     async fn process_request(&self, task: &Task) -> Result<RwalkResponse> {
+        self.ticker.tick();
+
         let start = std::time::Instant::now();
         let res = self
             .worker_config
@@ -196,6 +219,7 @@ impl WorkerPool {
             .send()
             .await?;
         let should_be_throttled = res.status().is_server_error() || res.status() == 429;
+
         if let Some(throttler) = self.worker_config.throttler.as_ref() {
             if should_be_throttled {
                 throttler.record_error();

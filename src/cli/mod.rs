@@ -44,4 +44,10 @@ pub struct Opts {
     /// Maximum retries for failed requests
     #[clap(short, long, default_value = "3", visible_alias = "retry")]
     pub retries: usize,
+    /// Only use HTTP/1
+    #[clap(long)]
+    pub http1: bool,
+    /// Only use HTTP/2
+    #[clap(long)]
+    pub http2: bool,
 }

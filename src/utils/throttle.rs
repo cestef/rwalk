@@ -9,48 +9,47 @@ use tokio::{
 };
 
 pub struct DynamicThrottler {
-    // Current requests per second limit
     current_rps: AtomicU64,
-    // Minimum allowed RPS
     min_rps: u64,
-    // Maximum allowed RPS
     max_rps: u64,
-    // Number of recent errors
     error_count: AtomicUsize,
-    // Number of recent successful requests
     success_count: AtomicUsize,
-    // Last adjustment time
     last_adjustment: Arc<Mutex<Instant>>,
-    // Window size for error rate calculation (in seconds)
     window_size: Duration,
-    // Error threshold percentage for throttling
     error_threshold: f64,
-    // Token bucket for rate limiting
-    last_request: Arc<Mutex<TokioInstant>>,
-    // Number of worker threads
-    worker_count: usize,
+    request_counter: AtomicU64,
+    window_start: Arc<Mutex<TokioInstant>>,
+    last_error_rate: Arc<Mutex<f64>>,
+    high_watermark: AtomicU64, // Highest successful RPS
+    low_watermark: AtomicU64,  // Lowest failed RPS
+    phase: Arc<Mutex<SearchPhase>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+enum SearchPhase {
+    Discovery,    // Initial phase to find upper bound
+    BinarySearch, // Binary search between bounds
+    Stabilize,    // Fine-tune around found optimum
 }
 
 impl DynamicThrottler {
-    pub fn new(
-        min_rps: u64,
-        max_rps: u64,
-        worker_count: usize,
-        window_size_millis: u64,
-        error_treshold: f64,
-    ) -> Self {
-        let middle = (min_rps + max_rps) / 2;
+    pub fn new(min_rps: u64, max_rps: u64, window_size_millis: u64, error_threshold: f64) -> Self {
+        let start_rps = min_rps;
         Self {
-            current_rps: AtomicU64::new(middle),
-            min_rps,
+            current_rps: AtomicU64::new(start_rps),
+            min_rps: min_rps.max(1),
             max_rps,
             error_count: AtomicUsize::new(0),
             success_count: AtomicUsize::new(0),
             last_adjustment: Arc::new(Mutex::new(Instant::now())),
             window_size: Duration::from_millis(window_size_millis),
-            error_threshold: error_treshold,
-            last_request: Arc::new(Mutex::new(TokioInstant::now())),
-            worker_count,
+            error_threshold,
+            request_counter: AtomicU64::new(0),
+            window_start: Arc::new(Mutex::new(TokioInstant::now())),
+            last_error_rate: Arc::new(Mutex::new(0.0)),
+            high_watermark: AtomicU64::new(min_rps),
+            low_watermark: AtomicU64::new(max_rps),
+            phase: Arc::new(Mutex::new(SearchPhase::Discovery)),
         }
     }
 
@@ -62,22 +61,36 @@ impl DynamicThrottler {
         self.error_count.fetch_add(1, Ordering::Relaxed);
     }
 
-    /// Wait for the appropriate delay before the next request
     pub async fn wait_for_request(&self) {
         let current_rps = self.current_rps.load(Ordering::Relaxed);
-        let delay = Duration::from_secs_f64(1.0 / current_rps as f64);
+        let rps = current_rps.max(1);
 
-        let mut last = self.last_request.lock().await;
+        // Calculate the theoretical time between requests
+        let interval = Duration::from_secs_f64(1.0 / rps as f64);
+
+        // Get our position in the current window
+        let request_number = self.request_counter.fetch_add(1, Ordering::Relaxed);
+
+        // Calculate when this request should occur
+        let target_time = {
+            let mut window_start = self.window_start.lock().await;
+            let now = TokioInstant::now();
+
+            // If we've passed our window, start a new one
+            if now.duration_since(*window_start) >= Duration::from_secs(2) {
+                *window_start = now;
+                self.request_counter.store(1, Ordering::Relaxed);
+            }
+
+            *window_start + interval * request_number as u32
+        };
+
+        // Wait until our target time
         let now = TokioInstant::now();
-        let elapsed = now.duration_since(*last);
-
-        if elapsed < delay {
-            sleep(delay - elapsed).await;
+        if target_time > now {
+            sleep(target_time - now).await;
         }
 
-        *last = TokioInstant::now();
-
-        // Try to adjust the rate after updating last_request
         self.adjust_rate().await;
     }
 
@@ -99,25 +112,79 @@ impl DynamicThrottler {
 
         let error_rate = errors as f64 / total as f64;
         let current = self.current_rps.load(Ordering::Relaxed);
+        let mut phase = self.phase.lock().await;
+        let mut last_error_rate = self.last_error_rate.lock().await;
 
-        let new_rps = if error_rate > self.error_threshold {
-            (current as f64 * 0.8) as u64
-        } else if error_rate < self.error_threshold / 2.0 {
-            (current as f64 * 1.1) as u64
-        } else {
-            current
+        let new_rps = match *phase {
+            SearchPhase::Discovery => {
+                if error_rate > self.error_threshold || current >= self.max_rps {
+                    // Found upper bound, switch to binary search
+                    self.low_watermark.store(
+                        self.high_watermark.load(Ordering::Relaxed),
+                        Ordering::Relaxed,
+                    );
+                    self.high_watermark.store(current, Ordering::Relaxed);
+                    *phase = SearchPhase::BinarySearch;
+                    (self.high_watermark.load(Ordering::Relaxed)
+                        + self.low_watermark.load(Ordering::Relaxed))
+                        / 2
+                } else {
+                    // Keep increasing exponentially
+                    self.high_watermark.store(current, Ordering::Relaxed);
+                    current * 2
+                }
+            }
+            SearchPhase::BinarySearch => {
+                if error_rate > self.error_threshold {
+                    self.high_watermark.store(current, Ordering::Relaxed);
+                } else {
+                    self.low_watermark.store(current, Ordering::Relaxed);
+                }
+
+                let new = (self.high_watermark.load(Ordering::Relaxed)
+                    + self.low_watermark.load(Ordering::Relaxed))
+                    / 2;
+                if (self.high_watermark.load(Ordering::Relaxed)
+                    - self.low_watermark.load(Ordering::Relaxed))
+                    <= 2
+                {
+                    *phase = SearchPhase::Stabilize;
+                }
+                new
+            }
+            SearchPhase::Stabilize => {
+                if error_rate > self.error_threshold {
+                    current - 1
+                } else if *last_error_rate == 0.0 && error_rate == 0.0 {
+                    current + 1
+                } else {
+                    current
+                }
+            }
         };
 
         let new_rps = new_rps.clamp(self.min_rps, self.max_rps);
+        *last_error_rate = error_rate;
 
         if new_rps != current {
             self.current_rps.store(new_rps, Ordering::Relaxed);
             println!(
-                "Throttling adjusted: {} → {} RPS (error rate: {:.2}%, {} workers)",
+                "Throttling adjusted: {} → {} RPS (error rate: {:.2}%, phase: {:?}, HWM: {}, LWM: {})",
                 current,
                 new_rps,
                 error_rate * 100.0,
-                self.worker_count
+                *phase,
+                self.high_watermark.load(Ordering::Relaxed),
+                self.low_watermark.load(Ordering::Relaxed)
+            );
+        } else {
+            println!(
+                "Throttling stable: {} RPS (error rate: {:.2}%, phase: {:?}, HWM: {}, LWM: {})",
+                current,
+                error_rate * 100.0,
+                *phase,
+                self.high_watermark.load(Ordering::Relaxed),
+                self.low_watermark.load(Ordering::Relaxed)
             );
         }
 
