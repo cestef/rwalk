@@ -16,6 +16,10 @@ impl Filter<RwalkResponse> for EndsFilter {
             .map_or(false, |e| e.ends_with(&self.substr))
     }
 
+    fn needs_body(&self) -> bool {
+        true
+    }
+
     fn name() -> &'static str {
         "ends"
     }

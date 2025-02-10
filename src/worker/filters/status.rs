@@ -18,6 +18,10 @@ impl Filter<RwalkResponse> for StatusFilter {
         StatusEvaluator.evaluate(&self.expr, item)
     }
 
+    fn needs_body(&self) -> bool {
+        true
+    }
+
     fn name() -> &'static str {
         "status"
     }

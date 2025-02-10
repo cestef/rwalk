@@ -16,6 +16,10 @@ impl Filter<RwalkResponse> for ContainsFilter {
             .map_or(false, |e| e.contains(&self.substr))
     }
 
+    fn needs_body(&self) -> bool {
+        true
+    }
+
     fn name() -> &'static str {
         "contains"
     }

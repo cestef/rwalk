@@ -146,15 +146,15 @@ impl WorkerPool {
         let workers = self.create_workers();
         let stealers = workers.iter().map(|w| w.stealer()).collect::<Vec<_>>();
 
-        // let ticker = self.ticker.clone();
+        let ticker = self.ticker.clone();
         let handles = self.spawn_workers(workers, stealers, results.clone())?;
 
-        // tokio::spawn(async move {
-        //     loop {
-        //         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        //         println!("RPS: {}", ticker.get_rate());
-        //     }
-        // });
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                println!("RPS: {}", ticker.get_rate());
+            }
+        });
 
         for handle in handles {
             handle.await??;
@@ -187,6 +187,7 @@ impl WorkerPool {
             })
             .collect())
     }
+
     async fn worker(
         self,
         worker: Worker<Task>,
@@ -201,7 +202,12 @@ impl WorkerPool {
             let response = self.process_request(&task).await?;
 
             if self.worker_config.filterer.all(&response) {
-                // println!("{}", response.url);
+                println!(
+                    "{} {} {}ms",
+                    response.status.as_u16(),
+                    response.url,
+                    response.time.as_millis()
+                );
                 self.worker_config.handler.handle(response.clone(), &self)?;
                 results.insert(response.url.to_string(), response);
             }
@@ -213,37 +219,41 @@ impl WorkerPool {
         self.ticker.tick();
 
         let start = std::time::Instant::now();
-        let res = self
-            .worker_config
-            .client
-            .get(task.url.clone())
-            .send()
-            .await?;
-        let should_be_throttled =
-            res.status().is_server_error() || res.status() == 429 || start.elapsed().as_secs() > 10;
+        let res = self.worker_config.client.get(task.url.clone()).send().await;
+        match res {
+            Ok(res) => {
+                let should_be_throttled = res.status().is_server_error() || res.status() == 429;
 
-        if let Some(throttler) = self.worker_config.throttler.as_ref() {
-            if should_be_throttled {
-                throttler.record_error();
-            } else {
-                throttler.record_success();
+                if let Some(ref throttler) = self.worker_config.throttler {
+                    if should_be_throttled {
+                        throttler.record_error();
+                    } else {
+                        throttler.record_success();
+                    }
+                }
+
+                RwalkResponse::from_response(res, self.worker_config.needs_body, start, task.depth)
+                    .await
+            }
+            Err(e) => {
+                self.worker_config
+                    .throttler
+                    .as_ref()
+                    .map(|t| t.record_error());
+                if task.retry < self.config.retries {
+                    let mut task = task.clone();
+                    task.retry();
+                    self.global_queue.push(task);
+                } else {
+                    println!(
+                        "Failed to fetch {} after {} retries",
+                        task.url, self.config.retries
+                    );
+                }
+
+                Err(e.into())
             }
         }
-
-        if should_be_throttled {
-            if task.retry < self.config.retries {
-                let mut task = task.clone();
-                task.retry();
-                self.global_queue.push(task);
-            } else {
-                println!(
-                    "Failed to fetch {} after {} retries",
-                    task.url, self.config.retries
-                );
-            }
-        }
-
-        RwalkResponse::from_response(res, self.worker_config.needs_body, start, task.depth).await
     }
 }
 

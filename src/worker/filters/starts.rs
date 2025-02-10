@@ -16,6 +16,10 @@ impl Filter<RwalkResponse> for StartsFilter {
             .map_or(false, |e| e.starts_with(&self.substr))
     }
 
+    fn needs_body(&self) -> bool {
+        true
+    }
+
     fn name() -> &'static str {
         "starts"
     }

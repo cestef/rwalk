@@ -1,7 +1,7 @@
 use clap::Parser;
 
 use rwalk::{cli::Opts, run};
-use tracing::Level;
+use tracing::debug;
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -15,15 +15,20 @@ async fn main() -> miette::Result<()> {
         .with(
             EnvFilter::from_env("RWALK_LOG")
                 .add_directive(
-                    "hyper_util::client::legacy::pool=off"
+                    "hyper_util=off"
                         .parse()
-                        .map_err(|_| miette::miette!("Failed to parse directive"))?,
+                        .map_err(|e| miette::miette!("Failed to parse directive: {}", e))?,
                 )
-                .add_directive(Level::INFO.into()),
+                .add_directive(
+                    "reqwest=off"
+                        .parse()
+                        .map_err(|e| miette::miette!("Failed to parse directive: {}", e))?,
+                ),
         )
         .init();
 
     let opts = Opts::parse();
+    debug!("{:#?}", opts);
     run(opts).await?;
     Ok(())
 }
