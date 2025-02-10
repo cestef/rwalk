@@ -44,6 +44,12 @@ cargo binstall rwalk
 cargo install rwalk
 ```
 
+### From [AUR](https://aur.archlinux.org/packages/rwalk) <!-- omit in toc -->
+
+```bash
+paru -S rwalk
+```
+
 <small>
     <p align="center">
         <i>You can also download the latest binary from the <a href="https://github.com/cestef/rwalk/releases/latest">releases page</a>.</i>
