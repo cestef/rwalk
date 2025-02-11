@@ -16,6 +16,7 @@ pub trait Filter<T>: Debug + Send + Sync {
     fn name() -> &'static str
     where
         Self: Sized;
+
     fn aliases() -> &'static [&'static str]
     where
         Self: Sized,

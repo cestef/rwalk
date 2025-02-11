@@ -7,7 +7,7 @@ use crate::worker::utils::RwalkResponse;
 pub fn response(response: &RwalkResponse) -> String {
     format!(
         "{} {} {}",
-        display_status_code(response.status.as_u16()),
+        display_status_code(response.status),
         display_url(response.url.as_str()),
         display_time(response.time.as_nanos())
     )
@@ -94,7 +94,7 @@ pub fn skip(response: &RwalkResponse, reason: SkipReason) -> String {
     format!(
         "{} {} {} {} {}",
         "↷".blue(),
-        response.status.as_u16().dimmed(),
+        response.status.dimmed(),
         display_url(response.url.as_str()),
         display_time(response.time.as_nanos()),
         format!("({})", reason).dimmed()

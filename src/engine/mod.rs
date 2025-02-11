@@ -2,8 +2,9 @@ pub mod handler;
 pub mod pool;
 
 pub use pool::WorkerPool;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Task {
     pub url: String,
     pub depth: usize,

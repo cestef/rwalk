@@ -61,6 +61,7 @@ macro_rules! response_filter {
     (
         $filter_name:ident,
         $value_type:ty,
+        needs_body = $needs_body:expr,
         $filter_fn:expr,
         $filter_str:literal,
         $($alias:literal),* $(,)?
@@ -68,6 +69,7 @@ macro_rules! response_filter {
         response_filter!(
             $filter_name,
             $value_type,
+            needs_body = $needs_body,
             $filter_fn,
             $filter_str,
             [$($alias),*],
@@ -79,6 +81,7 @@ macro_rules! response_filter {
     (
         $filter_name:ident,
         $value_type:ty,
+        needs_body = $needs_body:expr,
         $filter_fn:expr,
         $filter_str:literal,
         [$($alias:literal),* $(,)?],
@@ -107,7 +110,7 @@ macro_rules! response_filter {
             }
 
             fn needs_body(&self) -> bool {
-                true
+                $needs_body
             }
 
             fn name() -> &'static str {

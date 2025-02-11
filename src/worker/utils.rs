@@ -1,7 +1,7 @@
 use crate::{utils::constants::STEAL_LIMIT, Result};
 use crossbeam::deque::{Injector, Stealer, Worker};
 use dashmap::DashMap as HashMap;
-use reqwest::StatusCode;
+use serde::{Deserialize, Serialize};
 use std::iter;
 
 pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer<T>]) -> Option<T> {
@@ -22,12 +22,12 @@ pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer
     })
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RwalkResponse {
-    pub status: StatusCode,
+    pub status: u16,
     pub headers: HashMap<String, String>,
     pub body: Option<String>,
-    pub url: reqwest::Url,
+    pub url: url::Url,
     pub time: std::time::Duration,
     pub depth: usize,
 }
@@ -39,7 +39,7 @@ impl RwalkResponse {
         start: std::time::Instant,
         depth: usize,
     ) -> Result<Self> {
-        let status = response.status();
+        let status = response.status().as_u16();
         let url = response.url().clone();
         let headers = response
             .headers()

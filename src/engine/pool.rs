@@ -15,11 +15,17 @@ use crate::{
     },
 };
 
-use crossbeam::deque::{Injector, Stealer, Worker};
+use crossbeam::deque::{Injector, Steal, Stealer, Worker};
 use dashmap::DashMap as HashMap;
 use indicatif::ProgressBar;
 use reqwest::Client;
-use std::sync::Arc;
+use serde::{Deserialize, Serialize};
+use std::{
+    fs::File,
+    io::{BufReader, BufWriter},
+    path::Path,
+    sync::Arc,
+};
 use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
 
@@ -49,7 +55,6 @@ pub struct WorkerConfig {
     filterer: Filterer<RwalkResponse>,
     handler: Arc<Box<dyn ResponseHandler>>,
     throttler: Option<Arc<DynamicThrottler>>,
-    needs_body: bool,
 }
 
 #[derive(Clone)]
@@ -60,9 +65,62 @@ pub struct WorkerPool {
     pub wordlists: Arc<Vec<Wordlist>>,
     pub pb: ProgressBar,
     pub ticker: Arc<RequestTickerNoReset>,
+    pub results: Arc<HashMap<String, RwalkResponse>>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WorkerState {
+    pending_tasks: Vec<Task>,
+    completed_results: Vec<(String, RwalkResponse)>,
 }
 
 impl WorkerPool {
+    pub fn save_state<P: AsRef<Path>>(
+        path: P,
+        global_queue: Arc<Injector<Task>>,
+        results: Arc<HashMap<String, RwalkResponse>>,
+    ) -> Result<()> {
+        // Collect pending tasks from the global queue
+        let mut pending_tasks = Vec::new();
+        while let Steal::Success(task) = global_queue.steal() {
+            pending_tasks.push(task);
+        }
+
+        // Convert DashMap to Vec for serialization
+        let completed_results: Vec<(String, RwalkResponse)> = results
+            .iter()
+            .map(|entry| (entry.key().clone(), entry.value().clone()))
+            .collect();
+
+        let state = WorkerState {
+            pending_tasks,
+            completed_results,
+        };
+
+        let writer = BufWriter::new(File::create(path)?);
+        serde_json::to_writer(writer, &state)?;
+        Ok(())
+    }
+
+    pub fn load_state<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+        let reader = BufReader::new(File::open(path)?);
+        let state: WorkerState = serde_json::from_reader(reader)?;
+
+        // Restore pending tasks to global queue
+        for task in state.pending_tasks {
+            self.global_queue.push(task);
+        }
+
+        // Restore completed results
+        for (url, response) in state.completed_results {
+            self.results.insert(url, response);
+        }
+
+        // Update progress bar
+        self.pb.set_length(self.global_queue.len() as u64);
+
+        Ok(())
+    }
     pub fn new(
         config: PoolConfig,
         global_queue: Arc<Injector<Task>>,
@@ -90,7 +148,6 @@ impl WorkerPool {
                     config.error_threshold,
                 ))
             }),
-            needs_body: filterer.needs_body(),
         };
 
         let (shutdown_tx, _) = broadcast::channel(1);
@@ -108,6 +165,7 @@ impl WorkerPool {
                         .progress_chars(PROGRESS_CHARS),
                 ),
                 ticker: RequestTickerNoReset::new(),
+                results: Arc::new(HashMap::new()),
             },
             shutdown_tx,
         ))
@@ -164,8 +222,7 @@ impl WorkerPool {
     pub async fn run(
         self,
         mut shutdown_rx: broadcast::Receiver<()>,
-    ) -> Result<(HashMap<String, RwalkResponse>, f64)> {
-        let results = HashMap::<String, RwalkResponse>::new();
+    ) -> Result<(Arc<HashMap<String, RwalkResponse>>, f64)> {
         let workers = self.create_workers();
         let stealers = Arc::new(workers.iter().map(|w| w.stealer()).collect::<Vec<_>>());
 
@@ -173,6 +230,7 @@ impl WorkerPool {
         self.pb.set_length(self.global_queue.len() as u64);
 
         let global = self.global_queue.clone();
+        let global_ = global.clone();
         let pb = self.pb.clone();
         let ticker = self.ticker.clone();
         let pb_ = pb.clone();
@@ -197,9 +255,9 @@ impl WorkerPool {
         });
 
         let worker_rx = shutdown_rx.resubscribe();
-
+        let results = self.results.clone();
         // Spawn workers with shutdown handling
-        let handles = self.spawn_workers(workers, stealers.clone(), results.clone(), worker_rx)?;
+        let handles = self.spawn_workers(workers, stealers.clone(), worker_rx)?;
 
         // Wait for either completion or shutdown signal
         tokio::select! {
@@ -213,7 +271,8 @@ impl WorkerPool {
                 Ok((results, ticker.get_rate()))
             }
             _ = shutdown_rx.recv() => {
-                // TODO: save state
+                // Save state before returning
+                Self::save_state("rwalk.state", global_.clone(), results.clone())?;
                 pb.finish_and_clear();
                 Ok((results, ticker.get_rate()))
             }
@@ -230,14 +289,13 @@ impl WorkerPool {
         self,
         workers: Vec<Worker<Task>>,
         stealers: Arc<Vec<Stealer<Task>>>,
-        results: HashMap<String, RwalkResponse>,
         shutdown_rx: broadcast::Receiver<()>,
     ) -> Result<Vec<JoinHandle<Result<()>>>> {
         workers
             .into_iter()
             .map(|worker| {
                 let stealers = stealers.clone();
-                let results = results.clone();
+                let results = self.results.clone();
                 let self_ = self.clone();
                 let shutdown_rx = shutdown_rx.resubscribe();
 
@@ -254,7 +312,7 @@ impl WorkerPool {
         self,
         worker: Worker<Task>,
         stealers: &Vec<Stealer<Task>>,
-        results: HashMap<String, RwalkResponse>,
+        results: Arc<HashMap<String, RwalkResponse>>,
         mut shutdown_rx: broadcast::Receiver<()>,
     ) -> Result<()> {
         while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
@@ -300,7 +358,7 @@ impl WorkerPool {
                 }
                 let res = RwalkResponse::from_response(
                     res,
-                    self.worker_config.needs_body,
+                    self.worker_config.filterer.needs_body(),
                     start,
                     task.depth,
                 )

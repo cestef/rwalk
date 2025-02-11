@@ -30,6 +30,10 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::parse_error))]
     #[error(transparent)]
     ParseError(#[from] std::num::ParseIntError),
+
+    #[diagnostic(code(rwalk::json_error))]
+    #[error(transparent)]
+    JsonError(#[from] serde_json::Error),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]
