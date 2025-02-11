@@ -55,6 +55,7 @@ pub struct WorkerConfig {
     filterer: Filterer<RwalkResponse>,
     pub handler: Arc<Box<dyn ResponseHandler>>,
     throttler: Option<Arc<DynamicThrottler>>,
+    needs_body: bool,
 }
 
 #[derive(Clone)]
@@ -148,6 +149,7 @@ impl WorkerPool {
                     config.error_threshold,
                 ))
             }),
+            needs_body: filterer.needs_body(), // Precompute if any filter needs body
         };
 
         let (shutdown_tx, _) = broadcast::channel(1);
@@ -352,7 +354,7 @@ impl WorkerPool {
                 }
                 let res = RwalkResponse::from_response(
                     res,
-                    self.worker_config.filterer.needs_body(),
+                    self.worker_config.needs_body,
                     start,
                     task.depth,
                 )
