@@ -53,7 +53,7 @@ pub struct PoolConfig {
 pub struct WorkerConfig {
     client: Client,
     filterer: Filterer<RwalkResponse>,
-    handler: Arc<Box<dyn ResponseHandler>>,
+    pub handler: Arc<Box<dyn ResponseHandler>>,
     throttler: Option<Arc<DynamicThrottler>>,
 }
 
@@ -172,7 +172,7 @@ impl WorkerPool {
     }
 
     pub fn from_opts(
-        opts: Opts,
+        opts: &Opts,
         wordlists: Vec<Wordlist>,
     ) -> Result<(Self, broadcast::Sender<()>)> {
         let config = PoolConfig {
@@ -226,7 +226,6 @@ impl WorkerPool {
         let workers = self.create_workers();
         let stealers = Arc::new(workers.iter().map(|w| w.stealer()).collect::<Vec<_>>());
 
-        self.worker_config.handler.init(&self)?;
         self.pb.set_length(self.global_queue.len() as u64);
 
         let global = self.global_queue.clone();

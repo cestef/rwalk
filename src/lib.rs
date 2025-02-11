@@ -23,7 +23,13 @@ pub async fn run(opts: Opts) -> Result<f64> {
     let processor = WordlistProcessor::new(&opts);
     let wordlists = processor.process_wordlists().await?;
 
-    let (pool, shutdown_tx) = WorkerPool::from_opts(opts, wordlists)?;
+    let (pool, shutdown_tx) = WorkerPool::from_opts(&opts, wordlists)?;
+
+    if opts.resume {
+        pool.load_state("rwalk.state")?;
+    } else {
+        pool.worker_config.handler.init(&pool)?;
+    }
 
     let shutdown_tx_clone = shutdown_tx.clone();
     tokio::spawn(async move {

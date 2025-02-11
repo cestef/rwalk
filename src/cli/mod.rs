@@ -51,4 +51,7 @@ pub struct Opts {
     /// Only use HTTP/2
     #[clap(long)]
     pub http2: bool,
+    /// Resume from previous session
+    #[clap(long)]
+    pub resume: bool,
 }
