@@ -4,10 +4,10 @@ use super::response_filter;
 
 response_filter!(
     StatusFilter,
-    IntRange<u16>,
+    Vec<IntRange<u16>>,
     needs_body = false,
-    |res, range| range.contains(res.status),
+    |res: &RwalkResponse, range: &Vec<IntRange<u16>>| range.iter().any(|r| r.contains(res.status)),
     "status",
     ["code", "s"],
-    transform = |raw: String| raw.parse()
+    transform = |raw: String| raw.split(',').map(|s| s.parse()).collect::<Result<_>>()
 );

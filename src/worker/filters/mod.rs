@@ -5,7 +5,6 @@ pub mod starts;
 pub mod status;
 
 use crate::{
-    error::RwalkError,
     filters::{
         create_filter_registry,
         expression::{Evaluator, FilterExpr},
@@ -90,7 +89,6 @@ macro_rules! response_filter {
         use once_cell::sync::Lazy;
         use super::{Filter, GenericResponseEvaluator};
         use crate::{
-            filters::expression::{Evaluator, ExprParser, FilterExpr},
             worker::utils::RwalkResponse,
             Result,
         };
@@ -101,12 +99,12 @@ macro_rules! response_filter {
 
         #[derive(Debug, Clone)]
         pub struct $filter_name {
-            expr: FilterExpr<$value_type>,
+            value: $value_type,
         }
 
         impl Filter<RwalkResponse> for $filter_name {
             fn filter(&self, item: &RwalkResponse) -> bool {
-                EVALUATOR.evaluate(&self.expr, item)
+                $filter_fn(item, &self.value)
             }
 
             fn needs_body(&self) -> bool {
@@ -125,11 +123,9 @@ macro_rules! response_filter {
             where
                 Self: Sized,
             {
-                let mut parser = ExprParser::new(arg);
-                let raw_expr = parser.parse::<String>()?;
-                let expr = raw_expr.try_map($transform)?;
+                let value = $transform(arg.to_string())?;
 
-                Ok(Box::new(Self { expr }))
+                Ok(Box::new(Self { value }))
             }
         }
     };

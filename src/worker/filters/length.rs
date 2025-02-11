@@ -4,10 +4,13 @@ use super::response_filter;
 
 response_filter!(
     LengthFilter,
-    IntRange<usize>,
+    Vec<IntRange<usize>>,
     needs_body = true,
-    |res, range| res.body.as_ref().map_or(false, |e| range.contains(e.len())),
+    |res: &RwalkResponse, range: &Vec<IntRange<usize>>| {
+        let body = res.body.as_ref().expect("body is needed for length filter");
+        range.iter().any(|r| r.contains(body.len()))
+    },
     "length",
     ["l", "size"],
-    transform = |raw: String| raw.parse()
+    transform = |raw: String| raw.split(',').map(|s| s.parse()).collect::<Result<_>>()
 );

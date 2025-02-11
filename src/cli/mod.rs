@@ -1,6 +1,6 @@
 use clap::Parser;
 use dashmap::DashSet as HashSet;
-use parse::{parse_keyed_key_or_keyval, parse_keyval, parse_url, parse_wordlist};
+use parse::{parse_keyed_key_or_keyval, parse_url, parse_wordlist};
 use url::Url;
 
 pub mod parse;
@@ -22,8 +22,8 @@ pub struct Opts {
     #[clap(short = 'T', long, default_value_t = (num_cpus::get() * THREADS_PER_CORE) - 2)]
     pub threads: usize,
     /// List of filters to apply to responses, name:value
-    #[clap(short, long, value_parser = parse_keyval, value_delimiter = ';', visible_alias = "filter")]
-    pub filters: Vec<(String, String)>,
+    #[clap(short, long, visible_alias = "filter")]
+    pub filters: Vec<String>,
     /// List of transformations to apply to wordlists, [key:]name[:value]
     #[clap(short, long, value_parser = parse_keyed_key_or_keyval, value_delimiter = ';', visible_alias = "transform")]
     pub transforms: Vec<(HashSet<String>, String, Option<String>)>,

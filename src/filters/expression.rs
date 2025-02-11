@@ -22,8 +22,8 @@ pub enum Token {
     #[token("|")]
     Or,
 
-    #[token(",")]
-    Comma,
+    #[token(";")]
+    SemiColon,
 
     #[token("!")]
     Not,
@@ -34,7 +34,7 @@ pub enum Token {
     #[token(")")]
     RParen,
 
-    #[regex("[^&|,!()\\s]+")]
+    #[regex("[^&|;!()\\s]+")]
     Value,
 }
 
@@ -125,7 +125,7 @@ impl<'a> ExprParser<'a> {
 
         while let Some(Ok(token)) = &self.current_token {
             match token {
-                Token::Or | Token::Comma => {
+                Token::Or | Token::SemiColon => {
                     self.advance();
                     let right = self.parse_and()?;
                     left = FilterExpr::Or(Box::new(left), Box::new(right));

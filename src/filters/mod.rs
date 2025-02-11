@@ -1,11 +1,11 @@
 use crate::Result;
-use std::{fmt::Debug, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 pub mod expression;
 
 #[derive(Debug, Clone)]
 pub struct Filterer<T> {
-    filters: Arc<Vec<Box<dyn Filter<T>>>>,
+    filters: Arc<Vec<FilterExpr<Box<dyn Filter<T>>>>>,
 }
 
 unsafe impl<T> Send for Filterer<T> where Box<dyn Filter<T>>: Send {}
@@ -34,7 +34,7 @@ pub trait Filter<T>: Debug + Send + Sync {
 impl<T> Filterer<T> {
     pub fn new<I>(filters: I) -> Self
     where
-        I: IntoIterator<Item = Box<dyn Filter<T>>>,
+        I: IntoIterator<Item = FilterExpr<Box<dyn Filter<T>>>>,
     {
         Self {
             filters: Arc::new(filters.into_iter().collect()),
@@ -42,16 +42,77 @@ impl<T> Filterer<T> {
     }
 
     pub fn all(&self, item: &T) -> bool {
-        self.filters.iter().all(|f| f.filter(item))
+        self.filters
+            .iter()
+            .all(|f| FILTER_EVALUATOR.evaluate(f, item))
     }
 
     pub fn any(&self, item: &T) -> bool {
-        self.filters.iter().any(|f| f.filter(item))
+        self.filters
+            .iter()
+            .any(|f| FILTER_EVALUATOR.evaluate(f, item))
     }
 
     pub fn needs_body(&self) -> bool {
-        self.filters.iter().any(|f| f.needs_body())
+        self.filters
+            .iter()
+            .any(|f| NEEDS_BODY_EVALUATOR.evaluate(f, &()))
     }
+}
+
+#[derive(Debug)]
+struct FilterEvaluator;
+
+impl<T> Evaluator<T, Box<dyn Filter<T>>> for FilterEvaluator {
+    fn evaluate(&self, expr: &FilterExpr<Box<dyn Filter<T>>>, item: &T) -> bool {
+        match expr {
+            FilterExpr::And(left, right) => self.evaluate(left, item) && self.evaluate(right, item),
+            FilterExpr::Or(left, right) => self.evaluate(left, item) || self.evaluate(right, item),
+            FilterExpr::Not(expr) => !self.evaluate(expr, item),
+            FilterExpr::Value(filter) => filter.filter(item),
+            FilterExpr::Raw(_) => unreachable!(), // Should not happen after parsing
+        }
+    }
+}
+
+#[derive(Debug)]
+struct NeedsBodyEvaluator;
+
+impl<T> Evaluator<(), Box<dyn Filter<T>>> for NeedsBodyEvaluator {
+    fn evaluate(&self, expr: &FilterExpr<Box<dyn Filter<T>>>, item: &()) -> bool {
+        match expr {
+            FilterExpr::And(left, right) => self.evaluate(left, item) || self.evaluate(right, item),
+            FilterExpr::Or(left, right) => self.evaluate(left, item) || self.evaluate(right, item),
+            FilterExpr::Not(expr) => self.evaluate(expr, item),
+            FilterExpr::Value(filter) => filter.needs_body(),
+            FilterExpr::Raw(_) => unreachable!(), // Should not happen after parsing
+        }
+    }
+}
+
+static FILTER_EVALUATOR: FilterEvaluator = FilterEvaluator;
+static NEEDS_BODY_EVALUATOR: NeedsBodyEvaluator = NeedsBodyEvaluator;
+
+use crate::error::RwalkError;
+
+pub fn parse_filter<T>(
+    registry: &HashMap<&str, fn(&str) -> Result<Box<dyn Filter<T>>>>,
+    input: &str,
+) -> Result<FilterExpr<Box<dyn Filter<T>>>> {
+    let mut parser = ExprParser::new(input);
+    let raw_expr = parser.parse::<String>()?;
+
+    let expr = raw_expr.try_map(|e| {
+        let (key, value) = e
+            .split_once(':')
+            .ok_or_else(|| crate::error!("Invalid filter: {}", e))?;
+        match registry.get(key) {
+            Some(constructor) => constructor(value),
+            None => Err(crate::error!("Unknown filter: {}", key)),
+        }
+    })?;
+
+    Ok(expr)
 }
 
 macro_rules! create_filter_registry {
@@ -76,13 +137,11 @@ macro_rules! create_filter_registry {
 
 
         pub struct $static_name;
-
         impl $static_name {
-            pub fn construct(name: &str, arg: &str) -> Result<Box<dyn Filter<$item_type>>> {
-                match REGISTRY.get(name) {
-                    Some(constructor) => constructor(arg),
-                    None => Err(crate::error!("Unknown filter: {}", name)),
-                }
+            pub fn construct(input: &str) -> Result<FilterExpr<Box<dyn Filter<$item_type>>>> {
+                use crate::filters::parse_filter;
+                let parsed = parse_filter(&REGISTRY, input)?;
+                Ok(parsed)
             }
 
             pub fn list() -> HashSet<&'static str> {
@@ -94,3 +153,4 @@ macro_rules! create_filter_registry {
 }
 
 pub(crate) use create_filter_registry;
+use expression::{Evaluator, ExprParser, FilterExpr};

@@ -206,15 +206,10 @@ impl WorkerPool {
     fn create_filterer(opts: &Opts) -> Result<Filterer<RwalkResponse>> {
         let response_filters = DEFAULT_RESPONSE_FILTERS
             .iter()
-            .map(|(k, v)| (k.to_string(), v.to_string()))
-            .chain(
-                opts.filters
-                    .iter()
-                    .map(|(k, v)| (k.to_string(), v.to_string())),
-            )
-            .collect::<HashMap<_, _>>()
+            .map(|k| k.to_string())
+            .chain(opts.filters.iter().map(|k| k.to_string()))
             .into_iter()
-            .map(|(k, v)| ResponseFilterRegistry::construct(&k, &v))
+            .map(|k| ResponseFilterRegistry::construct(&k))
             .collect::<Result<Vec<_>>>()?;
         Ok(Filterer::new(response_filters))
     }
