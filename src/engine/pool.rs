@@ -239,7 +239,7 @@ impl WorkerPool {
                 let stealers = stealers.clone();
                 let results = results.clone();
                 let self_ = self.clone();
-                let mut shutdown_rx = shutdown_rx.resubscribe();
+                let shutdown_rx = shutdown_rx.resubscribe();
 
                 let handle = tokio::spawn(async move {
                     self_.worker(worker, &stealers, results, shutdown_rx).await
@@ -257,25 +257,10 @@ impl WorkerPool {
         results: HashMap<String, RwalkResponse>,
         mut shutdown_rx: broadcast::Receiver<()>,
     ) -> Result<()> {
-        // while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
-        //     if let Some(throttler) = self.worker_config.throttler.as_ref() {
-        //         throttler.wait_for_request().await;
-        //     }
-
-        //     let response = self.process_request(&task).await?;
-        //     self.ticker.tick();
-        //     if self.worker_config.filterer.all(&response) {
-        //         self.worker_config.handler.handle(response.clone(), &self)?;
-        //         results.insert(response.url.to_string(), response);
-        //     }
-        // }
-        // Ok(())
-
         while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
             tokio::select! {
-                _ = shutdown_rx.recv() => {
-                    break;
-                }
+                // biased;
+
                 _ = async {
                     if let Some(throttler) = self.worker_config.throttler.as_ref() {
                         throttler.wait_for_request().await;
@@ -290,6 +275,10 @@ impl WorkerPool {
 
                     Ok::<(), crate::error::RwalkError>(())
                 } => {}
+
+                _ = shutdown_rx.recv() => {
+                    break;
+                }
             }
         }
 

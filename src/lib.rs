@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use std::sync::Arc;
-
 use engine::WorkerPool;
 
 use cli::Opts;
