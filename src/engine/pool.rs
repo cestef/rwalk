@@ -20,7 +20,9 @@ use dashmap::DashMap as HashMap;
 use indicatif::ProgressBar;
 use reqwest::Client;
 use std::sync::Arc;
+use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
+
 use url::Url;
 
 use super::{
@@ -67,7 +69,7 @@ impl WorkerPool {
         client: Client,
         filterer: Filterer<RwalkResponse>,
         wordlists: Vec<Wordlist>,
-    ) -> Result<Self> {
+    ) -> Result<(Self, broadcast::Sender<()>)> {
         let handler: Box<dyn ResponseHandler> =
             match config.mode {
                 EngineMode::Recursive => Box::new(RecursiveHandler::construct(filterer.clone()))
@@ -91,22 +93,30 @@ impl WorkerPool {
             needs_body: filterer.needs_body(),
         };
 
-        Ok(Self {
-            config,
-            worker_config,
-            global_queue,
-            wordlists: Arc::new(wordlists),
-            pb: ProgressBar::new(0).with_style(
-                indicatif::ProgressStyle::default_bar()
-                    .template(PROGRESS_TEMPLATE)
-                    .unwrap()
-                    .progress_chars(PROGRESS_CHARS),
-            ),
-            ticker: RequestTickerNoReset::new(),
-        })
+        let (shutdown_tx, _) = broadcast::channel(1);
+
+        Ok((
+            Self {
+                config,
+                worker_config,
+                global_queue,
+                wordlists: Arc::new(wordlists),
+                pb: ProgressBar::new(0).with_style(
+                    indicatif::ProgressStyle::default_bar()
+                        .template(PROGRESS_TEMPLATE)
+                        .unwrap()
+                        .progress_chars(PROGRESS_CHARS),
+                ),
+                ticker: RequestTickerNoReset::new(),
+            },
+            shutdown_tx,
+        ))
     }
 
-    pub fn from_opts(opts: Opts, wordlists: Vec<Wordlist>) -> Result<Self> {
+    pub fn from_opts(
+        opts: Opts,
+        wordlists: Vec<Wordlist>,
+    ) -> Result<(Self, broadcast::Sender<()>)> {
         let config = PoolConfig {
             threads: opts.threads,
             base_url: opts.url.clone(),
@@ -151,13 +161,15 @@ impl WorkerPool {
         Ok(Filterer::new(response_filters))
     }
 
-    pub async fn run(self) -> Result<(HashMap<String, RwalkResponse>, f64)> {
+    pub async fn run(
+        self,
+        mut shutdown_rx: broadcast::Receiver<()>,
+    ) -> Result<(HashMap<String, RwalkResponse>, f64)> {
         let results = HashMap::<String, RwalkResponse>::new();
         let workers = self.create_workers();
         let stealers = Arc::new(workers.iter().map(|w| w.stealer()).collect::<Vec<_>>());
 
         self.worker_config.handler.init(&self)?;
-
         self.pb.set_length(self.global_queue.len() as u64);
 
         let global = self.global_queue.clone();
@@ -165,26 +177,47 @@ impl WorkerPool {
         let ticker = self.ticker.clone();
         let pb_ = pb.clone();
 
-        let handles = self.spawn_workers(workers, stealers.clone(), results.clone())?;
-
+        let mut progress_rx = shutdown_rx.resubscribe();
+        // Spawn progress updater with shutdown handling
         tokio::spawn(async move {
             loop {
-                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-                pb_.set_position(
-                    pb_.length()
-                        .unwrap_or_default()
-                        .saturating_sub(global.len() as u64),
-                );
+                tokio::select! {
+                    _ = tokio::time::sleep(std::time::Duration::from_millis(100)) => {
+                        pb_.set_position(
+                            pb_.length()
+                                .unwrap_or_default()
+                                .saturating_sub(global.len() as u64),
+                        );
+                    }
+                    _ = progress_rx.recv() => {
+                        break;
+                    }
+                }
             }
         });
 
-        for handle in handles {
-            handle.await??;
+        let worker_rx = shutdown_rx.resubscribe();
+
+        // Spawn workers with shutdown handling
+        let handles = self.spawn_workers(workers, stealers.clone(), results.clone(), worker_rx)?;
+
+        // Wait for either completion or shutdown signal
+        tokio::select! {
+            _ = async {
+                for handle in handles {
+                    handle.await??;
+                }
+                Ok::<(), crate::error::RwalkError>(())
+            } => {
+                pb.finish_and_clear();
+                Ok((results, ticker.get_rate()))
+            }
+            _ = shutdown_rx.recv() => {
+                // TODO: save state
+                pb.finish_and_clear();
+                Ok((results, ticker.get_rate()))
+            }
         }
-
-        pb.finish_and_clear();
-
-        Ok((results, ticker.get_rate()))
     }
 
     fn create_workers(&self) -> Vec<Worker<Task>> {
@@ -198,6 +231,7 @@ impl WorkerPool {
         workers: Vec<Worker<Task>>,
         stealers: Arc<Vec<Stealer<Task>>>,
         results: HashMap<String, RwalkResponse>,
+        shutdown_rx: broadcast::Receiver<()>,
     ) -> Result<Vec<JoinHandle<Result<()>>>> {
         workers
             .into_iter()
@@ -205,9 +239,11 @@ impl WorkerPool {
                 let stealers = stealers.clone();
                 let results = results.clone();
                 let self_ = self.clone();
+                let mut shutdown_rx = shutdown_rx.resubscribe();
 
-                let handle =
-                    tokio::spawn(async move { self_.worker(worker, &stealers, results).await });
+                let handle = tokio::spawn(async move {
+                    self_.worker(worker, &stealers, results, shutdown_rx).await
+                });
 
                 Ok(handle)
             })
@@ -219,19 +255,44 @@ impl WorkerPool {
         worker: Worker<Task>,
         stealers: &Vec<Stealer<Task>>,
         results: HashMap<String, RwalkResponse>,
+        mut shutdown_rx: broadcast::Receiver<()>,
     ) -> Result<()> {
-        while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
-            if let Some(throttler) = self.worker_config.throttler.as_ref() {
-                throttler.wait_for_request().await;
-            }
+        // while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
+        //     if let Some(throttler) = self.worker_config.throttler.as_ref() {
+        //         throttler.wait_for_request().await;
+        //     }
 
-            let response = self.process_request(&task).await?;
-            self.ticker.tick();
-            if self.worker_config.filterer.all(&response) {
-                self.worker_config.handler.handle(response.clone(), &self)?;
-                results.insert(response.url.to_string(), response);
+        //     let response = self.process_request(&task).await?;
+        //     self.ticker.tick();
+        //     if self.worker_config.filterer.all(&response) {
+        //         self.worker_config.handler.handle(response.clone(), &self)?;
+        //         results.insert(response.url.to_string(), response);
+        //     }
+        // }
+        // Ok(())
+
+        while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
+            tokio::select! {
+                _ = shutdown_rx.recv() => {
+                    break;
+                }
+                _ = async {
+                    if let Some(throttler) = self.worker_config.throttler.as_ref() {
+                        throttler.wait_for_request().await;
+                    }
+
+                    let response = self.process_request(&task).await?;
+                    self.ticker.tick();
+                    if self.worker_config.filterer.all(&response) {
+                        self.worker_config.handler.handle(response.clone(), &self)?;
+                        results.insert(response.url.to_string(), response);
+                    }
+
+                    Ok::<(), crate::error::RwalkError>(())
+                } => {}
             }
         }
+
         Ok(())
     }
 

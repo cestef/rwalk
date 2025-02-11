@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
-use engine::WorkerPool as Engine;
+use std::sync::Arc;
+
+use engine::WorkerPool;
 
 use cli::Opts;
 
@@ -23,8 +25,18 @@ pub async fn run(opts: Opts) -> Result<f64> {
     let processor = WordlistProcessor::new(&opts);
     let wordlists = processor.process_wordlists().await?;
 
-    let engine = Engine::from_opts(opts, wordlists)?;
-    let (results, rate) = engine.run().await?;
+    let (pool, shutdown_tx) = WorkerPool::from_opts(opts, wordlists)?;
+
+    let shutdown_tx_clone = shutdown_tx.clone();
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c().await.unwrap();
+        println!("\nReceived Ctrl+C, initiating graceful shutdown...");
+        let _ = shutdown_tx_clone.send(());
+    });
+
+    let rx = shutdown_tx.subscribe();
+
+    let (results, rate) = pool.run(rx).await?;
 
     tree::display_url_tree(&results);
     Ok(rate)
