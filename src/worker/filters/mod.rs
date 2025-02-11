@@ -3,6 +3,7 @@ pub mod ends;
 pub mod length;
 pub mod starts;
 pub mod status;
+pub mod time;
 
 use crate::{
     filters::{
@@ -24,7 +25,8 @@ create_filter_registry!(
         length::LengthFilter,
         starts::StartsFilter,
         ends::EndsFilter,
-        contains::ContainsFilter
+        contains::ContainsFilter,
+        time::TimeFilter
     ]
 );
 
