@@ -34,6 +34,10 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::json_error))]
     #[error(transparent)]
     JsonError(#[from] serde_json::Error),
+
+    #[diagnostic(code(rwalk::regex_error))]
+    #[error(transparent)]
+    RegexError(#[from] regex::Error),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]

@@ -1,6 +1,7 @@
 pub mod contains;
 pub mod ends;
 pub mod length;
+pub mod regex;
 pub mod starts;
 pub mod status;
 pub mod time;
@@ -26,7 +27,8 @@ create_filter_registry!(
         starts::StartsFilter,
         ends::EndsFilter,
         contains::ContainsFilter,
-        time::TimeFilter
+        time::TimeFilter,
+        regex::RegexFilter
     ]
 );
 

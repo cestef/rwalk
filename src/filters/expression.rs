@@ -16,13 +16,13 @@ use logos::Logos;
 #[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"[ \t\n\f]+")] // Skip whitespace
 pub enum Token {
-    #[token("&")]
+    #[token(" & ")]
     And,
 
-    #[token("|")]
+    #[token(" | ")]
     Or,
 
-    #[token(";")]
+    #[token(" ; ")]
     SemiColon,
 
     #[token("!")]

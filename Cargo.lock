@@ -2425,6 +2425,7 @@ dependencies = [
  "pid",
  "pid-lite",
  "rayon",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",
