@@ -38,14 +38,14 @@ pub enum Token {
     Value,
 }
 
-pub struct Parser<'a> {
+pub struct ExprParser<'a> {
     lexer: logos::Lexer<'a, Token>,
     current_token: Option<Result<Token, SyntaxError>>,
     current_slice: &'a str,
     input: &'a str,
 }
 
-impl<'a> Parser<'a> {
+impl<'a> ExprParser<'a> {
     pub fn new(input: &'a str) -> Self {
         let mut lexer = Token::lexer(input);
         let current_token = match lexer.next() {

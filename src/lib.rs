@@ -18,22 +18,14 @@ pub mod worker;
 pub(crate) use error::error;
 pub use error::Result;
 
-pub async fn run(opts: Opts) -> Result<()> {
+pub async fn run(opts: Opts) -> Result<f64> {
     // Process wordlists
     let processor = WordlistProcessor::new(&opts);
     let wordlists = processor.process_wordlists().await?;
 
-    println!(
-        "Using wordlists: {:?}",
-        wordlists
-            .iter()
-            .map(|w| (w.key.clone(), w.len()))
-            .collect::<Vec<_>>()
-    );
-
     let engine = Engine::from_opts(opts, wordlists)?;
-    let results = engine.run().await?;
+    let (results, rate) = engine.run().await?;
 
     tree::display_url_tree(&results);
-    Ok(())
+    Ok(rate)
 }

@@ -5,6 +5,17 @@ use crate::{
 };
 use dashmap::DashSet as HashSet;
 
+pub fn parse_url(s: &str) -> Result<url::Url> {
+    // Replace google.com with http://google.com
+    let s = if s.starts_with("http://") || s.starts_with("https://") {
+        s.to_string()
+    } else {
+        format!("http://{}", s)
+    };
+
+    url::Url::parse(&s).map_err(|e| syntax_error!((0, s.len()), s, "{e}"))
+}
+
 // Parse [key1,key2]name:value or name:value
 pub fn parse_keyed_keyval(s: &str) -> Result<(HashSet<String>, String, String)> {
     let (keys, rest) = parse_optional_keys(s)?;

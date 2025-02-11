@@ -1,5 +1,5 @@
 use super::Filter;
-use crate::filters::expression::{Evaluator, FilterExpr, Parser};
+use crate::filters::expression::{Evaluator, FilterExpr, ExprParser};
 use crate::types::IntRange;
 use crate::Result;
 
@@ -30,7 +30,7 @@ impl Filter<String> for LengthFilter {
     where
         Self: Sized,
     {
-        let mut parser = Parser::new(arg);
+        let mut parser = ExprParser::new(arg);
         let raw_expr = parser.parse::<String>()?;
 
         // Transform raw expressions into IntRange expressions

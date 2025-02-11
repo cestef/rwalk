@@ -1,60 +1,13 @@
-use axum::{routing::get, Router};
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::net::TcpListener;
-use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
+use actix_web::{web, App, HttpRequest, HttpServer, Responder};
 
-async fn hello() -> &'static str {
-    "Hello world"
+async fn greet(_: HttpRequest) -> impl Responder {
+    "Hello, World!"
 }
 
-#[tokio::main]
-async fn main() {
-    // Configure tracing if desired
-    // construct a subscriber that prints formatted traces to stdout
-    let subscriber = tracing_subscriber::FmtSubscriber::new();
-    // use that subscriber to process traces emitted after this point
-    tracing::subscriber::set_global_default(subscriber).unwrap();
-
-    // Allow bursts with up to five requests per IP address
-    // and replenishes one element every two seconds
-    // We Box it because Axum 0.6 requires all Layers to be Clone
-    // and thus we need a static reference to it
-    let governor_conf = Arc::new(
-        GovernorConfigBuilder::default()
-            .per_second(5000)
-            .burst_size(1000)
-            .finish()
-            .unwrap(),
-    );
-
-    let governor_limiter = governor_conf.limiter().clone();
-    let interval = Duration::from_secs(60);
-    // a separate background task to clean up
-    std::thread::spawn(move || loop {
-        std::thread::sleep(interval);
-        tracing::info!("rate limiting storage size: {}", governor_limiter.len());
-        governor_limiter.retain_recent();
-    });
-
-    // build our application with a route
-    let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/hello", get(hello))
-        .layer(GovernorLayer {
-            config: governor_conf,
-        });
-
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    tracing::debug!("listening on {}", addr);
-    let listener = TcpListener::bind(addr).await.unwrap();
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .await
-    .unwrap();
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(move || App::new().route("/hello", web::get().to(greet)))
+        .bind("127.0.0.1:3000")?
+        .run()
+        .await
 }

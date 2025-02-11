@@ -1,5 +1,8 @@
 use clap::Parser;
 
+use crossterm::style::Stylize;
+use indicatif::HumanDuration;
+use owo_colors::OwoColorize;
 use rwalk::{cli::Opts, run};
 use tracing::debug;
 use tracing_indicatif::IndicatifLayer;
@@ -29,6 +32,16 @@ async fn main() -> miette::Result<()> {
 
     let opts = Opts::parse();
     debug!("{:#?}", opts);
-    run(opts).await?;
+
+    let start = std::time::Instant::now();
+
+    let rate = run(opts).await?;
+
+    println!(
+        "Done in {} with an average of {} req/s",
+        format!("{:#}", HumanDuration(start.elapsed())).bold(),
+        rate.round().bold()
+    );
+
     Ok(())
 }

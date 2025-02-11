@@ -1,6 +1,6 @@
 use clap::Parser;
 use dashmap::DashSet as HashSet;
-use parse::{parse_keyed_key_or_keyval, parse_keyval, parse_wordlist};
+use parse::{parse_keyed_key_or_keyval, parse_keyval, parse_url, parse_wordlist};
 use url::Url;
 
 pub mod parse;
@@ -13,6 +13,7 @@ use crate::{
 
 #[derive(Debug, Parser, Clone)]
 pub struct Opts {
+    #[clap(value_parser = parse_url)]
     pub url: Url,
     /// Wordlist file(s) to use, [key:]path
     #[clap(value_parser = parse_wordlist)]

@@ -1,5 +1,8 @@
 pub mod constants;
+pub mod directory;
 pub mod error;
+pub mod print;
+pub mod progress;
 pub mod throttle;
 pub mod ticker;
 pub mod tree;

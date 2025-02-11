@@ -4,7 +4,9 @@ use crate::{
     filters::Filterer,
     types::EngineMode,
     utils::{
-        constants::DEFAULT_RESPONSE_FILTERS, throttle::DynamicThrottler, ticker::RequestTicker,
+        constants::{DEFAULT_RESPONSE_FILTERS, PROGRESS_CHARS, PROGRESS_TEMPLATE},
+        throttle::DynamicThrottler,
+        ticker::RequestTickerNoReset,
     },
     wordlist::Wordlist,
     worker::{
@@ -15,6 +17,7 @@ use crate::{
 
 use crossbeam::deque::{Injector, Stealer, Worker};
 use dashmap::DashMap as HashMap;
+use indicatif::ProgressBar;
 use reqwest::Client;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
@@ -49,11 +52,12 @@ pub struct WorkerConfig {
 
 #[derive(Clone)]
 pub struct WorkerPool {
-    pub(crate) config: PoolConfig,
-    pub(crate) worker_config: WorkerConfig,
-    pub(crate) global_queue: Arc<Injector<Task>>,
-    pub(crate) wordlists: Arc<Vec<Wordlist>>,
-    pub ticker: Arc<RequestTicker>,
+    pub config: PoolConfig,
+    pub worker_config: WorkerConfig,
+    pub global_queue: Arc<Injector<Task>>,
+    pub wordlists: Arc<Vec<Wordlist>>,
+    pub pb: ProgressBar,
+    pub ticker: Arc<RequestTickerNoReset>,
 }
 
 impl WorkerPool {
@@ -92,7 +96,13 @@ impl WorkerPool {
             worker_config,
             global_queue,
             wordlists: Arc::new(wordlists),
-            ticker: RequestTicker::new(5),
+            pb: ProgressBar::new(0).with_style(
+                indicatif::ProgressStyle::default_bar()
+                    .template(PROGRESS_TEMPLATE)
+                    .unwrap()
+                    .progress_chars(PROGRESS_CHARS),
+            ),
+            ticker: RequestTickerNoReset::new(),
         })
     }
 
@@ -141,18 +151,30 @@ impl WorkerPool {
         Ok(Filterer::new(response_filters))
     }
 
-    pub async fn run(self) -> Result<HashMap<String, RwalkResponse>> {
+    pub async fn run(self) -> Result<(HashMap<String, RwalkResponse>, f64)> {
         let results = HashMap::<String, RwalkResponse>::new();
         let workers = self.create_workers();
-        let stealers = workers.iter().map(|w| w.stealer()).collect::<Vec<_>>();
+        let stealers = Arc::new(workers.iter().map(|w| w.stealer()).collect::<Vec<_>>());
 
+        self.worker_config.handler.init(&self)?;
+
+        self.pb.set_length(self.global_queue.len() as u64);
+
+        let global = self.global_queue.clone();
+        let pb = self.pb.clone();
         let ticker = self.ticker.clone();
-        let handles = self.spawn_workers(workers, stealers, results.clone())?;
+        let pb_ = pb.clone();
+
+        let handles = self.spawn_workers(workers, stealers.clone(), results.clone())?;
 
         tokio::spawn(async move {
             loop {
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                println!("RPS: {}", ticker.get_rate());
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                pb_.set_position(
+                    pb_.length()
+                        .unwrap_or_default()
+                        .saturating_sub(global.len() as u64),
+                );
             }
         });
 
@@ -160,7 +182,9 @@ impl WorkerPool {
             handle.await??;
         }
 
-        Ok(results)
+        pb.finish_and_clear();
+
+        Ok((results, ticker.get_rate()))
     }
 
     fn create_workers(&self) -> Vec<Worker<Task>> {
@@ -172,42 +196,38 @@ impl WorkerPool {
     fn spawn_workers(
         self,
         workers: Vec<Worker<Task>>,
-        stealers: Vec<Stealer<Task>>,
+        stealers: Arc<Vec<Stealer<Task>>>,
         results: HashMap<String, RwalkResponse>,
     ) -> Result<Vec<JoinHandle<Result<()>>>> {
-        self.worker_config.handler.init(&self)?;
-
-        Ok(workers
+        workers
             .into_iter()
             .map(|worker| {
                 let stealers = stealers.clone();
                 let results = results.clone();
                 let self_ = self.clone();
-                tokio::spawn(async move { self_.worker(worker, stealers, results).await })
+
+                let handle =
+                    tokio::spawn(async move { self_.worker(worker, &stealers, results).await });
+
+                Ok(handle)
             })
-            .collect())
+            .collect::<Result<Vec<_>>>()
     }
 
     async fn worker(
         self,
         worker: Worker<Task>,
-        stealers: Vec<Stealer<Task>>,
+        stealers: &Vec<Stealer<Task>>,
         results: HashMap<String, RwalkResponse>,
     ) -> Result<()> {
         while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
             if let Some(throttler) = self.worker_config.throttler.as_ref() {
                 throttler.wait_for_request().await;
             }
-            // println!("Processing {}", task.url);
-            let response = self.process_request(&task).await?;
 
+            let response = self.process_request(&task).await?;
+            self.ticker.tick();
             if self.worker_config.filterer.all(&response) {
-                println!(
-                    "{} {} {}ms",
-                    response.status.as_u16(),
-                    response.url,
-                    response.time.as_millis()
-                );
                 self.worker_config.handler.handle(response.clone(), &self)?;
                 results.insert(response.url.to_string(), response);
             }
@@ -216,14 +236,11 @@ impl WorkerPool {
     }
 
     async fn process_request(&self, task: &Task) -> Result<RwalkResponse> {
-        self.ticker.tick();
-
         let start = std::time::Instant::now();
         let res = self.worker_config.client.get(task.url.clone()).send().await;
         match res {
             Ok(res) => {
                 let should_be_throttled = res.status().is_server_error() || res.status() == 429;
-
                 if let Some(ref throttler) = self.worker_config.throttler {
                     if should_be_throttled {
                         throttler.record_error();
@@ -231,9 +248,14 @@ impl WorkerPool {
                         throttler.record_success();
                     }
                 }
-
-                RwalkResponse::from_response(res, self.worker_config.needs_body, start, task.depth)
-                    .await
+                let res = RwalkResponse::from_response(
+                    res,
+                    self.worker_config.needs_body,
+                    start,
+                    task.depth,
+                )
+                .await;
+                res
             }
             Err(e) => {
                 self.worker_config
@@ -244,6 +266,7 @@ impl WorkerPool {
                     let mut task = task.clone();
                     task.retry();
                     self.global_queue.push(task);
+                    self.pb.set_length(self.global_queue.len() as u64);
                 } else {
                     println!(
                         "Failed to fetch {} after {} retries",

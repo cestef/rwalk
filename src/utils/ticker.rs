@@ -47,6 +47,30 @@ impl RequestTicker {
     }
 }
 
+pub struct RequestTickerNoReset {
+    count: AtomicU64,
+    start_time: Instant,
+}
+
+impl RequestTickerNoReset {
+    pub fn new() -> Arc<Self> {
+        Arc::new(Self {
+            count: AtomicU64::new(0),
+            start_time: Instant::now(),
+        })
+    }
+
+    pub fn tick(&self) {
+        self.count.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn get_rate(&self) -> f64 {
+        let elapsed = self.start_time.elapsed();
+        let count = self.count.load(Ordering::Relaxed);
+        count as f64 / elapsed.as_secs_f64()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
