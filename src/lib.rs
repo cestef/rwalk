@@ -32,10 +32,18 @@ pub async fn run(opts: Opts) -> Result<f64> {
     }
 
     let shutdown_tx_clone = shutdown_tx.clone();
+
     tokio::spawn(async move {
-        tokio::signal::ctrl_c().await.unwrap();
-        println!("\nReceived Ctrl+C, initiating graceful shutdown...");
-        let _ = shutdown_tx_clone.send(());
+        let _ = tokio::signal::ctrl_c().await;
+        println!(
+            "\nReceived Ctrl+C, {} exiting...",
+            if opts.no_save {
+                "gracefully"
+            } else {
+                "saving state and"
+            }
+        );
+        let _ = shutdown_tx_clone.send(!opts.no_save);
     });
 
     let rx = shutdown_tx.subscribe();

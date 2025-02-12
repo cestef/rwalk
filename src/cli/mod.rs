@@ -56,4 +56,7 @@ pub struct Opts {
     /// Resume from previous session
     #[clap(long)]
     pub resume: bool,
+    /// Don't save state on Ctrl+C
+    #[clap(long)]
+    pub no_save: bool,
 }

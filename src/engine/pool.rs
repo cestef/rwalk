@@ -128,7 +128,7 @@ impl WorkerPool {
         client: Client,
         filterer: Filterer<RwalkResponse>,
         wordlists: Vec<Wordlist>,
-    ) -> Result<(Self, broadcast::Sender<()>)> {
+    ) -> Result<(Self, broadcast::Sender<bool>)> {
         let handler: Box<dyn ResponseHandler> =
             match config.mode {
                 EngineMode::Recursive => Box::new(RecursiveHandler::construct(filterer.clone()))
@@ -176,7 +176,7 @@ impl WorkerPool {
     pub fn from_opts(
         opts: &Opts,
         wordlists: Vec<Wordlist>,
-    ) -> Result<(Self, broadcast::Sender<()>)> {
+    ) -> Result<(Self, broadcast::Sender<bool>)> {
         let config = PoolConfig {
             threads: opts.threads,
             base_url: opts.url.clone(),
@@ -218,7 +218,7 @@ impl WorkerPool {
 
     pub async fn run(
         self,
-        mut shutdown_rx: broadcast::Receiver<()>,
+        mut shutdown_rx: broadcast::Receiver<bool>,
     ) -> Result<(Arc<HashMap<String, RwalkResponse>>, f64)> {
         let workers = self.create_workers();
         let stealers = Arc::new(workers.iter().map(|w| w.stealer()).collect::<Vec<_>>());
@@ -266,9 +266,11 @@ impl WorkerPool {
                 pb.finish_and_clear();
                 Ok((results, ticker.get_rate()))
             }
-            _ = shutdown_rx.recv() => {
-                // Save state before returning
-                Self::save_state("rwalk.state", global_.clone(), results.clone())?;
+            e = shutdown_rx.recv() => {
+                if matches!(e, Ok(true)) {
+                    // Save state before returning
+                    Self::save_state("rwalk.state", global_.clone(), results.clone())?;
+                }
                 pb.finish_and_clear();
                 Ok((results, ticker.get_rate()))
             }
@@ -285,7 +287,7 @@ impl WorkerPool {
         self,
         workers: Vec<Worker<Task>>,
         stealers: Arc<Vec<Stealer<Task>>>,
-        shutdown_rx: broadcast::Receiver<()>,
+        shutdown_rx: broadcast::Receiver<bool>,
     ) -> Result<Vec<JoinHandle<Result<()>>>> {
         workers
             .into_iter()
@@ -309,7 +311,7 @@ impl WorkerPool {
         worker: Worker<Task>,
         stealers: &Vec<Stealer<Task>>,
         results: Arc<HashMap<String, RwalkResponse>>,
-        mut shutdown_rx: broadcast::Receiver<()>,
+        mut shutdown_rx: broadcast::Receiver<bool>,
     ) -> Result<()> {
         while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
             tokio::select! {
