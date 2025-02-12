@@ -4,6 +4,7 @@ use parse::{parse_keyed_key_or_keyval, parse_url, parse_wordlist};
 use url::Url;
 
 pub mod parse;
+pub mod utils;
 
 use crate::{
     constants::THREADS_PER_CORE,
@@ -12,6 +13,7 @@ use crate::{
 };
 
 #[derive(Debug, Parser, Clone)]
+#[clap(version = utils::version(), long_version = utils::long_version())]
 pub struct Opts {
     #[clap(value_parser = parse_url)]
     pub url: Url,
@@ -19,7 +21,7 @@ pub struct Opts {
     #[clap(value_parser = parse_wordlist)]
     pub wordlists: Vec<(String, String)>,
     /// Number of threads to use, defaults to num. of cores * 10
-    #[clap(short = 'T', long, default_value_t = (num_cpus::get() * THREADS_PER_CORE) - 2)]
+    #[clap(short = 'T', long, default_value_t = num_cpus::get() * THREADS_PER_CORE)]
     pub threads: usize,
     /// List of filters to apply to responses, name:value
     #[clap(short, long, visible_alias = "filter")]

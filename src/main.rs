@@ -1,6 +1,5 @@
 use clap::Parser;
 
-use crossterm::style::Stylize;
 use indicatif::HumanDuration;
 use owo_colors::OwoColorize;
 use rwalk::{cli::Opts, run};

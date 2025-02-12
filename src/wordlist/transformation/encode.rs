@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use base64::{engine::GeneralPurpose, Engine};
+use base64::Engine;
 
 use super::Transform;
 use crate::{
