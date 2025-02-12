@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::{
     engine::WorkerPool,
     filters::Filterer,
-    utils::{directory, print},
+    utils::{directory, format},
     worker::utils::RwalkResponse,
     Result,
 };
@@ -19,7 +19,7 @@ impl ResponseHandler for RecursiveHandler {
     fn handle(&self, response: RwalkResponse, pool: &WorkerPool) -> Result<()> {
         // If it's a directory and passes filters, we should recursively scan it
         if directory::check(&response) {
-            pool.pb.println(print::response(&response));
+            pool.pb.println(format::response(&response));
 
             let pool = Arc::new(pool);
             let response = Arc::new(response);
@@ -34,7 +34,7 @@ impl ResponseHandler for RecursiveHandler {
             pool.pb.set_length(pool.global_queue.len() as u64);
         } else {
             pool.pb
-                .println(print::skip(&response, print::SkipReason::NonDirectory));
+                .println(format::skip(&response, format::SkipReason::NonDirectory));
         }
 
         Ok(())

@@ -5,6 +5,7 @@ use crate::{
     engine::{Task, WorkerPool},
     error::{error, RwalkError},
     filters::Filterer,
+    utils::format,
     wordlist::Wordlist,
     worker::utils::RwalkResponse,
     Result,
@@ -17,7 +18,8 @@ pub struct TemplateHandler {
 }
 
 impl ResponseHandler for TemplateHandler {
-    fn handle(&self, _response: RwalkResponse, _pool: &WorkerPool) -> Result<()> {
+    fn handle(&self, response: RwalkResponse, pool: &WorkerPool) -> Result<()> {
+        pool.pb.println(format::response(&response));
         Ok(())
     }
 
