@@ -3,7 +3,7 @@ use crate::Result;
 use std::fmt::Debug;
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FilterExpr<T> {
     And(Box<FilterExpr<T>>, Box<FilterExpr<T>>),
     Or(Box<FilterExpr<T>>, Box<FilterExpr<T>>),
@@ -16,13 +16,13 @@ use logos::Logos;
 #[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"[ \t\n\f]+")] // Skip whitespace
 pub enum Token {
-    #[token(" & ")]
+    #[token("&")]
     And,
 
-    #[token(" | ")]
+    #[token("|")]
     Or,
 
-    #[token(" ; ")]
+    #[token(";")]
     SemiColon,
 
     #[token("!")]
@@ -34,8 +34,30 @@ pub enum Token {
     #[token(")")]
     RParen,
 
-    #[regex("[^&|;!()\\s]+")]
+    // 1. Either a sequence of non-special chars (not including whitespace)
+    // 2. Or an escape sequence followed by any char (including whitespace)
+    // This prevents overlap with the skip pattern
+    #[regex(r"([^&|;!()\\\s]+|\\[\s&|;!()\\])+")]
     Value,
+}
+
+// Helper function to unescape a string
+fn unescape_string(input: &str) -> String {
+    let mut result = String::with_capacity(input.len());
+    let mut chars = input.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            if let Some(next_char) = chars.next() {
+                // Keep the actual character after the escape
+                result.push(next_char);
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+
+    result
 }
 
 pub struct ExprParser<'a> {
@@ -178,9 +200,10 @@ impl<'a> ExprParser<'a> {
                 Ok(expr)
             }
             Some(Ok(Token::Value)) => {
-                let value = self.current_slice.to_string();
+                // Unescape the value before storing it
+                let unescaped_value = unescape_string(self.current_slice);
                 self.advance();
-                Ok(FilterExpr::Raw(value))
+                Ok(FilterExpr::Raw(unescaped_value))
             }
             Some(Ok(token)) => Err(SyntaxError {
                 src: self.input.to_string(),
@@ -243,5 +266,161 @@ impl<V> FilterExpr<V> {
             }
             FilterExpr::Raw(raw) => Ok(FilterExpr::Value(f(raw)?)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simple_expression() {
+        let mut parser = ExprParser::new("value");
+        let expr = parser.parse::<String>().unwrap();
+
+        match expr {
+            FilterExpr::Raw(value) => {
+                assert_eq!(value, "value");
+            }
+            _ => panic!("Expected Raw variant"),
+        }
+    }
+
+    #[test]
+    fn test_escaped_values() {
+        let mut parser = ExprParser::new(r"value\&with\|escaped\;chars");
+        let expr = parser.parse::<String>().unwrap();
+
+        match expr {
+            FilterExpr::Raw(value) => {
+                assert_eq!(value, "value&with|escaped;chars");
+            }
+            _ => panic!("Expected Raw variant"),
+        }
+    }
+
+    #[test]
+    fn test_escaped_whitespace() {
+        let mut parser = ExprParser::new(r"prefix\ suffix");
+        let expr = parser.parse::<String>().unwrap();
+
+        match expr {
+            FilterExpr::Raw(value) => {
+                assert_eq!(value, "prefix suffix");
+            }
+            _ => panic!("Expected Raw variant"),
+        }
+    }
+
+    #[test]
+    fn test_complex_expression_with_escapes() {
+        let input = r"normal & escaped\&value | another\|value";
+        let mut parser = ExprParser::new(input);
+        let expr = parser.parse::<String>().unwrap();
+
+        assert_eq!(
+            expr,
+            FilterExpr::Or(
+                Box::new(FilterExpr::And(
+                    Box::new(FilterExpr::Raw("normal".to_string())),
+                    Box::new(FilterExpr::Raw("escaped&value".to_string()))
+                )),
+                Box::new(FilterExpr::Raw("another|value".to_string()))
+            )
+        );
+    }
+
+    #[test]
+    fn test_map() {
+        let input = r"normal & escaped\&value | another\|value";
+        let mut parser = ExprParser::new(input);
+        let expr = parser.parse::<String>().unwrap();
+
+        let mapped = expr.map(|s| s.to_uppercase());
+        assert_eq!(
+            mapped,
+            FilterExpr::Or(
+                Box::new(FilterExpr::And(
+                    Box::new(FilterExpr::Value("NORMAL".to_string())),
+                    Box::new(FilterExpr::Value("ESCAPED&VALUE".to_string()))
+                )),
+                Box::new(FilterExpr::Value("ANOTHER|VALUE".to_string()))
+            )
+        );
+    }
+
+    #[test]
+    fn test_try_map() {
+        let input = r"normal & escaped\&value | another\|value";
+        let mut parser = ExprParser::new(input);
+        let expr = parser.parse::<String>().unwrap();
+
+        let mapped = expr
+            .try_map(|s| Ok::<String, String>(s.to_uppercase()))
+            .unwrap();
+        assert_eq!(
+            mapped,
+            FilterExpr::Or(
+                Box::new(FilterExpr::And(
+                    Box::new(FilterExpr::Value("NORMAL".to_string())),
+                    Box::new(FilterExpr::Value("ESCAPED&VALUE".to_string()))
+                )),
+                Box::new(FilterExpr::Value("ANOTHER|VALUE".to_string()))
+            )
+        );
+    }
+
+    #[test]
+    fn test_missing_parentheses() {
+        let input = "value & (value | value";
+        let mut parser = ExprParser::new(input);
+        let result = parser.parse::<String>();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_double_parentheses() {
+        let input = "value & ((value | value))";
+        let mut parser = ExprParser::new(input);
+        let result = parser.parse::<String>();
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_empty_parentheses() {
+        let input = "value & ()";
+        let mut parser = ExprParser::new(input);
+        let result = parser.parse::<String>();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_unexpected_token() {
+        let input = "value & | value";
+        let mut parser = ExprParser::new(input);
+        let result = parser.parse::<String>();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_unexpected_end_of_input() {
+        let input = "value &";
+        let mut parser = ExprParser::new(input);
+        let result = parser.parse::<String>();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_invalid_token() {
+        let input = "value & value $ value";
+        let mut parser = ExprParser::new(input);
+        let result = parser.parse::<String>();
+        println!("{:?}", result);
+        assert!(result.is_err());
     }
 }
