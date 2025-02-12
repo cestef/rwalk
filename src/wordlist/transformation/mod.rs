@@ -1,4 +1,22 @@
-pub mod case;
+mod case;
+mod encode;
+mod prefix;
+mod remove;
+mod replace;
+mod suffix;
+
+create_transformer_registry!(
+    WordlistTransformerRegistry,
+    String,
+    [
+        case::CaseTransformer,
+        prefix::PrefixTransformer,
+        suffix::SuffixTransformer,
+        replace::ReplaceTransformer,
+        remove::RemoveTransformer,
+        encode::EncodeTransformer
+    ]
+);
 
 use crate::{error::RwalkError, Result};
 use once_cell::sync::Lazy;
@@ -84,5 +102,3 @@ macro_rules! create_transformer_registry {
 }
 
 pub(crate) use create_transformer_registry;
-
-create_transformer_registry!(WordlistTransformerRegistry, String, [case::CaseTransformer]);

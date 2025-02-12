@@ -10,6 +10,7 @@ use crate::{
 pub enum Case {
     Upper,
     Lower,
+    Capitalize,
 }
 
 impl FromStr for Case {
@@ -19,6 +20,7 @@ impl FromStr for Case {
         match s.to_lowercase().as_str() {
             "upper" | "up" | "u" => Ok(Case::Upper),
             "lower" | "low" | "l" => Ok(Case::Lower),
+            "capitalize" | "cap" | "c" => Ok(Case::Capitalize),
             _ => Err(error!("Invalid case: {}", s)),
         }
     }
@@ -32,8 +34,13 @@ pub struct CaseTransformer {
 impl Transform<String> for CaseTransformer {
     fn transform(&self, item: &mut String) {
         match self.case {
-            Case::Upper => *item = item.to_uppercase(),
-            Case::Lower => *item = item.to_lowercase(),
+            Case::Upper => item.make_ascii_uppercase(),
+            Case::Lower => item.make_ascii_lowercase(),
+            Case::Capitalize => {
+                if let Some(first) = item.chars().next() {
+                    item.replace_range(..1, &first.to_uppercase().to_string());
+                }
+            }
         }
     }
 
