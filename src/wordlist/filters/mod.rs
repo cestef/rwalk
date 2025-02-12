@@ -4,13 +4,16 @@ pub mod length;
 pub mod starts;
 
 use crate::{
-    filters::{create_filter_registry, expression::FilterExpr, Filter},
+    filters::{expression::FilterExpr, Filter},
+    utils::registry::create_registry,
     Result,
 };
 
 use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
-create_filter_registry!(
+
+create_registry!(
+    filter,
     WordlistFilterRegitry,
     String,
     [

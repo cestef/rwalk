@@ -10,17 +10,18 @@ mod r#type;
 
 use crate::{
     filters::{
-        create_filter_registry,
         expression::{Evaluator, FilterExpr},
         Filter,
     },
+    utils::registry::create_registry,
     worker::utils::RwalkResponse,
     Result,
 };
 use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
 
-create_filter_registry!(
+create_registry!(
+    filter,
     ResponseFilterRegistry,
     RwalkResponse,
     [

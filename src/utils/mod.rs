@@ -3,6 +3,7 @@ pub mod directory;
 pub mod error;
 pub mod format;
 pub mod progress;
+pub mod registry;
 pub mod throttle;
 pub mod ticker;
 pub mod tree;

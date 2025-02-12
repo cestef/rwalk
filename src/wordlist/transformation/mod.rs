@@ -5,7 +5,8 @@ mod remove;
 mod replace;
 mod suffix;
 
-create_transformer_registry!(
+create_registry!(
+    transform,
     WordlistTransformerRegistry,
     String,
     [
@@ -18,6 +19,7 @@ create_transformer_registry!(
     ]
 );
 
+use crate::utils::registry::create_registry;
 use crate::{error::RwalkError, Result};
 use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
@@ -64,41 +66,3 @@ impl<T> Transformer<T> {
         }
     }
 }
-
-macro_rules! create_transformer_registry {
-    ($static_name:ident, $item_type:ty, [$($transformer:ty),*]) => {
-        type TransformerConstructor = fn(Option<&str>) -> Result<Box<dyn Transform<$item_type>>>;
-
-        static REGISTRY: Lazy<HashMap<&'static str, TransformerConstructor>> = Lazy::new(|| {
-            let mut registry = HashMap::new();
-
-            $(
-                // Register main name
-                registry.insert(<$transformer>::name(), <$transformer>::construct as TransformerConstructor);
-                // Register aliases
-                for &alias in <$transformer>::aliases() {
-                    registry.insert(alias, <$transformer>::construct as TransformerConstructor);
-                }
-            )*
-
-            registry
-        });
-
-        pub struct $static_name;
-
-        impl $static_name {
-            pub fn construct(name: &str, arg: Option<&str>) -> Result<Box<dyn Transform<$item_type>>> {
-                match REGISTRY.get(name) {
-                    Some(constructor) => constructor(arg),
-                    None => Err(crate::error!("Unknown transformer: {}", name)),
-                }
-            }
-
-            pub fn list() -> HashSet<&'static str> {
-                REGISTRY.keys().copied().collect()
-            }
-        }
-    };
-}
-
-pub(crate) use create_transformer_registry;

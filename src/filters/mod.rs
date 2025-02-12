@@ -1,5 +1,6 @@
 use crate::Result;
-use std::{collections::HashMap, fmt::Debug, sync::Arc};
+use expression::{Evaluator, FilterExpr};
+use std::{fmt::Debug, sync::Arc};
 
 pub mod expression;
 
@@ -92,65 +93,3 @@ impl<T> Evaluator<(), Box<dyn Filter<T>>> for NeedsBodyEvaluator {
 
 static FILTER_EVALUATOR: FilterEvaluator = FilterEvaluator;
 static NEEDS_BODY_EVALUATOR: NeedsBodyEvaluator = NeedsBodyEvaluator;
-
-use crate::error::RwalkError;
-
-pub fn parse_filter<T>(
-    registry: &HashMap<&str, fn(&str) -> Result<Box<dyn Filter<T>>>>,
-    input: &str,
-) -> Result<FilterExpr<Box<dyn Filter<T>>>> {
-    let mut parser = ExprParser::new(input);
-    let raw_expr = parser.parse::<String>()?;
-
-    let expr = raw_expr.try_map(|e| {
-        let (key, value) = e
-            .split_once(':')
-            .ok_or_else(|| crate::error!("Invalid filter: {}", e))?;
-        match registry.get(key) {
-            Some(constructor) => constructor(value),
-            None => Err(crate::error!("Unknown filter: {}", key)),
-        }
-    })?;
-
-    Ok(expr)
-}
-
-macro_rules! create_filter_registry {
-    ($static_name:ident, $item_type:ty, [$($filter:ty),*]) => {
-
-        type FilterConstructor = fn(&str) -> Result<Box<dyn Filter<$item_type>>>;
-
-        static REGISTRY: Lazy<HashMap<&'static str, FilterConstructor>> = Lazy::new(|| {
-            let mut registry = HashMap::new();
-
-            $(
-                // Register main name
-                registry.insert(<$filter>::name(), <$filter>::construct as FilterConstructor);
-                // Register aliases
-                for &alias in <$filter>::aliases() {
-                    registry.insert(alias, <$filter>::construct as FilterConstructor);
-                }
-            )*
-
-            registry
-        });
-
-
-        pub struct $static_name;
-        impl $static_name {
-            pub fn construct(input: &str) -> Result<FilterExpr<Box<dyn Filter<$item_type>>>> {
-                use crate::filters::parse_filter;
-                let parsed = parse_filter(&REGISTRY, input)?;
-                Ok(parsed)
-            }
-
-            pub fn list() -> HashSet<&'static str> {
-                REGISTRY.keys().copied().collect()
-            }
-        }
-
-    };
-}
-
-pub(crate) use create_filter_registry;
-use expression::{Evaluator, ExprParser, FilterExpr};
