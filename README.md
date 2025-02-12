@@ -2,9 +2,17 @@
     <img src="assets/header.png" alt="rwalk" />
 </p>
 
-[![Crates.io](https://img.shields.io/crates/v/rwalk?labelColor=%231e1e1e&color=%231e1e1e)](https://crates.io/crates/rwalk)
-[![GitHub](https://img.shields.io/github/license/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e)](https://github.com/cestef/rwalk/releases/latest)
+<p align="center">
+    <a href="https://crates.io/crates/rwalk" style="text-decoration: none;">
+        <img src="https://img.shields.io/github/actions/workflow/status/cestef/rwalk/release.yml?labelColor=%231e1e1e&color=%231e1e1e" alt="Crates.io" />
+    </a>
+    <a href="https://img.shields.io/github/v/release/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" style="text-decoration: none;">
+        <img src="https://img.shields.io/github/v/release/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" alt="Release" />
+    </a>
+    <a href="LICENSE" style="text-decoration: none;">
+        <img src="https://img.shields.io/github/license/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" alt="License" />
+    </a>
+</p>
 
 > [!WARNING]
 > This is the development branch. I am mostly testing new features here. If you want to use a stable version, please check the [main branch](https://github.com/cestef/rwalk/tree/main).
