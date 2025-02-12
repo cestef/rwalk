@@ -1,33 +1,10 @@
-use super::Filter;
-use crate::Result;
+use super::wordlist_filter;
 
-#[derive(Debug, Clone)]
-pub struct EndsFilter {
-    substr: String,
-}
-
-#[derive(Debug)]
-struct LengthValueParser;
-
-impl Filter<String> for EndsFilter {
-    fn filter(&self, item: &String) -> bool {
-        item.ends_with(&self.substr)
-    }
-
-    fn name() -> &'static str {
-        "ends"
-    }
-
-    fn aliases() -> &'static [&'static str] {
-        &["e"]
-    }
-
-    fn construct(arg: &str, _: Option<usize>) -> Result<Box<dyn Filter<String>>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(EndsFilter {
-            substr: arg.to_string(),
-        }))
-    }
-}
+wordlist_filter!(
+    EndsFilter,
+    String,
+    |w: &String, sub: &String| w.ends_with(sub),
+    "ends",
+    "end",
+    "e"
+);

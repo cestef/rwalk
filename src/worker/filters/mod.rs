@@ -9,10 +9,7 @@ mod time;
 mod r#type;
 
 use crate::{
-    filters::{
-        expression::{Evaluator, FilterExpr},
-        Filter,
-    },
+    filters::{expression::FilterExpr, Filter},
     utils::registry::create_registry,
     worker::utils::RwalkResponse,
     Result,
@@ -37,33 +34,6 @@ create_registry!(
     ]
 );
 
-pub struct GenericResponseEvaluator<V> {
-    filter_fn: fn(&RwalkResponse, &V) -> bool,
-    _phantom: std::marker::PhantomData<V>,
-}
-
-impl<V> GenericResponseEvaluator<V> {
-    pub fn new(filter_fn: fn(&RwalkResponse, &V) -> bool) -> Self {
-        Self {
-            filter_fn,
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-
-impl<V> Evaluator<RwalkResponse, V> for GenericResponseEvaluator<V> {
-    fn evaluate(&self, expr: &FilterExpr<V>, item: &RwalkResponse) -> bool {
-        use FilterExpr::*;
-        match expr {
-            And(left, right) => self.evaluate(left, item) && self.evaluate(right, item),
-            Or(left, right) => self.evaluate(left, item) || self.evaluate(right, item),
-            Not(expr) => !self.evaluate(expr, item),
-            Value(sub) => (self.filter_fn)(item, sub),
-            Raw(e) => unreachable!("{e}"), // Should not happen after parsing
-        }
-    }
-}
-#[macro_export]
 macro_rules! response_filter {
     // Basic variant with default transformation
     (
@@ -85,7 +55,7 @@ macro_rules! response_filter {
         );
     };
 
-    // Variant with custom value transformation
+
     (
         $filter_name:ident,
         $value_type:ty,
@@ -96,14 +66,15 @@ macro_rules! response_filter {
         transform = $transform:expr
     ) => {
         use once_cell::sync::Lazy;
-        use super::{Filter, GenericResponseEvaluator};
+        use super::Filter;
         use crate::{
             worker::utils::RwalkResponse,
             Result,
+            filters::evaluator::GenericEvaluator,
         };
 
-        static EVALUATOR: Lazy<GenericResponseEvaluator<$value_type>> = Lazy::new(|| {
-            GenericResponseEvaluator::new($filter_fn)
+        static EVALUATOR: Lazy<GenericEvaluator<$value_type, RwalkResponse>> = Lazy::new(|| {
+            GenericEvaluator::new($filter_fn)
         });
 
         #[derive(Debug, Clone)]
@@ -134,12 +105,16 @@ macro_rules! response_filter {
                 &[$($alias),*]
             }
 
-            fn construct(arg: &str, depth: Option<usize>) -> Result<Box<dyn Filter<RwalkResponse>>>
+            fn construct(arg: &str, depth: Option<&str>) -> Result<Box<dyn Filter<RwalkResponse>>>
             where
                 Self: Sized,
             {
                 let value = $transform(arg.to_string())?;
-
+                let depth = if let Some(depth) = depth {
+                    Some(depth.parse::<usize>()?)
+                } else {
+                    None
+                };
                 Ok(Box::new(Self { value, depth }))
             }
         }

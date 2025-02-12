@@ -1,7 +1,9 @@
 use crate::Result;
-use expression::{Evaluator, FilterExpr};
+use evaluator::Evaluator;
+use expression::FilterExpr;
 use std::{fmt::Debug, sync::Arc};
 
+pub mod evaluator;
 pub mod expression;
 
 #[derive(Debug, Clone)]
@@ -27,7 +29,7 @@ pub trait Filter<T>: Debug + Send + Sync {
     fn needs_body(&self) -> bool {
         false
     }
-    fn construct(arg: &str, depth: Option<usize>) -> Result<Box<dyn Filter<T>>>
+    fn construct(arg: &str, specifier: Option<&str>) -> Result<Box<dyn Filter<T>>>
     where
         Self: Sized;
 }

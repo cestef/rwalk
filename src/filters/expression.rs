@@ -220,10 +220,6 @@ impl<'a> ExprParser<'a> {
     }
 }
 
-pub trait Evaluator<T, V> {
-    fn evaluate(&self, expr: &FilterExpr<V>, item: &T) -> bool;
-}
-
 impl<V> FilterExpr<V> {
     pub fn map<U, F>(self, f: F) -> FilterExpr<U>
     where

@@ -1,33 +1,9 @@
-use super::Filter;
-use crate::Result;
+use super::wordlist_filter;
 
-#[derive(Debug, Clone)]
-pub struct ContainsFilter {
-    substr: String,
-}
-
-#[derive(Debug)]
-struct LengthValueParser;
-
-impl Filter<String> for ContainsFilter {
-    fn filter(&self, item: &String) -> bool {
-        item.contains(&self.substr)
-    }
-
-    fn name() -> &'static str {
-        "contains"
-    }
-
-    fn aliases() -> &'static [&'static str] {
-        &["c", "has"]
-    }
-
-    fn construct(arg: &str, _: Option<usize>) -> Result<Box<dyn Filter<String>>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(ContainsFilter {
-            substr: arg.to_string(),
-        }))
-    }
-}
+wordlist_filter!(
+    ContainsFilter,
+    String,
+    |w: &String, sub: &String| w.contains(sub),
+    "contains",
+    "c"
+);
