@@ -17,7 +17,7 @@ fn display_url(url: &str) -> Cow<'_, str> {
     urlencoding::decode(url).unwrap_or(url.into())
 }
 
-fn display_time(t: u128) -> String {
+pub fn display_time(t: u128) -> String {
     let t = t as f64 / 1_000_000.0;
     let mut unit: &str = "ms";
     let mut value: f64 = t;
@@ -62,21 +62,50 @@ fn icon_for_status_code(s: u16) -> &'static str {
     }
 }
 
-pub fn warning(msg: &str) -> String {
-    format!("{} {}", "⚠".yellow(), msg)
+// pub fn warning(msg: &str) -> String {
+//     format!("{} {}", "⚠".yellow(), msg)
+// }
+
+// pub fn error(msg: &str) -> String {
+//     format!("{} {}", "✖".red(), msg)
+// }
+
+// pub fn info(msg: &str) -> String {
+//     format!("{} {}", "ℹ️".blue(), msg)
+// }
+
+// pub fn success(msg: &str) -> String {
+//     format!("{} {}", "✓".green(), msg)
+// }
+
+macro_rules! success {
+    ($($arg:tt)*) => {
+        println!("{} {}", "✓".green(), format!($($arg)*))
+    };
 }
 
-pub fn error(msg: &str) -> String {
-    format!("{} {}", "✖".red(), msg)
+macro_rules! error {
+    ($($arg:tt)*) => {
+        println!("{} {}", "✖".red(), format!($($arg)*))
+    };
 }
 
-pub fn info(msg: &str) -> String {
-    format!("{} {}", "ℹ️".blue(), msg)
+macro_rules! warning {
+    ($($arg:tt)*) => {
+        println!("{} {}", "⚠".yellow(), format!($($arg)*))
+    };
 }
 
-pub fn success(msg: &str) -> String {
-    format!("{} {}", "✓".green(), msg)
+macro_rules! info {
+    ($($arg:tt)*) => {
+        println!("{} {}", "ℹ️".blue(), format!($($arg)*))
+    };
 }
+
+pub(crate) use error;
+pub(crate) use info;
+pub(crate) use success;
+pub(crate) use warning;
 
 pub enum SkipReason {
     NonDirectory,

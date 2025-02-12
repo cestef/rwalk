@@ -1,11 +1,14 @@
+use indicatif::ProgressBar;
+use itertools::Itertools;
+use owo_colors::OwoColorize;
 use rayon::prelude::*;
-use std::sync::Arc;
+use std::{collections::HashMap, time::Duration};
 
 use crate::{
     engine::{Task, WorkerPool},
     error::{error, RwalkError},
     filters::Filterer,
-    utils::format,
+    utils::format::{self, display_time, success},
     wordlist::Wordlist,
     worker::utils::RwalkResponse,
     Result,
@@ -46,66 +49,64 @@ impl ResponseHandler for TemplateHandler {
 
 impl TemplateHandler {
     fn generate_urls(&self, wordlists: &Vec<Wordlist>, base_url: &str) -> Result<Vec<String>> {
+        let pb = ProgressBar::new(0).with_style(
+            indicatif::ProgressStyle::default_bar()
+                .template("{spinner:.green} {msg} {elapsed_precise}")
+                .unwrap(),
+        );
+        pb.enable_steady_tick(Duration::from_millis(100));
+
+        pb.set_message("Generating URLs for");
+
         // Find all template markers and their positions in the URL
-        let template_positions: Vec<_> = base_url.match_indices('$').map(|(pos, _)| pos).collect();
-
-        if template_positions.is_empty() {
-            return Ok(vec![base_url.to_string()]);
-        }
-
-        // Get the wordlist that corresponds to the '$' marker
-        let wordlist = wordlists
+        let positions: HashMap<String, Vec<_>> = wordlists
             .iter()
-            .find(|w| w.key == "$")
-            .ok_or_else(|| error!("No wordlist found for template marker '$'"))?;
-
-        let wordlist = Arc::new(wordlist);
-        let base_url = Arc::new(base_url.to_string());
-        let template_positions = Arc::new(template_positions);
-
-        // Calculate total combinations
-        let total_combinations = wordlist.words.len().pow(template_positions.len() as u32);
-
-        // Split work into chunks
-        let chunk_size = (total_combinations / rayon::current_num_threads()).max(1);
-
-        // Generate URLs in parallel
-        let urls: Vec<String> = (0..total_combinations)
-            .into_par_iter()
-            .chunks(chunk_size)
-            .flat_map(|chunk| {
-                let wordlist = Arc::clone(&wordlist);
-                let base_url = Arc::clone(&base_url);
-                let template_positions = Arc::clone(&template_positions);
-
-                chunk
-                    .into_iter()
-                    .map(move |i| {
-                        let mut combination = Vec::new();
-                        let mut n = i;
-
-                        for _ in 0..template_positions.len() {
-                            let word_idx = n % wordlist.words.len();
-                            combination.push(&wordlist.words[word_idx]);
-                            n /= wordlist.words.len();
-                        }
-
-                        let mut url = (*base_url).clone();
-                        let mut offset = 0;
-
-                        for (pos, word) in template_positions.iter().zip(combination) {
-                            let pos = *pos + offset;
-                            url.replace_range(pos..pos + 1, word);
-                            offset += word.len() - 1;
-                        }
-
-                        url
-                    })
-                    .collect::<Vec<_>>()
+            .map(|w| {
+                let positions = base_url
+                    .match_indices(&w.key)
+                    .map(|(pos, _)| pos)
+                    .collect::<Vec<_>>();
+                (w.key.clone(), positions)
             })
             .collect();
 
-        println!("Generated {} URLs", urls.len());
+        if positions.iter().all(|(_, v)| v.is_empty()) {
+            return Err(error!("No template markers found in URL"));
+        }
+
+        // Create iterator of word references for each wordlist
+        let word_iters: Vec<_> = wordlists.iter().map(|wl| wl.words.iter()).collect();
+
+        // Generate all combinations using MultiProduct
+        let combinations = word_iters
+            .into_iter()
+            .multi_cartesian_product()
+            .par_bridge();
+
+        // For each combination, create a URL by replacing template markers
+        let urls: Vec<String> = combinations
+            .map(|words| {
+                let mut url = base_url.to_string();
+                for (wordlist, word) in wordlists.iter().zip(words) {
+                    // Replace all occurrences of this template marker
+                    if let Some(positions) = positions.get(&wordlist.key) {
+                        for &pos in positions {
+                            url.replace_range(pos..pos + wordlist.key.len(), word);
+                        }
+                    }
+                }
+                url
+            })
+            .collect();
+
+        pb.finish_and_clear();
+
+        success!(
+            "Generated {} URLs in {}",
+            urls.len().to_string().bold(),
+            display_time(pb.elapsed().as_nanos())
+        );
+
         Ok(urls)
     }
 }
