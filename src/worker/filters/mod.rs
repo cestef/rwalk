@@ -109,10 +109,16 @@ macro_rules! response_filter {
         #[derive(Debug, Clone)]
         pub struct $filter_name {
             value: $value_type,
+            depth: Option<usize>,
         }
 
         impl Filter<RwalkResponse> for $filter_name {
             fn filter(&self, item: &RwalkResponse) -> bool {
+                if let Some(depth) = self.depth {
+                    if item.depth != depth {
+                        return false;
+                    }
+                }
                 $filter_fn(item, &self.value)
             }
 
@@ -128,13 +134,13 @@ macro_rules! response_filter {
                 &[$($alias),*]
             }
 
-            fn construct(arg: &str) -> Result<Box<dyn Filter<RwalkResponse>>>
+            fn construct(arg: &str, depth: Option<usize>) -> Result<Box<dyn Filter<RwalkResponse>>>
             where
                 Self: Sized,
             {
                 let value = $transform(arg.to_string())?;
 
-                Ok(Box::new(Self { value }))
+                Ok(Box::new(Self { value, depth }))
             }
         }
     };

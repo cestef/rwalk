@@ -17,7 +17,7 @@ use crate::{
 pub struct Opts {
     #[clap(value_parser = parse_url)]
     pub url: Url,
-    /// Wordlist file(s) to use, [key:]path
+    /// Wordlist file(s) to use, path[:key]
     #[clap(value_parser = parse_wordlist)]
     pub wordlists: Vec<(String, String)>,
     /// Number of threads to use, defaults to num. of cores * 10
@@ -59,4 +59,7 @@ pub struct Opts {
     /// Don't save state on Ctrl+C
     #[clap(long)]
     pub no_save: bool,
+    /// Extra information to display on hits
+    #[clap(short, long)]
+    pub show: Vec<String>,
 }

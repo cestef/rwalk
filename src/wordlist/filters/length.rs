@@ -1,5 +1,5 @@
 use super::Filter;
-use crate::filters::expression::{Evaluator, FilterExpr, ExprParser};
+use crate::filters::expression::{Evaluator, ExprParser, FilterExpr};
 use crate::types::IntRange;
 use crate::Result;
 
@@ -26,7 +26,7 @@ impl Filter<String> for LengthFilter {
         &["l"]
     }
 
-    fn construct(arg: &str) -> Result<Box<dyn Filter<String>>>
+    fn construct(arg: &str, _: Option<usize>) -> Result<Box<dyn Filter<String>>>
     where
         Self: Sized,
     {

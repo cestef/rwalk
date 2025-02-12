@@ -27,7 +27,7 @@ pub trait Filter<T>: Debug + Send + Sync {
     fn needs_body(&self) -> bool {
         false
     }
-    fn construct(arg: &str) -> Result<Box<dyn Filter<T>>>
+    fn construct(arg: &str, depth: Option<usize>) -> Result<Box<dyn Filter<T>>>
     where
         Self: Sized;
 }

@@ -22,7 +22,7 @@ impl Filter<String> for StartsFilter {
         &["s"]
     }
 
-    fn construct(arg: &str) -> Result<Box<dyn Filter<String>>>
+    fn construct(arg: &str, _: Option<usize>) -> Result<Box<dyn Filter<String>>>
     where
         Self: Sized,
     {

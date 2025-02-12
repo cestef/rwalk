@@ -61,7 +61,7 @@ macro_rules! create_registry {
         $item_type:ty,
         [$($implementor:ty),* $(,)?]
     ) => {
-        type FilterConstructor = fn(&str) -> Result<Box<dyn Filter<$item_type>>>;
+        type FilterConstructor = fn(&str, Option<usize>) -> Result<Box<dyn Filter<$item_type>>>;
 
         create_registry!(@base
             $static_name,
@@ -82,8 +82,20 @@ macro_rules! create_registry {
                     let (key, value) = e
                         .split_once(':')
                         .ok_or_else(|| crate::error!("Invalid filter: {}", e))?;
+                    let (depth, key) = if key.starts_with('[') && key.ends_with(']') {
+                        let depth = key
+                            .strip_prefix('[')
+                            .and_then(|s| s.strip_suffix(']'))
+                            .ok_or_else(|| crate::error!("Invalid filter: {}", e))?
+                            .parse::<usize>()
+                            .map_err(|_| crate::error!("Invalid filter: {}", e))?;
+                        let key = value;
+                        (Some(depth), key)
+                    } else {
+                        (None, key)
+                    };
                     match REGISTRY.get(key) {
-                        Some(constructor) => constructor(value),
+                        Some(constructor) => constructor(value, depth),
                         None => Err(crate::error!("Unknown filter: {}", key)),
                     }
                 })?;
