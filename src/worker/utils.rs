@@ -1,4 +1,7 @@
-use crate::{utils::constants::STEAL_LIMIT, Result};
+use crate::{
+    utils::{constants::STEAL_LIMIT, directory},
+    Result,
+};
 use crossbeam::deque::{Injector, Stealer, Worker};
 use dashmap::DashMap as HashMap;
 use serde::{Deserialize, Serialize};
@@ -30,6 +33,7 @@ pub struct RwalkResponse {
     pub url: url::Url,
     pub time: std::time::Duration,
     pub depth: usize,
+    pub directory: bool,
 }
 
 impl RwalkResponse {
@@ -53,13 +57,18 @@ impl RwalkResponse {
             None
         };
 
-        Ok(Self {
+        let mut res = Self {
             status,
             headers,
             body,
             url,
             time: start.elapsed(),
             depth,
-        })
+            directory: false,
+        };
+
+        res.directory = directory::check(&res);
+
+        Ok(res)
     }
 }

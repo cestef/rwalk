@@ -1,10 +1,12 @@
 pub mod contains;
 pub mod ends;
+pub mod header;
 pub mod length;
 pub mod regex;
 pub mod starts;
 pub mod status;
 pub mod time;
+pub mod r#type;
 
 use crate::{
     filters::{
@@ -28,7 +30,9 @@ create_filter_registry!(
         ends::EndsFilter,
         contains::ContainsFilter,
         time::TimeFilter,
-        regex::RegexFilter
+        regex::RegexFilter,
+        header::HeaderFilter,
+        r#type::TypeFilter
     ]
 );
 

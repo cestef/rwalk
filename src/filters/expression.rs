@@ -423,4 +423,63 @@ mod tests {
         println!("{:?}", result);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_operators_without_spaces() {
+        let test_cases = vec![
+            ("a&b", 2),       // Basic case
+            ("a & b", 2),     // With spaces
+            ("a&b|c", 3),     // Multiple operators
+            ("a & b | c", 3), // Multiple operators with spaces
+            ("a&b & c|d", 4), // Mixed spacing
+        ];
+
+        for (input, expected_count) in test_cases {
+            let mut parser = ExprParser::new(input);
+            let expr = parser.parse::<String>().unwrap();
+
+            // Count the number of values in the expression
+            fn count_values(expr: &FilterExpr<String>) -> usize {
+                match expr {
+                    FilterExpr::And(left, right) => count_values(left) + count_values(right),
+                    FilterExpr::Or(left, right) => count_values(left) + count_values(right),
+                    FilterExpr::Not(expr) => count_values(expr),
+                    FilterExpr::Raw(_) => 1,
+                    _ => 0,
+                }
+            }
+
+            assert_eq!(
+                count_values(&expr),
+                expected_count,
+                "Failed for input: {}",
+                input
+            );
+        }
+    }
+
+    #[test]
+    fn test_escaped_spaces() {
+        let test_cases = vec![
+            (r"hello\ world", "hello world"),
+            (r"hello\ world&test", "hello world"), // First value only
+            (r"\ leading\ space", " leading space"),
+            (r"trailing\ \ spaces\ ", "trailing  spaces "),
+        ];
+
+        for (input, expected) in test_cases {
+            let mut parser = ExprParser::new(input);
+            let expr = parser.parse::<String>().unwrap();
+
+            match expr {
+                FilterExpr::Raw(value) => assert_eq!(value, expected),
+                FilterExpr::And(left, _) => {
+                    if let FilterExpr::Raw(value) = *left {
+                        assert_eq!(value, expected);
+                    }
+                }
+                _ => panic!("Unexpected expression type"),
+            }
+        }
+    }
 }

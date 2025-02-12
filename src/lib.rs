@@ -16,7 +16,7 @@ pub mod wordlist;
 pub mod worker;
 
 pub(crate) use error::error;
-pub use error::Result;
+pub use error::*;
 
 pub async fn run(opts: Opts) -> Result<f64> {
     // Process wordlists

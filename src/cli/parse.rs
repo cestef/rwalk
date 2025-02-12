@@ -52,12 +52,16 @@ pub fn parse_optional_keys(s: &str) -> Result<(HashSet<String>, &str)> {
 }
 
 // key:value
-pub fn parse_keyval(s: &str) -> Result<(String, String)> {
-    let parts: Vec<&str> = s.split(':').collect();
+pub fn parse_keyval_with_sep(s: &str, sep: char) -> Result<(String, String)> {
+    let parts: Vec<&str> = s.split(sep).collect();
     if parts.len() != 2 {
         return Err(syntax_error!((0, s.len()), s, "Expected exactly one ':'"));
     }
     Ok((parts[0].to_lowercase(), parts[1].to_string()))
+}
+
+pub fn parse_keyval(s: &str) -> Result<(String, String)> {
+    parse_keyval_with_sep(s, ':')
 }
 
 // key[:value]
