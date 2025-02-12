@@ -1,4 +1,5 @@
 use clap::Parser;
+use cowstr::CowStr;
 use dashmap::DashSet as HashSet;
 use parse::{parse_keyed_key_or_keyval, parse_url, parse_wordlist};
 use url::Url;
@@ -19,7 +20,7 @@ pub struct Opts {
     pub url: Url,
     /// Wordlist file(s) to use, path[:key]
     #[clap(value_parser = parse_wordlist)]
-    pub wordlists: Vec<(String, String)>,
+    pub wordlists: Vec<(CowStr, CowStr)>,
     /// Number of threads to use, defaults to num. of cores * 10
     #[clap(short = 'T', long, default_value_t = num_cpus::get() * THREADS_PER_CORE)]
     pub threads: usize,
@@ -62,4 +63,7 @@ pub struct Opts {
     /// Extra information to display on hits
     #[clap(short, long)]
     pub show: Vec<String>,
+    /// Wordlist filters
+    #[clap(short, long, visible_alias = "wf")]
+    pub wordlist_filters: Vec<String>,
 }

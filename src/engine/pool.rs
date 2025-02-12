@@ -375,7 +375,7 @@ impl WorkerPool {
                     self.pb.set_length(self.global_queue.len() as u64);
                 } else {
                     println!(
-                        "Failed to fetch {} after {} retries",
+                        "Failed to fetch {} after {} retries: {e}",
                         task.url, self.config.retries
                     );
                 }

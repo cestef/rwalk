@@ -1,3 +1,4 @@
+use cowstr::CowStr;
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use owo_colors::OwoColorize;
@@ -59,11 +60,11 @@ impl TemplateHandler {
         pb.set_message("Generating URLs for");
 
         // Find all template markers and their positions in the URL
-        let positions: HashMap<String, Vec<_>> = wordlists
+        let positions: HashMap<CowStr, Vec<_>> = wordlists
             .iter()
             .map(|w| {
                 let positions = base_url
-                    .match_indices(&w.key)
+                    .match_indices(&*w.key)
                     .map(|(pos, _)| pos)
                     .collect::<Vec<_>>();
                 (w.key.clone(), positions)

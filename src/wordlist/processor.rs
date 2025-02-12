@@ -1,11 +1,14 @@
 use crate::{
     cli::Opts,
     error::{Result, RwalkError},
+    filters::Filterer,
     wordlist::{
+        filters::WordlistFilterRegistry,
         transformation::{Transformer, WordlistTransformerRegistry},
         Wordlist,
     },
 };
+use cowstr::CowStr;
 use dashmap::{DashMap, DashSet};
 
 use std::sync::Arc;
@@ -28,6 +31,7 @@ impl<'a> WordlistProcessor<'a> {
         let mut set = JoinSet::new();
         let mut merged = Vec::with_capacity(self.opts.wordlists.len());
         let shared_words = Arc::new(DashMap::new());
+        let filterer = Arc::new(self.create_filterer()?);
 
         // Process wordlists concurrently
         for (path, key) in &self.opts.wordlists {
@@ -35,10 +39,16 @@ impl<'a> WordlistProcessor<'a> {
             let key = key.clone();
             let transformer = Arc::new(self.create_transformer(&key)?);
             let shared_words = Arc::clone(&shared_words);
-
+            let filterer = Arc::clone(&filterer);
             set.spawn(async move {
-                let wordlist =
-                    Self::process_single_wordlist(path, key, &transformer, &shared_words).await?;
+                let wordlist = Self::process_single_wordlist(
+                    path,
+                    key,
+                    &transformer,
+                    &filterer,
+                    &shared_words,
+                )
+                .await?;
                 Ok::<Wordlist, RwalkError>(wordlist)
             });
         }
@@ -55,12 +65,13 @@ impl<'a> WordlistProcessor<'a> {
     }
 
     async fn process_single_wordlist(
-        path: String,
-        key: String,
+        path: CowStr,
+        key: CowStr,
         transformer: &Transformer<String>,
-        shared_words: &DashMap<String, DashSet<String>>,
+        filterer: &Filterer<(CowStr, CowStr)>,
+        shared_words: &DashMap<CowStr, DashSet<CowStr>>,
     ) -> Result<Wordlist> {
-        let file = File::open(&path).await?;
+        let file = File::open(&*path).await?;
         let reader = BufReader::new(file);
         let mut lines = reader.lines();
 
@@ -70,12 +81,13 @@ impl<'a> WordlistProcessor<'a> {
             if !line.trim().is_empty() {
                 let mut word = line;
                 transformer.apply(&mut word);
-
+                let word: CowStr = word.into();
                 // Only add if not seen before for this key
                 if shared_words
                     .entry(key.clone())
                     .or_insert_with(DashSet::new)
                     .insert(word.clone())
+                    && filterer.all(&(key.clone(), word.clone()))
                 {
                     words.push(word);
                 }
@@ -98,5 +110,16 @@ impl<'a> WordlistProcessor<'a> {
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Transformer::new(transformers))
+    }
+
+    fn create_filterer(&self) -> Result<Filterer<(CowStr, CowStr)>> {
+        let filters = self
+            .opts
+            .wordlist_filters
+            .iter()
+            .map(|value| WordlistFilterRegistry::construct(&value))
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Filterer::new(filters))
     }
 }

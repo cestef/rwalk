@@ -1,7 +1,8 @@
 use crate::Result;
+use cowstr::CowStr;
 use evaluator::Evaluator;
 use expression::FilterExpr;
-use std::{fmt::Debug, sync::Arc};
+use std::{collections::HashSet, fmt::Debug, sync::Arc};
 
 pub mod evaluator;
 pub mod expression;
@@ -29,7 +30,7 @@ pub trait Filter<T>: Debug + Send + Sync {
     fn needs_body(&self) -> bool {
         false
     }
-    fn construct(arg: &str, specifier: Option<&str>) -> Result<Box<dyn Filter<T>>>
+    fn construct(arg: &str, specifier: Option<HashSet<CowStr>>) -> Result<Box<dyn Filter<T>>>
     where
         Self: Sized;
 }

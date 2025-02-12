@@ -9,13 +9,14 @@ use crate::{
     Result,
 };
 
+use cowstr::CowStr;
 use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
 
 create_registry!(
     filter,
-    WordlistFilterRegitry,
-    String,
+    WordlistFilterRegistry,
+    (CowStr, CowStr),
     [
         length::LengthFilter,
         contains::ContainsFilter,
@@ -53,24 +54,32 @@ macro_rules! wordlist_filter {
         transform = $transform:expr
     ) => {
         use once_cell::sync::Lazy;
+        use cowstr::CowStr;
         use super::Filter;
         use crate::{
             Result,
             filters::evaluator::GenericEvaluator,
         };
+        use std::collections::HashSet;
 
-        static EVALUATOR: Lazy<GenericEvaluator<$value_type, String>> = Lazy::new(|| {
+        static EVALUATOR: Lazy<GenericEvaluator<$value_type, CowStr>> = Lazy::new(|| {
             GenericEvaluator::new($filter_fn)
         });
 
         #[derive(Debug, Clone)]
         pub struct $filter_name {
             value: $value_type,
+            filter: Option<HashSet<CowStr>>,
         }
 
-        impl Filter<String> for $filter_name {
-            fn filter(&self, item: &String) -> bool {
-                $filter_fn(item, &self.value)
+        impl Filter<(CowStr, CowStr)> for $filter_name {
+            fn filter(&self, item: &(CowStr, CowStr)) -> bool {
+                if let Some(filter) = &self.filter {
+                    if !filter.contains(&item.0) {
+                        return true;
+                    }
+                }
+                $filter_fn(&item.1, &self.value)
             }
 
             fn name() -> &'static str {
@@ -81,12 +90,12 @@ macro_rules! wordlist_filter {
                 &[$($alias),*]
             }
 
-            fn construct(arg: &str, _specifier: Option<&str>) -> Result<Box<dyn Filter<String>>>
+            fn construct(arg: &str, filter: Option<HashSet<CowStr>>) -> Result<Box<dyn Filter<(CowStr, CowStr)>>>
             where
                 Self: Sized,
             {
                 let value = $transform(arg.to_string())?;
-                Ok(Box::new(Self { value }))
+                Ok(Box::new(Self { value, filter }))
             }
         }
     };

@@ -61,7 +61,7 @@ macro_rules! create_registry {
         $item_type:ty,
         [$($implementor:ty),* $(,)?]
     ) => {
-        type FilterConstructor = fn(&str, Option<&str>) -> Result<Box<dyn Filter<$item_type>>>;
+        type FilterConstructor = fn(&str, Option<HashSet<cowstr::CowStr>>) -> Result<Box<dyn Filter<$item_type>>>;
 
         create_registry!(@base
             $static_name,
@@ -74,6 +74,7 @@ macro_rules! create_registry {
             pub fn construct(input: &str) -> Result<FilterExpr<Box<dyn Filter<$item_type>>>> {
                 use crate::filters::expression::ExprParser;
                 use crate::RwalkError;
+                use std::collections::HashSet;
 
                 let mut parser = ExprParser::new(input);
                 let raw_expr = parser.parse::<String>()?;
@@ -82,18 +83,19 @@ macro_rules! create_registry {
                     let (key, value) = e
                         .split_once(':')
                         .ok_or_else(|| crate::error!("Invalid filter: {}", e))?;
-                    let (depth, key) = if key.starts_with('[') && key.ends_with(']') {
-                        let filter = key
-                            .strip_prefix('[')
-                            .and_then(|s| s.strip_suffix(']'))
-                            .ok_or_else(|| crate::error!("Invalid filter: {}", e))?;
-                        let key = value;
+                    let (filter, key) = if key.starts_with('[') {
+                        // [filter]key
+                        let (filter, key) = key.split_once(']').ok_or_else(|| crate::error!("Invalid filter: {}", e))?;
+                        let filter = &filter[1..];
+
+                        let filter = filter.split(',').map(cowstr::CowStr::from).collect::<HashSet<_>>();
                         (Some(filter), key)
                     } else {
                         (None, key)
                     };
+
                     match REGISTRY.get(key) {
-                        Some(constructor) => constructor(value, depth),
+                        Some(constructor) => constructor(value, filter),
                         None => Err(crate::error!("Unknown filter: {}", key)),
                     }
                 })?;

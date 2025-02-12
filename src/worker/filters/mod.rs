@@ -72,6 +72,8 @@ macro_rules! response_filter {
             Result,
             filters::evaluator::GenericEvaluator,
         };
+        use std::collections::HashSet;
+        use cowstr::CowStr;
 
         static EVALUATOR: Lazy<GenericEvaluator<$value_type, RwalkResponse>> = Lazy::new(|| {
             GenericEvaluator::new($filter_fn)
@@ -80,14 +82,15 @@ macro_rules! response_filter {
         #[derive(Debug, Clone)]
         pub struct $filter_name {
             value: $value_type,
-            depth: Option<usize>,
+            depth: Option<HashSet<usize>>,
         }
 
         impl Filter<RwalkResponse> for $filter_name {
             fn filter(&self, item: &RwalkResponse) -> bool {
-                if let Some(depth) = self.depth {
-                    if item.depth != depth {
-                        return false;
+                if let Some(ref depth) = self.depth {
+                    if !depth.contains(&item.depth) {
+                        // Skip if the depth does not match
+                        return true;
                     }
                 }
                 $filter_fn(item, &self.value)
@@ -105,13 +108,13 @@ macro_rules! response_filter {
                 &[$($alias),*]
             }
 
-            fn construct(arg: &str, depth: Option<&str>) -> Result<Box<dyn Filter<RwalkResponse>>>
+            fn construct(arg: &str, depth: Option<HashSet<CowStr>>) -> Result<Box<dyn Filter<RwalkResponse>>>
             where
                 Self: Sized,
             {
                 let value = $transform(arg.to_string())?;
                 let depth = if let Some(depth) = depth {
-                    Some(depth.parse::<usize>()?)
+                    Some(depth.iter().map(|d| d.parse().unwrap()).collect())
                 } else {
                     None
                 };

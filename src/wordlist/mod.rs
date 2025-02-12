@@ -1,4 +1,5 @@
 use crate::{engine::Task, Result};
+use cowstr::CowStr;
 use crossbeam::deque::Injector;
 
 use rayon::iter::{IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
@@ -11,11 +12,11 @@ pub mod transformation;
 
 #[derive(Debug, Clone)]
 pub struct Wordlist {
-    pub words: Vec<String>,
-    pub key: String,
+    pub words: Vec<CowStr>,
+    pub key: CowStr,
 }
 impl Wordlist {
-    pub fn new(key: String) -> Self {
+    pub fn new(key: CowStr) -> Self {
         Self {
             words: Vec::with_capacity(1024), // Pre-allocate reasonable default capacity
             key,
@@ -26,7 +27,7 @@ impl Wordlist {
         self.words.extend(other.words);
     }
 
-    pub fn transform(&mut self, transformer: &Transformer<String>) {
+    pub fn transform(&mut self, transformer: &Transformer<CowStr>) {
         self.words.par_iter_mut().for_each(|word| {
             transformer.apply(word);
         });
