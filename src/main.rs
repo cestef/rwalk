@@ -32,7 +32,7 @@ async fn main() -> miette::Result<()> {
     let opts = Opts::parse();
     debug!("{:#?}", opts);
 
-    println!("{}", table::from_opts(&opts));
+    // println!("{}", table::from_opts(&opts));
 
     let start = std::time::Instant::now();
 

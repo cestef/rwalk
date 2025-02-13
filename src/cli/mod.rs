@@ -8,11 +8,7 @@ use url::Url;
 pub mod parse;
 pub mod utils;
 
-use crate::{
-    constants::THREADS_PER_CORE,
-    types::EngineMode,
-    utils::constants::{DEFAULT_THROTTLE_ERROR_THRESHOLD, DEFAULT_THROTTLE_WINDOW_SIZE_MILLIS},
-};
+use crate::{constants::THREADS_PER_CORE, types::EngineMode};
 
 #[derive(Debug, Parser, Clone, Tabled)]
 #[clap(version = utils::version(), long_version = utils::long_version())]
@@ -36,10 +32,10 @@ pub struct Opts {
     /// Fuzzing mode, one of: recursive (r), template (t)
     #[clap(short, long, default_value = "recursive")]
     pub mode: EngineMode,
-    /// Request rate limit in requests per second, [lower:]upper
-    #[clap(long, value_parser = parse::parse_throttle, visible_alias = "rps")]
+    /// Request rate limit in requests per second
+    #[clap(long, visible_alias = "rps")]
     #[tabled(format = "{:?}")]
-    pub throttle: Option<(u64, u64)>,
+    pub throttle: Option<u64>,
     /// Maximum depth in recursive mode
     #[clap(short, long, default_value = "3")]
     pub depth: usize,

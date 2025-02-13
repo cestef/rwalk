@@ -6,7 +6,7 @@ use crate::{
     utils::{
         constants::{DEFAULT_RESPONSE_FILTERS, PROGRESS_CHARS, PROGRESS_TEMPLATE},
         format::warning,
-        throttle::DynamicThrottler,
+        throttle::SimpleThrottler,
         ticker::RequestTickerNoReset,
     },
     wordlist::Wordlist,
@@ -43,9 +43,7 @@ pub struct PoolConfig {
     pub threads: usize,
     pub base_url: Url,
     pub mode: EngineMode,
-    pub rps: Option<(u64, u64)>,
-    pub window: u64,
-    pub error_threshold: f64,
+    pub rps: Option<u64>,
     pub retries: usize,
 }
 
@@ -55,7 +53,7 @@ pub struct WorkerConfig {
     client: Client,
     filterer: Filterer<RwalkResponse>,
     pub handler: Arc<Box<dyn ResponseHandler>>,
-    throttler: Option<Arc<DynamicThrottler>>,
+    throttler: Option<Arc<SimpleThrottler>>,
     needs_body: bool,
 }
 
@@ -142,14 +140,7 @@ impl WorkerPool {
             client,
             filterer: filterer.clone(),
             handler: Arc::new(handler),
-            throttler: config.rps.map(|(min, max)| {
-                Arc::new(DynamicThrottler::new(
-                    min,
-                    max,
-                    config.window,
-                    config.error_threshold,
-                ))
-            }),
+            throttler: config.rps.map(|max| Arc::new(SimpleThrottler::new(max))),
             needs_body: filterer.needs_body(), // Precompute if any filter needs body
         };
 
@@ -183,8 +174,7 @@ impl WorkerPool {
             base_url: opts.url.clone(),
             mode: opts.mode,
             rps: opts.throttle,
-            window: opts.window,
-            error_threshold: opts.error_threshold,
+
             retries: opts.retries,
         };
 
@@ -347,14 +337,6 @@ impl WorkerPool {
         let res = self.worker_config.client.get(task.url.clone()).send().await;
         match res {
             Ok(res) => {
-                let should_be_throttled = res.status().is_server_error() || res.status() == 429;
-                if let Some(ref throttler) = self.worker_config.throttler {
-                    if should_be_throttled {
-                        throttler.record_error();
-                    } else {
-                        throttler.record_success();
-                    }
-                }
                 let res = RwalkResponse::from_response(
                     res,
                     self.worker_config.needs_body,
@@ -365,11 +347,6 @@ impl WorkerPool {
                 res
             }
             Err(e) => {
-                self.worker_config
-                    .throttler
-                    .as_ref()
-                    .map(|t| t.record_error());
-
                 if task.retry < self.config.retries {
                     let mut task = task.clone();
                     task.retry();
