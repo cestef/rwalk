@@ -66,4 +66,7 @@ pub struct Opts {
     /// Wordlist filters
     #[clap(short, long, visible_alias = "wf")]
     pub wordlist_filters: Vec<String>,
+    /// Force the scan, even if the target is unreachable
+    #[clap(long)]
+    pub force: bool,
 }

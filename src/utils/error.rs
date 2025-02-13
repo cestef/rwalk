@@ -38,6 +38,13 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::regex_error))]
     #[error(transparent)]
     RegexError(#[from] regex::Error),
+
+    #[diagnostic(code(rwalk::unreachable_host))]
+    #[error("Host is unreachable, use --force to ignore")]
+    UnreachableHost {
+        #[source]
+        source: reqwest::Error,
+    },
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]

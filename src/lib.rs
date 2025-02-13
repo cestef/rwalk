@@ -19,6 +19,16 @@ pub(crate) use error::error;
 pub use error::*;
 
 pub async fn run(opts: Opts) -> Result<f64> {
+    // Check if the website is reachable
+    if !opts.force {
+        let url = opts.url.clone();
+        let host = url.host_str().ok_or_else(|| error!("Invalid URL"))?;
+        let scheme = url.scheme();
+        reqwest::get(&format!("{scheme}://{host}"))
+            .await
+            .map_err(|e| RwalkError::UnreachableHost { source: e })?;
+    }
+
     // Process wordlists
     let processor = WordlistProcessor::new(&opts);
     let wordlists = processor.process_wordlists().await?;
