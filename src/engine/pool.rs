@@ -5,6 +5,7 @@ use crate::{
     types::EngineMode,
     utils::{
         constants::{DEFAULT_RESPONSE_FILTERS, PROGRESS_CHARS, PROGRESS_TEMPLATE},
+        format::warning,
         throttle::DynamicThrottler,
         ticker::RequestTickerNoReset,
     },
@@ -18,6 +19,7 @@ use crate::{
 use crossbeam::deque::{Injector, Steal, Stealer, Worker};
 use dashmap::DashMap as HashMap;
 use indicatif::ProgressBar;
+use owo_colors::OwoColorize;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -28,7 +30,6 @@ use std::{
 };
 use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
-
 use url::Url;
 
 use super::{
@@ -368,19 +369,22 @@ impl WorkerPool {
                     .throttler
                     .as_ref()
                     .map(|t| t.record_error());
+
                 if task.retry < self.config.retries {
                     let mut task = task.clone();
                     task.retry();
                     self.global_queue.push(task);
                     self.pb.set_length(self.global_queue.len() as u64);
                 } else {
-                    println!(
+                    warning!(
                         "Failed to fetch {} after {} retries: {e}",
-                        task.url, self.config.retries
+                        task.url,
+                        self.config.retries
                     );
                 }
 
-                Err(e.into())
+                let res = RwalkResponse::from_error(e, task.url.clone().parse()?, task.depth);
+                Ok(res)
             }
         }
     }

@@ -26,6 +26,15 @@ impl FromStr for EngineMode {
     }
 }
 
+impl Display for EngineMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EngineMode::Recursive => write!(f, "recursive"),
+            EngineMode::Template => write!(f, "template"),
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct IntRange<T>
 where

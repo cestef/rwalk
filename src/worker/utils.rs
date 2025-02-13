@@ -1,11 +1,12 @@
 use crate::{
+    error,
     utils::{constants::STEAL_LIMIT, directory},
-    Result,
+    Result, RwalkError,
 };
 use crossbeam::deque::{Injector, Stealer, Worker};
 use dashmap::DashMap as HashMap;
 use serde::{Deserialize, Serialize};
-use std::iter;
+use std::{iter, str::FromStr};
 
 pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer<T>]) -> Option<T> {
     // Pop a task from the local queue, if not empty.
@@ -33,7 +34,27 @@ pub struct RwalkResponse {
     pub url: url::Url,
     pub time: std::time::Duration,
     pub depth: usize,
-    pub directory: bool,
+    pub r#type: ResponseType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Copy, PartialEq, Eq)]
+pub enum ResponseType {
+    Directory,
+    File,
+    Error,
+}
+
+impl FromStr for ResponseType {
+    type Err = RwalkError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "directory" | "dir" | "d" => Ok(ResponseType::Directory),
+            "file" | "f" => Ok(ResponseType::File),
+            "error" | "e" => Ok(ResponseType::Error),
+            _ => Err(error!("Invalid type filter value: {}", s)),
+        }
+    }
 }
 
 impl RwalkResponse {
@@ -64,11 +85,31 @@ impl RwalkResponse {
             url,
             time: start.elapsed(),
             depth,
-            directory: false,
+            r#type: ResponseType::File,
         };
 
-        res.directory = directory::check(&res);
+        if directory::check(&res) {
+            res.r#type = ResponseType::Directory;
+        }
 
         Ok(res)
+    }
+
+    pub fn from_error(e: reqwest::Error, url: url::Url, depth: usize) -> Self {
+        let status = e.status().map_or(0, |s| s.as_u16());
+        let headers = HashMap::new();
+        let body = Some(e.to_string());
+        let time = std::time::Duration::default();
+        let r#type = ResponseType::Error;
+
+        Self {
+            status,
+            headers,
+            body,
+            url,
+            time,
+            depth,
+            r#type,
+        }
     }
 }

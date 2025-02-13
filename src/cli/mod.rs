@@ -2,6 +2,7 @@ use clap::Parser;
 use cowstr::CowStr;
 use dashmap::DashSet as HashSet;
 use parse::{parse_keyed_key_or_keyval, parse_url, parse_wordlist};
+use tabled::Tabled;
 use url::Url;
 
 pub mod parse;
@@ -13,13 +14,15 @@ use crate::{
     utils::constants::{DEFAULT_THROTTLE_ERROR_THRESHOLD, DEFAULT_THROTTLE_WINDOW_SIZE_MILLIS},
 };
 
-#[derive(Debug, Parser, Clone)]
+#[derive(Debug, Parser, Clone, Tabled)]
 #[clap(version = utils::version(), long_version = utils::long_version())]
+#[tabled(display(Vec, "tabled::derive::display::debug"))]
 pub struct Opts {
     #[clap(value_parser = parse_url)]
     pub url: Url,
     /// Wordlist file(s) to use, path[:key]
     #[clap(value_parser = parse_wordlist)]
+    #[tabled(display("display_wordlists"))]
     pub wordlists: Vec<(CowStr, CowStr)>,
     /// Number of threads to use, defaults to num. of cores * 10
     #[clap(short = 'T', long, default_value_t = num_cpus::get() * THREADS_PER_CORE)]
@@ -35,13 +38,8 @@ pub struct Opts {
     pub mode: EngineMode,
     /// Request rate limit in requests per second, [lower:]upper
     #[clap(long, value_parser = parse::parse_throttle, visible_alias = "rps")]
+    #[tabled(format = "{:?}")]
     pub throttle: Option<(u64, u64)>,
-    /// Duration of the window in milliseconds to calculate error rate for throttling
-    #[clap(short, long, default_value_t = DEFAULT_THROTTLE_WINDOW_SIZE_MILLIS)]
-    pub window: u64,
-    /// Error rate threshold for throttling
-    #[clap(long, default_value_t = DEFAULT_THROTTLE_ERROR_THRESHOLD, visible_alias = "et")]
-    pub error_threshold: f64,
     /// Maximum depth in recursive mode
     #[clap(short, long, default_value = "3")]
     pub depth: usize,
@@ -69,4 +67,12 @@ pub struct Opts {
     /// Force the scan, even if the target is unreachable
     #[clap(long)]
     pub force: bool,
+}
+
+fn display_wordlists(wordlists: &Vec<(CowStr, CowStr)>) -> String {
+    wordlists
+        .iter()
+        .map(|(path, key)| format!("{}:{}", path, key))
+        .collect::<Vec<String>>()
+        .join(", ")
 }

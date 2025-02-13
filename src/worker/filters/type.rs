@@ -1,16 +1,12 @@
 use super::response_filter;
-use crate::{error, RwalkError};
+use crate::worker::utils::ResponseType;
 
 response_filter!(
     TypeFilter,
-    bool,
+    ResponseType,
     needs_body = false,
-    |res: &RwalkResponse, needs_dir: &bool| res.directory == *needs_dir,
+    |res: &RwalkResponse, expected: &ResponseType| res.r#type == *expected,
     "type",
     ["t"],
-    transform = |raw: String| match raw.to_lowercase().as_str() {
-        "directory" | "dir" | "d" => Ok(true),
-        "file" | "f" => Ok(false),
-        _ => Err(error!("Invalid type filter value: {}", raw)),
-    }
+    transform = |raw: String| raw.parse::<ResponseType>()
 );

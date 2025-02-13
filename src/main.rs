@@ -2,7 +2,7 @@ use clap::Parser;
 
 use indicatif::HumanDuration;
 use owo_colors::OwoColorize;
-use rwalk::{cli::Opts, run};
+use rwalk::{cli::Opts, run, utils::table};
 use tracing::debug;
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -31,6 +31,8 @@ async fn main() -> miette::Result<()> {
 
     let opts = Opts::parse();
     debug!("{:#?}", opts);
+
+    println!("{}", table::from_opts(&opts));
 
     let start = std::time::Instant::now();
 
