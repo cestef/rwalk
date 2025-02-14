@@ -30,15 +30,15 @@ macro_rules! create_registry {
         pub struct $static_name;
 
         impl $static_name {
-            pub fn list() -> HashSet<(String, Vec<String>)> {
-                let mut list = HashSet::new();
+            pub fn list() -> Vec<(&'static str, Vec<&'static str>)> {
+                let mut list = Vec::new();
 
                 $(
                     let mut aliases = Vec::new();
                     for &alias in <$implementor>::aliases() {
-                        aliases.push(alias.to_string());
+                        aliases.push(alias);
                     }
-                    list.insert((<$implementor>::name().to_string(), aliases));
+                    list.push((<$implementor>::name(), aliases));
                 )*
 
                 list

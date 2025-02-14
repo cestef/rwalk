@@ -114,7 +114,7 @@ pub enum SkipReason {
 impl Display for SkipReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SkipReason::NonDirectory => write!(f, "is not a directory"),
+            SkipReason::NonDirectory => write!(f, "not a directory"),
         }
     }
 }
