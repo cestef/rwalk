@@ -116,3 +116,14 @@ fn parse_throttle_range(s: &str) -> Result<(u64, u64)> {
         _ => Err(syntax_error!((0, s.len()), s, "Expected at most one ':'")),
     }
 }
+
+// @file or raw string
+pub fn parse_filter(s: &str) -> Result<String> {
+    if s.starts_with('@') {
+        let path = &s[1..];
+        let content = std::fs::read_to_string(path)?;
+        Ok(content)
+    } else {
+        Ok(s.to_string())
+    }
+}

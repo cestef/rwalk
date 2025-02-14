@@ -1,7 +1,7 @@
 use clap::Parser;
 use cowstr::CowStr;
 use dashmap::DashSet as HashSet;
-use parse::{parse_keyed_key_or_keyval, parse_url, parse_wordlist};
+use parse::{parse_filter, parse_keyed_key_or_keyval, parse_url, parse_wordlist};
 use tabled::Tabled;
 use url::Url;
 
@@ -24,7 +24,7 @@ pub struct Opts {
     #[clap(short = 'T', long, default_value_t = num_cpus::get() * THREADS_PER_CORE)]
     pub threads: usize,
     /// List of filters to apply to responses, name:value
-    #[clap(short, long, visible_alias = "filter")]
+    #[clap(short, long, visible_alias = "filter", value_parser = parse_filter)]
     pub filters: Vec<String>,
     /// List of transformations to apply to wordlists, [key:]name[:value]
     #[clap(short, long, value_parser = parse_keyed_key_or_keyval, value_delimiter = ';', visible_alias = "transform")]

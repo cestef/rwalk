@@ -2,7 +2,7 @@ use clap::Parser;
 
 use indicatif::HumanDuration;
 use owo_colors::OwoColorize;
-use rwalk::{cli::Opts, run, utils::table};
+use rwalk::{cli::Opts, run};
 use tracing::debug;
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
