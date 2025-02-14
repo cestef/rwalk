@@ -2,20 +2,24 @@ use crate::Result;
 use cowstr::CowStr;
 use evaluator::Evaluator;
 use expression::FilterExpr;
-use std::{collections::HashSet, fmt::Debug, sync::Arc};
+use std::{
+    collections::HashSet,
+    fmt::{Debug, Display},
+    sync::Arc,
+};
 
 pub mod evaluator;
 pub mod expression;
 
 #[derive(Debug, Clone)]
 pub struct Filterer<T> {
-    filters: Arc<Vec<FilterExpr<Box<dyn Filter<T>>>>>,
+    pub filter: Option<Arc<FilterExpr<Box<dyn Filter<T>>>>>,
 }
 
 unsafe impl<T> Send for Filterer<T> where Box<dyn Filter<T>>: Send {}
 unsafe impl<T> Sync for Filterer<T> where Box<dyn Filter<T>>: Sync {}
 
-pub trait Filter<T>: Debug + Send + Sync {
+pub trait Filter<T>: Debug + Send + Sync + Display {
     fn filter(&self, item: &T) -> bool;
     fn name() -> &'static str
     where
@@ -36,31 +40,26 @@ pub trait Filter<T>: Debug + Send + Sync {
 }
 
 impl<T> Filterer<T> {
-    pub fn new<I>(filters: I) -> Self
-    where
-        I: IntoIterator<Item = FilterExpr<Box<dyn Filter<T>>>>,
-    {
+    pub fn new(filter: Option<FilterExpr<Box<dyn Filter<T>>>>) -> Self {
         Self {
-            filters: Arc::new(filters.into_iter().collect()),
+            filter: filter.map(Arc::new),
         }
     }
 
-    pub fn all(&self, item: &T) -> bool {
-        self.filters
-            .iter()
-            .all(|f| FILTER_EVALUATOR.evaluate(f, item))
-    }
-
-    pub fn any(&self, item: &T) -> bool {
-        self.filters
-            .iter()
-            .any(|f| FILTER_EVALUATOR.evaluate(f, item))
+    pub fn filter(&self, item: &T) -> bool {
+        if let Some(filter) = &self.filter {
+            FILTER_EVALUATOR.evaluate(filter, item)
+        } else {
+            true
+        }
     }
 
     pub fn needs_body(&self) -> bool {
-        self.filters
-            .iter()
-            .any(|f| NEEDS_BODY_EVALUATOR.evaluate(f, &()))
+        if let Some(filter) = &self.filter {
+            NEEDS_BODY_EVALUATOR.evaluate(filter, &())
+        } else {
+            false
+        }
     }
 }
 

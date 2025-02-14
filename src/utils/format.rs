@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt::Display};
 
-use owo_colors::{OwoColorize, Rgb};
+use owo_colors::OwoColorize;
 
 use crate::worker::utils::RwalkResponse;
 
@@ -35,19 +35,19 @@ pub fn display_time(t: u128) -> String {
 pub fn display_status_code(s: u16) -> String {
     format!(
         "{} {}",
-        color_for_status_code(icon_for_status_code(s).to_string(), s),
+        color_for_status_code(icon_for_status_code(s), s),
         s.dimmed()
     )
 }
 
-fn color_for_status_code(icon: String, s: u16) -> String {
+pub fn color_for_status_code(input: &str, s: u16) -> String {
     match s {
-        100..=199 => icon.blue().to_string(),
-        200..=299 => icon.green().to_string(),
-        300..=399 => icon.yellow().to_string(),
-        400..=499 => icon.color(Rgb(255, 165, 0)).to_string(),
-        500..=599 => icon.red().to_string(),
-        _ => icon.to_string(),
+        100..=199 => input.blue().to_string(),
+        200..=299 => input.green().to_string(),
+        300..=399 => input.blue().to_string(),
+        400..=499 => input.yellow().to_string(),
+        500..=599 => input.red().to_string(),
+        _ => input.to_string(),
     }
 }
 
@@ -103,7 +103,7 @@ macro_rules! info {
 }
 
 // pub(crate) use error;
-// pub(crate) use info;
+pub(crate) use info;
 pub(crate) use success;
 pub(crate) use warning;
 

@@ -87,7 +87,7 @@ impl<'a> WordlistProcessor<'a> {
                     .entry(key.clone())
                     .or_insert_with(DashSet::new)
                     .insert(word.clone())
-                    && filterer.all(&(key.clone(), word.clone()))
+                    && filterer.filter(&(key.clone(), word.clone()))
                 {
                     words.push(word);
                 }
@@ -113,13 +113,12 @@ impl<'a> WordlistProcessor<'a> {
     }
 
     fn create_filterer(&self) -> Result<Filterer<(CowStr, CowStr)>> {
-        let filters = self
-            .opts
-            .wordlist_filters
-            .iter()
-            .map(|value| WordlistFilterRegistry::construct(&value))
-            .collect::<Result<Vec<_>>>()?;
+        let filter = if let Some(ref filter) = self.opts.wordlist_filter {
+            Some(WordlistFilterRegistry::construct(filter)?)
+        } else {
+            None
+        };
 
-        Ok(Filterer::new(filters))
+        Ok(Filterer::new(filter))
     }
 }

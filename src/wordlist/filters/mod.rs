@@ -98,6 +98,12 @@ macro_rules! wordlist_filter {
                 Ok(Box::new(Self { value, filter }))
             }
         }
+
+        impl std::fmt::Display for $filter_name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}({})", Self::name(), self.value)
+            }
+        }
     };
 }
 

@@ -4,7 +4,9 @@ use crate::{
     filters::Filterer,
     types::EngineMode,
     utils::{
-        constants::{DEFAULT_RESPONSE_FILTERS, PROGRESS_CHARS, PROGRESS_TEMPLATE},
+        constants::{
+            DEFAULT_RESPONSE_FILTER, PROGRESS_CHARS, PROGRESS_TEMPLATE, PROGRESS_UPDATE_INTERVAL,
+        },
         format::warning,
         throttle::SimpleThrottler,
         ticker::RequestTickerNoReset,
@@ -51,7 +53,7 @@ pub struct PoolConfig {
 #[derive(Clone)]
 pub struct WorkerConfig {
     client: Client,
-    filterer: Filterer<RwalkResponse>,
+    pub filterer: Filterer<RwalkResponse>,
     pub handler: Arc<Box<dyn ResponseHandler>>,
     throttler: Option<Arc<SimpleThrottler>>,
     needs_body: bool,
@@ -197,14 +199,12 @@ impl WorkerPool {
     }
 
     fn create_filterer(opts: &Opts) -> Result<Filterer<RwalkResponse>> {
-        let response_filters = DEFAULT_RESPONSE_FILTERS
-            .iter()
-            .map(|k| k.to_string())
-            .chain(opts.filters.iter().map(|k| k.to_string()))
-            .into_iter()
-            .map(|k| ResponseFilterRegistry::construct(&k))
-            .collect::<Result<Vec<_>>>()?;
-        Ok(Filterer::new(response_filters))
+        let filter = opts
+            .filter
+            .as_deref()
+            .unwrap_or_else(|| DEFAULT_RESPONSE_FILTER);
+        let filter = ResponseFilterRegistry::construct(&filter)?;
+        Ok(Filterer::new(Some(filter)))
     }
 
     pub async fn run(
@@ -223,11 +223,11 @@ impl WorkerPool {
         let pb_ = pb.clone();
 
         let mut progress_rx = shutdown_rx.resubscribe();
-        // Spawn progress updater with shutdown handling
+
         tokio::spawn(async move {
             loop {
                 tokio::select! {
-                    _ = tokio::time::sleep(std::time::Duration::from_millis(100)) => {
+                    _ = tokio::time::sleep(PROGRESS_UPDATE_INTERVAL) => {
                         pb_.set_position(
                             pb_.length()
                                 .unwrap_or_default()
@@ -243,7 +243,6 @@ impl WorkerPool {
 
         let worker_rx = shutdown_rx.resubscribe();
         let results = self.results.clone();
-        // Spawn workers with shutdown handling
         let handles = self.spawn_workers(workers, stealers.clone(), worker_rx)?;
 
         // Wait for either completion or shutdown signal
@@ -315,7 +314,7 @@ impl WorkerPool {
 
                     let response = self.process_request(&task).await?;
                     self.ticker.tick();
-                    if self.worker_config.filterer.all(&response) {
+                    if self.worker_config.filterer.filter(&response) {
                         self.worker_config.handler.handle(response.clone(), &self)?;
                         results.insert(response.url.to_string(), response);
                     }

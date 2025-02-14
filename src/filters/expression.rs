@@ -1,6 +1,6 @@
 use crate::error::SyntaxError;
 use crate::Result;
-use std::fmt::Debug;
+use std::fmt::{self, Debug, Display};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -11,7 +11,10 @@ pub enum FilterExpr<T> {
     Value(T),
     Raw(String), // Unparsed value string
 }
+
 use logos::Logos;
+use once_cell::sync::Lazy;
+use owo_colors::OwoColorize;
 
 #[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"[ \t\n\f]+")] // Skip whitespace
@@ -261,6 +264,45 @@ impl<V> FilterExpr<V> {
                 unreachable!("Value variant encountered during Raw transformation")
             }
             FilterExpr::Raw(raw) => Ok(FilterExpr::Value(f(raw)?)),
+        }
+    }
+}
+
+static NOT: Lazy<String> = Lazy::new(|| "!".bold().to_string());
+static AND: Lazy<String> = Lazy::new(|| "&".bold().to_string());
+static OR: Lazy<String> = Lazy::new(|| "|".bold().to_string());
+
+impl<V> Display for FilterExpr<V>
+where
+    V: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FilterExpr::And(left, right) => {
+                if let FilterExpr::Or(_, _) = **left {
+                    write!(f, "({}) {} ", left, *AND)?;
+                } else {
+                    write!(f, "{} {} ", left, *AND)?;
+                }
+
+                if let FilterExpr::Or(_, _) = **right {
+                    write!(f, "({})", right)
+                } else {
+                    write!(f, "{}", right)
+                }
+            }
+            FilterExpr::Or(left, right) => {
+                write!(f, "{} {} {}", left, *OR, right)
+            }
+            FilterExpr::Not(expr) => {
+                if let FilterExpr::And(_, _) | FilterExpr::Or(_, _) = **expr {
+                    write!(f, "{}({})", *NOT, expr)
+                } else {
+                    write!(f, "{}{}", *NOT, expr)
+                }
+            }
+            FilterExpr::Value(value) => write!(f, "{}", value),
+            FilterExpr::Raw(raw) => write!(f, "{}", raw),
         }
     }
 }

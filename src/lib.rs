@@ -3,8 +3,8 @@
 use engine::WorkerPool;
 
 use cli::Opts;
-
-use utils::{constants, error, tree, types};
+use owo_colors::OwoColorize;
+use utils::{constants, error, format::info, tree, types};
 
 use wordlist::processor::WordlistProcessor;
 
@@ -40,6 +40,8 @@ pub async fn run(opts: Opts) -> Result<f64> {
     } else {
         pool.worker_config.handler.init(&pool)?;
     }
+
+    info!("{}\n", pool.worker_config.filterer.filter.as_ref().unwrap());
 
     let shutdown_tx_clone = shutdown_tx.clone();
 

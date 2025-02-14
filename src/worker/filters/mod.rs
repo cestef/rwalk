@@ -121,6 +121,22 @@ macro_rules! response_filter {
                 Ok(Box::new(Self { value, depth }))
             }
         }
+
+        impl std::fmt::Display for $filter_name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                use owo_colors::OwoColorize;
+                use itertools::Itertools;
+                write!(f, "[{}]{}:{:?}",
+                    if let Some(ref depth) = self.depth {
+                        depth.iter().sorted().map(|d| d.dimmed().to_string()).collect::<Vec<String>>().join(",")
+                    } else {
+                        "*".dimmed().to_string()
+                    },
+                    Self::name(),
+                    self.value
+                )
+            }
+        }
     };
 }
 

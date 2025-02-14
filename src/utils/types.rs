@@ -2,7 +2,10 @@ use num_traits::PrimInt;
 use serde::Deserialize;
 use std::{fmt::Display, str::FromStr};
 
-use crate::error::{syntax_error, RwalkError, SyntaxError};
+use crate::{
+    error::{syntax_error, RwalkError, SyntaxError},
+    utils::format::color_for_status_code,
+};
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 pub enum EngineMode {
@@ -58,12 +61,61 @@ where
     }
 }
 
-impl<T> std::fmt::Debug for IntRange<T>
+fn range_to_string<T>(range: &IntRange<T>, format_callback: Option<&dyn Fn(&T) -> String>) -> String
 where
     T: PrimInt + Display,
 {
+    match format_callback {
+        Some(callback) => format_range(range, Some(callback)),
+        None => format_range(range, None),
+    }
+}
+
+fn format_range<T>(range: &IntRange<T>, format_callback: Option<&dyn Fn(&T) -> String>) -> String
+where
+    T: PrimInt + Display,
+{
+    let format_value = |value: &T| match format_callback {
+        Some(callback) => callback(value),
+        None => value.to_string(),
+    };
+
+    if range.start == range.end {
+        format_value(&range.start)
+    } else if range.start == T::min_value() {
+        format!("<{}", format_value(&range.end))
+    } else if range.end == T::max_value() {
+        format!(">{}", format_value(&range.start))
+    } else {
+        format!(
+            "{}-{}",
+            format_value(&range.start),
+            format_value(&range.end)
+        )
+    }
+}
+
+impl std::fmt::Debug for IntRange<u16>
+// Status codes are u16
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}-{}", self.start, self.end)
+        let result = range_to_string(self, Some(&|v| color_for_status_code(&v.to_string(), *v)));
+        write!(f, "{}", result)
+    }
+}
+impl std::fmt::Debug for IntRange<usize>
+// Status codes are u16
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", range_to_string(self, None))
+    }
+}
+
+impl std::fmt::Debug for IntRange<u64>
+// Status codes are u16
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", range_to_string(self, None))
     }
 }
 

@@ -28,9 +28,8 @@ pub struct Opts {
     #[merge(strategy = merge_overwrite)]
     pub threads: usize,
     /// List of filters to apply to responses, name:value
-    #[clap(short, long, visible_alias = "filter", value_parser = parse_filter)]
-    #[merge(strategy = merge::vec::append)]
-    pub filters: Vec<String>,
+    #[clap(short, long, value_parser = parse_filter)]
+    pub filter: Option<String>,
     /// List of transformations to apply to wordlists, [key:]name[:value]
     #[clap(short, long, value_parser = parse_keyed_key_or_keyval, value_delimiter = ';', visible_alias = "transform")]
     #[merge(strategy = merge::vec::append)]
@@ -72,8 +71,7 @@ pub struct Opts {
     pub show: Vec<String>,
     /// Wordlist filters
     #[clap(short, long, visible_alias = "wf")]
-    #[merge(strategy = merge::vec::append)]
-    pub wordlist_filters: Vec<String>,
+    pub wordlist_filter: Option<String>,
     /// Force the scan, even if the target is unreachable
     #[clap(long)]
     #[merge(strategy = merge::bool::overwrite_false)]
