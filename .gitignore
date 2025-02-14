@@ -1,3 +1,4 @@
 /target
 rwalk.state
 common.txt
+*.filter

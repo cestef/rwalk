@@ -1,6 +1,6 @@
 use crate::{
     error,
-    utils::{constants::STEAL_LIMIT, directory},
+    utils::{constants::STEAL_BATCH_LIMIT, directory},
     Result, RwalkError,
 };
 use crossbeam::deque::{Injector, Stealer, Worker};
@@ -15,7 +15,7 @@ pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer
         iter::repeat_with(|| {
             // Try stealing a batch of tasks from the global queue.
             global
-                .steal_batch_with_limit_and_pop(local, STEAL_LIMIT)
+                .steal_batch_with_limit_and_pop(local, STEAL_BATCH_LIMIT)
                 // Or try stealing a task from one of the other threads.
                 .or_else(|| stealers.iter().map(|s| s.steal()).collect())
         })

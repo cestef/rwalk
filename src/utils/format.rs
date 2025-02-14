@@ -32,7 +32,7 @@ pub fn display_time(t: u128) -> String {
     format!("{:.2}{}", value.dimmed().bold(), unit.dimmed())
 }
 
-fn display_status_code(s: u16) -> String {
+pub fn display_status_code(s: u16) -> String {
     format!(
         "{} {}",
         color_for_status_code(icon_for_status_code(s).to_string(), s),

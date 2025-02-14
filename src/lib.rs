@@ -60,6 +60,6 @@ pub async fn run(opts: Opts) -> Result<f64> {
 
     let (results, rate) = pool.run(rx).await?;
 
-    tree::display_url_tree(&results);
+    tree::display_url_tree(&opts.url, &results);
     Ok(rate)
 }

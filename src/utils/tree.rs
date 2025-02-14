@@ -1,61 +1,141 @@
-use dashmap::DashMap as HashMap;
+use dashmap::DashMap;
+use ptree::{Style, TreeItem};
+use std::borrow::Cow;
+use std::collections::HashMap;
 use url::Url;
 
+use crate::utils::format::display_status_code;
 use crate::worker::utils::RwalkResponse;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct Node {
+    name: String,
+    status: u16,
     children: HashMap<String, Node>,
     is_endpoint: bool,
 }
 
-pub fn display_url_tree(urls: &HashMap<String, RwalkResponse>) {
-    let mut root = Node::default();
+impl Node {
+    // New function to simplify paths where possible
+    fn simplify(&mut self) {
+        // First recurse into children
+        for (_, child) in &mut self.children {
+            child.simplify();
+        }
 
-    // Build the tree structure
-    for e in urls.iter() {
-        let url = e.key();
+        // Then handle this node
+        let mut i = 0;
+        while i < self.children.len() {
+            let mut keys_to_remove = Vec::new();
+            let mut nodes_to_add = HashMap::new();
+
+            // Find children with only one child that aren't endpoints
+            for (key, child) in &self.children {
+                if child.children.len() == 1 && !child.is_endpoint {
+                    let (grandchild_key, grandchild) = child.children.iter().next().unwrap();
+                    let new_key = format!("{}/{}", key, grandchild_key);
+
+                    keys_to_remove.push(key.clone());
+                    nodes_to_add.insert(new_key, grandchild.clone());
+                }
+            }
+
+            // If no changes, we're done
+            if keys_to_remove.is_empty() {
+                break;
+            }
+
+            // Remove old nodes
+            for key in keys_to_remove {
+                self.children.remove(&key);
+            }
+
+            // Add new merged nodes
+            for (key, node) in nodes_to_add {
+                self.children.insert(key, node);
+            }
+
+            i += 1;
+        }
+    }
+}
+
+impl TreeItem for Node {
+    type Child = Node;
+
+    fn children(&self) -> Cow<[Self::Child]> {
+        let mut children: Vec<Node> = self
+            .children
+            .iter()
+            .map(|(key, value)| {
+                let mut child = value.clone();
+                child.name = key.clone();
+
+                child
+            })
+            .collect();
+
+        children.sort_by(|a, b| a.name.cmp(&b.name));
+        Cow::Owned(children)
+    }
+
+    fn write_self<W: std::io::Write>(&self, f: &mut W, style: &Style) -> std::io::Result<()> {
+        if !self.name.is_empty() {
+            write!(
+                f,
+                "{} /{}",
+                display_status_code(self.status),
+                style.paint(&self.name)
+            )
+        } else {
+            Ok(())
+        }
+    }
+}
+
+pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
+    let mut root = Node {
+        name: String::new(),
+        ..Node::default()
+    };
+
+    // Build the tree structure using regular HashMap
+    for entry in urls.iter() {
+        let url = entry.key();
         if let Ok(parsed_url) = Url::parse(url) {
             let path = parsed_url.path();
             let components: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
 
-            insert_path(&mut root, &components);
+            insert_path(&mut root, &components, entry.value());
         }
     }
 
-    // Display the tree
-    print_tree(&root, 0, "");
+    // Simplify the tree before displaying
+    root.simplify();
+
+    print!("\n{}://{}", base.scheme(), base.host_str().unwrap());
+
+    // Display the tree using ptree
+    ptree::print_tree(&root).unwrap();
 }
 
-fn insert_path(node: &mut Node, components: &[&str]) {
+fn insert_path(node: &mut Node, components: &[&str], response: &RwalkResponse) {
     if components.is_empty() {
         node.is_endpoint = true;
         return;
     }
 
     let component = components[0];
-    let mut child = node.children.entry(component.to_string()).or_default();
 
-    insert_path(&mut child, &components[1..]);
-}
+    // Use regular HashMap for building
+    let child = node
+        .children
+        .entry(component.to_string())
+        .or_insert_with(|| Node {
+            name: String::new(),
+            status: response.status,
+            ..Node::default()
+        });
 
-fn print_tree(node: &Node, depth: usize, prefix: &str) {
-    for (i, child) in node.children.iter().enumerate() {
-        let name = child.key();
-        let is_last = i == node.children.len() - 1;
-
-        // Print current node
-        let branch = if is_last { "└── " } else { "├── " };
-        println!("{}{}/{}", prefix, branch, name);
-
-        // Prepare prefix for children
-        let child_prefix = if is_last {
-            format!("{}   ", prefix)
-        } else {
-            format!("{}│  ", prefix)
-        };
-
-        // Recursively print children
-        print_tree(&child, depth + 1, &child_prefix);
-    }
+    insert_path(child, &components[1..], response);
 }
