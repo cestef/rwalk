@@ -1,9 +1,10 @@
 use num_traits::PrimInt;
+use serde::Deserialize;
 use std::{fmt::Display, str::FromStr};
 
 use crate::error::{syntax_error, RwalkError, SyntaxError};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
 pub enum EngineMode {
     Recursive,
     Template,

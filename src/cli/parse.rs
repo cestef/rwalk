@@ -3,7 +3,6 @@ use crate::{
     utils::constants::DEFAULT_WORDLIST_KEY,
     Result,
 };
-use cowstr::CowStr;
 use dashmap::DashSet as HashSet;
 
 pub fn parse_url(s: &str) -> Result<url::Url> {
@@ -74,7 +73,7 @@ pub fn parse_key_or_keyval(s: &str) -> Result<(String, Option<String>)> {
     Ok((parts[0].to_lowercase(), parts.get(1).map(|s| s.to_string())))
 }
 
-pub fn parse_wordlist(s: &str) -> Result<(CowStr, CowStr)> {
+pub fn parse_wordlist(s: &str) -> Result<(String, String)> {
     let res = parse_key_or_keyval(s)?;
     let res = (
         res.0.into(),

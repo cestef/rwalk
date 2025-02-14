@@ -16,14 +16,11 @@ struct Node {
 }
 
 impl Node {
-    // New function to simplify paths where possible
     fn simplify(&mut self) {
-        // First recurse into children
         for (_, child) in &mut self.children {
             child.simplify();
         }
 
-        // Then handle this node
         let mut i = 0;
         while i < self.children.len() {
             let mut keys_to_remove = Vec::new();
@@ -40,17 +37,14 @@ impl Node {
                 }
             }
 
-            // If no changes, we're done
             if keys_to_remove.is_empty() {
                 break;
             }
 
-            // Remove old nodes
             for key in keys_to_remove {
                 self.children.remove(&key);
             }
 
-            // Add new merged nodes
             for (key, node) in nodes_to_add {
                 self.children.insert(key, node);
             }
@@ -99,7 +93,6 @@ pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
         ..Node::default()
     };
 
-    // Build the tree structure using regular HashMap
     for entry in urls.iter() {
         let url = entry.key();
         if let Ok(parsed_url) = Url::parse(url) {
@@ -110,12 +103,10 @@ pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
         }
     }
 
-    // Simplify the tree before displaying
     root.simplify();
 
     print!("\n{}://{}", base.scheme(), base.host_str().unwrap());
 
-    // Display the tree using ptree
     ptree::print_tree(&root).unwrap();
 }
 
@@ -127,7 +118,6 @@ fn insert_path(node: &mut Node, components: &[&str], response: &RwalkResponse) {
 
     let component = components[0];
 
-    // Use regular HashMap for building
     let child = node
         .children
         .entry(component.to_string())

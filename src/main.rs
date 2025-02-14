@@ -1,8 +1,8 @@
 use clap::Parser;
-
 use indicatif::HumanDuration;
+use merge::Merge;
 use owo_colors::OwoColorize;
-use rwalk::{cli::Opts, run};
+use rwalk::{cli::Opts, run, RwalkError};
 use tracing::debug;
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -29,8 +29,16 @@ async fn main() -> miette::Result<()> {
         )
         .init();
 
-    let opts = Opts::parse();
+    let mut opts = Opts::parse();
     debug!("{:#?}", opts);
+    if let Some(ref config) = opts.config {
+        let config = tokio::fs::read_to_string(config)
+            .await
+            .map_err(RwalkError::from)?;
+        let config: Opts = toml::from_str(&config).map_err(RwalkError::from)?;
+        opts.merge(config);
+        debug!("merged: {:#?}", opts);
+    }
 
     // println!("{}", table::from_opts(&opts));
 

@@ -45,6 +45,10 @@ pub enum RwalkError {
         #[source]
         source: reqwest::Error,
     },
+
+    #[diagnostic(code(rwalk::toml_error))]
+    #[error(transparent)]
+    TomlError(#[from] toml::de::Error),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]

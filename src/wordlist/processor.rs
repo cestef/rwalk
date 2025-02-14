@@ -42,8 +42,8 @@ impl<'a> WordlistProcessor<'a> {
             let filterer = Arc::clone(&filterer);
             set.spawn(async move {
                 let wordlist = Self::process_single_wordlist(
-                    path,
-                    key,
+                    path.into(),
+                    key.into(),
                     &transformer,
                     &filterer,
                     &shared_words,
