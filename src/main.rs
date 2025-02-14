@@ -1,8 +1,15 @@
 use clap::Parser;
 use indicatif::HumanDuration;
+use itertools::Itertools;
 use merge::Merge;
 use owo_colors::OwoColorize;
-use rwalk::{cli::Opts, run, RwalkError};
+use rwalk::{
+    cli::Opts,
+    run,
+    wordlist::{filters::WordlistFilterRegistry, transformation::WordlistTransformerRegistry},
+    worker::filters::ResponseFilterRegistry,
+    RwalkError,
+};
 use tracing::debug;
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -41,6 +48,43 @@ async fn main() -> miette::Result<()> {
     }
 
     // println!("{}", table::from_opts(&opts));
+
+    if opts.list_filters {
+        let response_filters = ResponseFilterRegistry::list();
+        let wordlist_filters = WordlistFilterRegistry::list();
+        println!("{}", "Response Filters:".underline());
+        for (filter, aliases) in response_filters {
+            println!(
+                " - {} ({})",
+                filter.bold(),
+                aliases.iter().map(|e| e.dimmed().to_string()).join(", ")
+            );
+        }
+        println!("\n{}", "Wordlist Filters:".underline());
+        for (filter, aliases) in wordlist_filters {
+            println!(
+                " - {} ({})",
+                filter.bold(),
+                aliases.iter().map(|e| e.dimmed().to_string()).join(", ")
+            );
+        }
+
+        return Ok(());
+    }
+
+    if opts.list_transforms {
+        let transforms = WordlistTransformerRegistry::list();
+        println!("{}", "Transforms:".underline());
+        for (transform, aliases) in transforms {
+            println!(
+                " - {} ({})",
+                transform.bold(),
+                aliases.iter().map(|e| e.dimmed().to_string()).join(", ")
+            );
+        }
+
+        return Ok(());
+    }
 
     let start = std::time::Instant::now();
 

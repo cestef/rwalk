@@ -3,17 +3,25 @@ macro_rules! create_registry {
     (@base
         $static_name:ident,
         $constructor_type:ty,
-        $registry_var:ident,
         [$($implementor:ty),* $(,)?]
     ) => {
-        static $registry_var: Lazy<HashMap<&'static str, $constructor_type>> = Lazy::new(|| {
+        // Aliases registry $registry_var_ALIASES
+        static ALIASES: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
+            let mut registry = HashMap::new();
+
+            $(
+                for &alias in <$implementor>::aliases() {
+                    registry.insert(alias, <$implementor>::name());
+                }
+            )*
+
+            registry
+        });
+        static REGISTRY: Lazy<HashMap<&'static str, $constructor_type>> = Lazy::new(|| {
             let mut registry = HashMap::new();
 
             $(
                 registry.insert(<$implementor>::name(), <$implementor>::construct as $constructor_type);
-                for &alias in <$implementor>::aliases() {
-                    registry.insert(alias, <$implementor>::construct as $constructor_type);
-                }
             )*
 
             registry
@@ -22,8 +30,18 @@ macro_rules! create_registry {
         pub struct $static_name;
 
         impl $static_name {
-            pub fn list() -> HashSet<&'static str> {
-                $registry_var.keys().copied().collect()
+            pub fn list() -> HashSet<(String, Vec<String>)> {
+                let mut list = HashSet::new();
+
+                $(
+                    let mut aliases = Vec::new();
+                    for &alias in <$implementor>::aliases() {
+                        aliases.push(alias.to_string());
+                    }
+                    list.insert((<$implementor>::name().to_string(), aliases));
+                )*
+
+                list
             }
         }
     };
@@ -40,12 +58,12 @@ macro_rules! create_registry {
         create_registry!(@base
             $static_name,
             TransformerConstructor,
-            REGISTRY,
             [$($implementor),*]
         );
 
         impl $static_name {
             pub fn construct(name: &str, arg: Option<&str>) -> Result<Box<dyn Transform<$item_type>>> {
+                let name = ALIASES.get(name).copied().unwrap_or(name);
                 match REGISTRY.get(name) {
                     Some(constructor) => constructor(arg),
                     None => Err(crate::error!("Unknown transformer: {}", name)),
@@ -66,7 +84,6 @@ macro_rules! create_registry {
         create_registry!(@base
             $static_name,
             FilterConstructor,
-            REGISTRY,
             [$($implementor),*]
         );
 
@@ -94,6 +111,7 @@ macro_rules! create_registry {
                         (None, key)
                     };
 
+                    let key = ALIASES.get(key).copied().unwrap_or(key);
                     match REGISTRY.get(key) {
                         Some(constructor) => constructor(value, filter),
                         None => Err(crate::error!("Unknown filter: {}", key)),

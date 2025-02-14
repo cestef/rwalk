@@ -27,10 +27,10 @@ pub struct Opts {
     #[clap(short = 'T', long, default_value_t = num_cpus::get() * THREADS_PER_CORE)]
     #[merge(strategy = merge_overwrite)]
     pub threads: usize,
-    /// List of filters to apply to responses, name:value
+    /// List of filters to apply to responses, name:value, see --list-filters
     #[clap(short, long, value_parser = parse_filter)]
     pub filter: Option<String>,
-    /// List of transformations to apply to wordlists, [key:]name[:value]
+    /// List of transformations to apply to wordlists, [key:]name[:value], see --list-transforms
     #[clap(short, long, value_parser = parse_keyed_key_or_keyval, value_delimiter = ';', visible_alias = "transform")]
     #[merge(strategy = merge::vec::append)]
     pub transforms: Vec<(HashSet<String>, String, Option<String>)>,
@@ -69,7 +69,7 @@ pub struct Opts {
     #[clap(short, long)]
     #[merge(strategy = merge::vec::append)]
     pub show: Vec<String>,
-    /// Wordlist filters
+    /// Wordlist filters, see --list-filters
     #[clap(short, long, visible_alias = "wf")]
     pub wordlist_filter: Option<String>,
     /// Force the scan, even if the target is unreachable
@@ -80,6 +80,14 @@ pub struct Opts {
     #[merge(skip)]
     #[clap(short, long)]
     pub config: Option<PathBuf>,
+
+    #[merge(skip)]
+    #[clap(long)]
+    pub list_filters: bool,
+
+    #[merge(skip)]
+    #[clap(long)]
+    pub list_transforms: bool,
 }
 
 fn display_wordlists(wordlists: &Vec<(CowStr, CowStr)>) -> String {
