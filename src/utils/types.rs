@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use num_traits::PrimInt;
 use serde::Deserialize;
 use std::{fmt::Display, str::FromStr};
@@ -13,29 +14,24 @@ pub enum EngineMode {
     Template,
 }
 
-impl FromStr for EngineMode {
-    type Err = RwalkError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "recursive" | "r" => Ok(EngineMode::Recursive),
-            "template" | "t" => Ok(EngineMode::Template),
-            _ => Err(syntax_error!(
-                (0, s.len()),
-                s,
-                "Invalid engine mode: '{}', available: 'recursive', 'template'",
-                s
-            )),
+impl ValueEnum for EngineMode {
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        match self {
+            EngineMode::Recursive => Some(
+                clap::builder::PossibleValue::new("recursive")
+                    .aliases(&["r"])
+                    .help("Recursively fuzz the target, increasing the depth with each request"),
+            ),
+            EngineMode::Template => {
+                Some(clap::builder::PossibleValue::new("template").aliases(&["t"]).help(
+                    "Use a template to generate payloads, replacing placeholders with wordlist values",
+                ))
+            }
         }
     }
-}
 
-impl Display for EngineMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            EngineMode::Recursive => write!(f, "recursive"),
-            EngineMode::Template => write!(f, "template"),
-        }
+    fn value_variants<'a>() -> &'a [Self] {
+        &[EngineMode::Recursive, EngineMode::Template]
     }
 }
 

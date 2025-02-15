@@ -126,11 +126,11 @@ macro_rules! response_filter {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 use owo_colors::OwoColorize;
                 use itertools::Itertools;
-                write!(f, "[{}]{}:{:?}",
+                write!(f, "{}{}:{:?}",
                     if let Some(ref depth) = self.depth {
-                        depth.iter().sorted().map(|d| d.dimmed().to_string()).collect::<Vec<String>>().join(",")
+                        format!("[{}]", depth.iter().sorted().map(|d| d.dimmed().to_string()).collect::<Vec<String>>().join(","))
                     } else {
-                        "*".dimmed().to_string()
+                        "".to_string()
                     },
                     Self::name(),
                     self.value

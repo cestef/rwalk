@@ -22,7 +22,7 @@ create_registry!(
 use crate::utils::registry::create_registry;
 use crate::{error::RwalkError, Result};
 use once_cell::sync::Lazy;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 

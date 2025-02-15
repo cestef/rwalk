@@ -12,15 +12,15 @@ pub mod parse;
 pub mod utils;
 
 use crate::{constants::THREADS_PER_CORE, types::EngineMode};
-
+use clap::builder::EnumValueParser;
 #[derive(Debug, Parser, Clone, Merge, Deserialize)]
 #[clap(version = utils::version(), long_version = utils::long_version())]
 pub struct Opts {
-    #[clap(value_parser = parse_url)]
+    #[clap(value_parser = parse_url, required = true)]
     #[merge(strategy = merge_overwrite)]
     pub url: Url,
     /// Wordlist file(s) to use, path[:key]
-    #[clap(value_parser = parse_wordlist)]
+    #[clap(value_parser = parse_wordlist, required = true)]
     #[merge(strategy = merge::vec::append)]
     pub wordlists: Vec<(String, String)>,
     /// Number of threads to use, defaults to num. of cores * 10
@@ -35,11 +35,11 @@ pub struct Opts {
     #[merge(strategy = merge::vec::append)]
     pub transforms: Vec<(HashSet<String>, String, Option<String>)>,
     /// Fuzzing mode, one of: recursive (r), template (t)
-    #[clap(short, long, default_value = "recursive")]
+    #[clap(short, long, default_value = "recursive", value_parser = EnumValueParser::<EngineMode>::new())]
     #[merge(strategy = merge_overwrite)]
     pub mode: EngineMode,
     /// Request rate limit in requests per second
-    #[clap(long, visible_alias = "rps")]
+    #[clap(long, visible_alias = "rate")]
     pub throttle: Option<u64>,
     /// Maximum depth in recursive mode
     #[clap(short, long, default_value = "3")]
@@ -76,6 +76,10 @@ pub struct Opts {
     #[clap(long)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub force: bool,
+
+    /// Output file, defaults to stdout
+    #[clap(short, long)]
+    pub output: Option<String>,
 
     #[merge(skip)]
     #[clap(short, long)]

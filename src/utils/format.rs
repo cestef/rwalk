@@ -98,7 +98,7 @@ macro_rules! warning {
 
 macro_rules! info {
     ($($arg:tt)*) => {
-        println!("{} {}", "ℹ️".blue(), format!($($arg)*))
+        println!("{} {}", "ℹ".blue(), format!($($arg)*))
     };
 }
 

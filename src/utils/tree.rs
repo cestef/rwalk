@@ -104,7 +104,9 @@ pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
     }
 
     root.simplify();
-
+    if root.children.is_empty() {
+        return;
+    }
     print!("\n{}://{}", base.scheme(), base.host_str().unwrap());
 
     ptree::print_tree(&root).unwrap();
