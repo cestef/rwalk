@@ -59,7 +59,7 @@ async fn main() -> miette::Result<()> {
 
     let rate = run(opts).await?;
 
-    println!(
+    rwalk::success!(
         "Done in {} with an average of {} req/s",
         format!("{:#}", HumanDuration(start.elapsed())).bold(),
         rate.round().bold()

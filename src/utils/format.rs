@@ -78,32 +78,36 @@ fn icon_for_status_code(s: u16) -> &'static str {
 //     format!("{} {}", "✓".green(), msg)
 // }
 
+#[macro_export]
 macro_rules! success {
     ($($arg:tt)*) => {
         println!("{} {}", "✓".green(), format!($($arg)*))
     };
 }
 
-macro_rules! error {
+#[macro_export]
+macro_rules! print_error {
     ($($arg:tt)*) => {
         println!("{} {}", "✖".red(), format!($($arg)*))
     };
 }
 
+#[macro_export]
 macro_rules! warning {
     ($($arg:tt)*) => {
         println!("{} {}", "⚠".yellow(), format!($($arg)*))
     };
 }
 
+#[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {
         println!("{} {}", "ℹ".blue(), format!($($arg)*))
     };
 }
 
-// pub(crate) use error;
-pub(crate) use info;
+// pub(crate) use info;
+// pub(crate) use print_error;
 pub(crate) use success;
 pub(crate) use warning;
 

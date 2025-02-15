@@ -220,26 +220,27 @@ impl WorkerPool {
         let global_ = global.clone();
         let pb = self.pb.clone();
         let ticker = self.ticker.clone();
-        let pb_ = pb.clone();
+        // let pb_ = pb.clone();
 
-        let mut progress_rx = shutdown_rx.resubscribe();
+        // let mut progress_rx = shutdown_rx.resubscribe();
 
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    _ = tokio::time::sleep(PROGRESS_UPDATE_INTERVAL) => {
-                        pb_.set_position(
-                            pb_.length()
-                                .unwrap_or_default()
-                                .saturating_sub(global.len() as u64),
-                        );
-                    }
-                    _ = progress_rx.recv() => {
-                        break;
-                    }
-                }
-            }
-        });
+        // tokio::spawn(async move {
+        //     loop {
+        //         tokio::select! {
+        //             _ = tokio::time::sleep(PROGRESS_UPDATE_INTERVAL) => {
+        //                 pb_.set_position(
+        //                     pb_.length()
+        //                         .unwrap_or_default()
+        //                         .saturating_sub(global.len() as u64),
+        //                 );
+        //             }
+        //             _ = progress_rx.recv() => {
+        //                 break;
+        //             }
+        //         }
+        //     }
+        // });
+        pb.enable_steady_tick(PROGRESS_UPDATE_INTERVAL);
 
         let worker_rx = shutdown_rx.resubscribe();
         let results = self.results.clone();
@@ -314,6 +315,7 @@ impl WorkerPool {
 
                     let response = self.process_request(&task).await?;
                     self.ticker.tick();
+                    self.pb.inc(1);
                     if self.worker_config.filterer.filter(&response) {
                         self.worker_config.handler.handle(response.clone(), &self)?;
                         results.insert(response.url.to_string(), response);

@@ -4,7 +4,7 @@ use engine::WorkerPool;
 
 use cli::Opts;
 use owo_colors::OwoColorize;
-use utils::{constants, error, format::info, tree, types};
+use utils::{constants, error, tree, types};
 
 use wordlist::processor::WordlistProcessor;
 
