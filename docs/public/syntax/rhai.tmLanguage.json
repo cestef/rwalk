@@ -1,0 +1,867 @@
+{
+	"name": "Rhai",
+	"version": "v0.6.7",
+	"fileTypes": ["rhai"],
+	"uuid": "1e76f176-ee1c-4331-a781-eb21c0da77cf",
+	"scopeName": "source.rhai",
+	"information_for_contributors": ["aster: galaster@foxmail.com", "schungx: schungx@live.com"],
+	"patterns": [
+		{
+			"include": "#core"
+		}
+	],
+	"repository": {
+		"core": {
+			"patterns": [
+				{
+					"include": "#expression"
+				}
+			]
+		},
+		"expression": {
+			"patterns": [
+				{
+					"include": "#literal-closure-labels"
+				},
+				{
+					"include": "#literal-labels"
+				},
+				{
+					"include": "#literal-keywords"
+				},
+				{
+					"include": "#support"
+				},
+				{
+					"include": "#literal-function"
+				},
+				{
+					"include": "#literal-closure"
+				},
+				{
+					"include": "#literal-constant"
+				},
+				{
+					"include": "#literal-template-string"
+				},
+				{
+					"include": "#literal-language-variable"
+				},
+				{
+					"include": "#literal-module"
+				},
+				{
+					"include": "#literal-method-call"
+				},
+				{
+					"include": "#literal-function-call"
+				},
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#brackets"
+				},
+				{
+					"include": "#literal-operators"
+				},
+				{
+					"include": "#literal-namespace"
+				},
+				{
+					"include": "#literal-variable"
+				},
+				{
+					"include": "#literal-punctuation"
+				}
+			]
+		},
+		"literal-constant": {
+			"patterns": [
+				{
+					"include": "#literal-number"
+				},
+				{
+					"include": "#literal-string"
+				},
+				{
+					"include": "#literal-language-constant"
+				}
+			]
+		},
+		"round-brackets": {
+			"patterns": [
+				{
+					"name": "meta.group.braces.round",
+					"begin": "\\((?!\\*)",
+					"beginCaptures": {
+						"0": {
+							"name": "meta.brace.round.rhai"
+						}
+					},
+					"end": "(?<!\\*)\\)",
+					"endCaptures": {
+						"0": {
+							"name": "meta.brace.round.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#expression"
+						}
+					]
+				}
+			]
+		},
+		"square-brackets": {
+			"patterns": [
+				{
+					"name": "meta.group.braces.square",
+					"begin": "\\[|\\?\\[",
+					"beginCaptures": {
+						"0": {
+							"name": "meta.brace.square.rhai"
+						}
+					},
+					"end": "\\]",
+					"endCaptures": {
+						"0": {
+							"name": "meta.brace.square.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#expression"
+						}
+					]
+				}
+			]
+		},
+		"curly-brackets": {
+			"patterns": [
+				{
+					"name": "meta.group.braces.curly",
+					"begin": "\\{",
+					"beginCaptures": {
+						"0": {
+							"name": "meta.brace.curly.rhai"
+						}
+					},
+					"end": "\\}",
+					"endCaptures": {
+						"0": {
+							"name": "meta.brace.curly.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "$self"
+						}
+					]
+				}
+			]
+		},
+		"brackets": {
+			"patterns": [
+				{
+					"include": "#round-brackets"
+				},
+				{
+					"include": "#square-brackets"
+				},
+				{
+					"include": "#curly-brackets"
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.block.documentation.rhai",
+					"begin": "/\\*\\*(?![/|\\*])",
+					"end": "\\*/",
+					"captures": {
+						"0": {
+							"name": "punctuation.definition.comment.block.documentation.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#comments"
+						}
+					]
+				},
+				{
+					"name": "comment.block.rhai",
+					"begin": "/\\*",
+					"end": "\\*/",
+					"captures": {
+						"0": {
+							"name": "punctuation.definition.comment.block.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#comments"
+						}
+					]
+				},
+				{
+					"name": "comment.line.documentation.rhai",
+					"match": "(///)[^/].*$\\n?",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.comment.documentation.rhai"
+						}
+					}
+				},
+				{
+					"name": "comment.line.double-slash.rhai",
+					"match": "(//).*$\\n?",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.comment.double-slash.rhai"
+						}
+					}
+				},
+				{
+					"name": "comment.line.shebang.rhai",
+					"match": "^(#!).*$\\n?",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.comment.rhai"
+						}
+					}
+				}
+			]
+		},
+		"function-declaration-parameters": {
+			"patterns": [
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.parameters.begin.rhai"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.parameters.end.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"name": "variable.parameter.function.rhai",
+							"match": "[_a-zA-Z]\\w*"
+						},
+						{
+							"name": "punctuation.separator.parameter.function.rhai",
+							"match": "\\,"
+						},
+						{
+							"include": "#parameters-list"
+						}
+					]
+				}
+			]
+		},
+		"parameters-list": {
+			"patterns": [
+				{
+					"name": "variable.parameter.function.rhai",
+					"match": "[_a-zA-Z]\\w*"
+				},
+				{
+					"name": "punctuation.separator.parameter.function.rhai",
+					"match": "\\,"
+				},
+				{
+					"include": "#comments"
+				}
+			]
+		},
+		"literal-module": {
+			"patterns": [
+				{
+					"name": "keyword.other.module.rhai",
+					"match": "\\b(import|export|as)\\b"
+				}
+			]
+		},
+		"literal-function": {
+			"patterns": [
+				{
+					"name": "meta.function.rhai",
+					"begin": "(?x)\n  (?:\\b(private)\\s+)?\n  \\s*(fn)\n  \\s*([_a-zA-Z]\\w*)\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "storage.modifier.rhai"
+						},
+						"2": {
+							"name": "storage.type.function.rhai"
+						},
+						"3": {
+							"name": "entity.name.function.rhai"
+						}
+					},
+					"end": "(?<=\\))",
+					"patterns": [
+						{
+							"include": "#parameters-list"
+						}
+					]
+				},
+				{
+					"name": "keyword.other.function.rhai",
+					"match": "\\b(fn)\\b"
+				},
+				{
+					"name": "keyword.other.modifier.rhai",
+					"match": "\\b(private)\\b"
+				}
+			]
+		},
+		"literal-closure": {
+			"patterns": [
+				{
+					"name": "meta.function.closure.rhai",
+					"begin": "(\\|)(?=\\s*[_a-zA-Z\\|])",
+					"beginCaptures": {
+						"1": {
+							"name": "punctuation.definition.parameters.closure.begin.rhai"
+						}
+					},
+					"end": "(\\|)",
+					"endCaptures": {
+						"1": {
+							"name": "punctuation.definition.parameters.closure.end.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#parameters-list"
+						}
+					]
+				},
+				{
+					"name": "meta.function.closure.rhai",
+					"begin": "(\\b[_a-zA-Z]\\w*)\\s*(=)\\s*(\\|)(?=\\s*[_a-zA-Z\\|])",
+					"beginCaptures": {
+						"1": {
+							"name": "entity.name.function.closure.rhai"
+						},
+						"2": {
+							"name": "keyword.operator.assignment.rhai"
+						},
+						"3": {
+							"name": "punctuation.definition.parameters.closure.begin.rhai"
+						}
+					},
+					"end": "(\\|)",
+					"endCaptures": {
+						"1": {
+							"name": "punctuation.definition.parameters.closure.end.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#parameters-list"
+						}
+					]
+				},
+				{
+					"name": "meta.function.closure.rhai",
+					"begin": "(=>)\\s*(\\|)(?=\\s*[_a-zA-Z\\|])",
+					"beginCaptures": {
+						"1": {
+							"name": "punctuation.separator.switch.case.rhai"
+						},
+						"2": {
+							"name": "punctuation.definition.parameters.closure.begin.rhai"
+						}
+					},
+					"end": "(\\|)",
+					"endCaptures": {
+						"1": {
+							"name": "punctuation.definition.parameters.closure.end.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#parameters-list"
+						}
+					]
+				}
+			]
+		},
+		"literal-closure-labels": {
+			"patterns": [
+				{
+					"name": "meta.function.closure.rhai",
+					"begin": "(\\b[_a-zA-Z]\\w*)\\s*(\\:)\\s*(\\|)(?=\\s*[_a-zA-Z\\|])",
+					"beginCaptures": {
+						"1": {
+							"name": "string.unquoted.label.rhai entity.name.function.method.rhai"
+						},
+						"2": {
+							"name": "punctuation.separator.key-value.rhai"
+						},
+						"3": {
+							"name": "punctuation.definition.parameters.closure.begin.rhai"
+						}
+					},
+					"end": "(\\|)",
+					"endCaptures": {
+						"1": {
+							"name": "punctuation.definition.parameters.closure.end.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#parameters-list"
+						}
+					]
+				},
+				{
+					"name": "meta.function.closure.rhai",
+					"begin": "((\\\")((?:[^\"]|\\\\\")*)(\\\"))\\s*(:)\\s*(\\|)(?=\\s*[_a-zA-Z\\|])",
+					"beginCaptures": {
+						"1": {
+							"name": "string.quoted.double.rhai"
+						},
+						"2": {
+							"name": "punctuation.definition.string.begin.rhai"
+						},
+						"3": {
+							"name": "entity.name.function.method.rhai"
+						},
+						"4": {
+							"name": "punctuation.definition.string.end.rhai"
+						},
+						"5": {
+							"name": "punctuation.separator.key-value.rhai"
+						},
+						"6": {
+							"name": "punctuation.definition.parameters.closure.begin.rhai"
+						}
+					},
+					"end": "(\\|)",
+					"endCaptures": {
+						"1": {
+							"name": "punctuation.definition.parameters.closure.end.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#parameters-list"
+						}
+					]
+				}
+			]
+		},
+		"literal-function-call": {
+			"patterns": [
+				{
+					"name": "meta.function-call.without-arguments.rhai",
+					"match": "(?x)\n  ([_a-zA-Z]\\w*)(!)?\\s*\n  (\\(\\s*\\))",
+					"captures": {
+						"1": {
+							"name": "entity.name.function.rhai"
+						},
+						"2": {
+							"name": "punctuation.function-call.capture.rhai"
+						},
+						"3": {
+							"name": "meta.group.braces.round.function.arguments.rhai"
+						}
+					}
+				},
+				{
+					"name": "meta.function-call.with-arguments.rhai",
+					"match": "(?x)\n  ([_a-zA-Z]\\w*)(!)?\\s*\n  (?=\\()",
+					"captures": {
+						"1": {
+							"name": "entity.name.function.rhai"
+						},
+						"2": {
+							"name": "punctuation.function-call.capture.rhai"
+						}
+					}
+				}
+			]
+		},
+		"literal-method-call": {
+			"patterns": [
+				{
+					"name": "meta.function-call.method.without-arguments.rhai",
+					"match": "(?x)\n  (?<=(\\.|\\?\\.))\n  \\s*([_a-zA-Z]\\w*)\\s*\n  (\\(\\s*\\))",
+					"captures": {
+						"1": {
+							"name": "entity.name.function.rhai"
+						},
+						"2": {
+							"name": "meta.group.braces.round.function.arguments.rhai"
+						}
+					}
+				},
+				{
+					"name": "meta.function-call.method.with-arguments.rhai",
+					"match": "(?x)\n  (?<=(\\.|\\?\\.))\n  \\s*([_a-zA-Z]\\w*)\\s*\n  (?=\\()",
+					"captures": {
+						"1": {
+							"name": "entity.name.function.rhai"
+						}
+					}
+				}
+			]
+		},
+		"literal-language-variable": {
+			"patterns": [
+				{
+					"name": "variable.language.this.rhai",
+					"match": "\\bthis\\b"
+				}
+			]
+		},
+		"literal-language-constant": {
+			"patterns": [
+				{
+					"name": "constant.language.boolean.true.rhai",
+					"match": "\\btrue\\b"
+				},
+				{
+					"name": "constant.language.boolean.false.rhai",
+					"match": "\\bfalse\\b"
+				}
+			]
+		},
+		"literal-language-namespace": {
+			"patterns": [
+				{
+					"match": "(?<!\\:\\:)\\s*((global)\\s*(\\:\\:))(?!<)",
+					"captures": {
+						"1": {
+							"name": "meta.path.rhai"
+						},
+						"2": {
+							"name": "constant.language.namespace.global.rhai entity.name.namespace.rhai"
+						},
+						"3": {
+							"name": "punctuation.separator.namespace.rhai"
+						}
+					}
+				}
+			]
+		},
+		"literal-keyword-storage": {
+			"patterns": [
+				{
+					"name": "storage.type.rhai",
+					"match": "\\b(const|let)\\b"
+				}
+			]
+		},
+		"literal-keywords": {
+			"patterns": [
+				{
+					"include": "#literal-keyword-storage"
+				},
+				{
+					"name": "keyword.control.flow.rhai",
+					"match": "\\b(return)\\b"
+				},
+				{
+					"name": "keyword.control.conditional.rhai",
+					"match": "\\b(if|else|switch)\\b"
+				},
+				{
+					"name": "keyword.control.trycatch.rhai",
+					"match": "\\b(throw|try|catch)\\b"
+				},
+				{
+					"name": "keyword.control.loop.rhai",
+					"match": "\\b(for|in|loop|do|while|until|break|continue)\\b"
+				}
+			]
+		},
+		"literal-operators": {
+			"patterns": [
+				{
+					"name": "keyword.operator.logical.rhai",
+					"match": "(?x)\n  !(?!=)| # logical-not     right-to-left   right\n  &&    | # logical-and     left-to-right   both\n  \\|\\|    # logical-or      left-to-right   both"
+				},
+				{
+					"name": "keyword.operator.containment.rhai",
+					"match": "(?x)\n  \\bin\\b   | # in             left-to-right   both\n  \\B!in\\b    # not-in         left-to-right   both"
+				},
+				{
+					"name": "keyword.operator.coalesce.rhai",
+					"match": "(?x)\n  \\?\\?    # null-coalesce   left-to-right   both"
+				},
+				{
+					"name": "keyword.operator.assignment.rhai",
+					"match": "(?x)\n  =(?![=>]) # assignment    right-to-left   both"
+				},
+				{
+					"name": "keyword.operator.assignment.augmented.rhai",
+					"match": "(?x)\n  %=   | # assignment       right-to-left   both\n  &=   | # assignment       right-to-left   both\n  \\*\\*=| # assignment       right-to-left   both\n  (?<!\\*)\\*= | # assignment right-to-left   both\n  \\+=  | # assignment       right-to-left   both\n  -=   | # assignment       right-to-left   both\n  /=   | # assignment       right-to-left   both\n  \\^=  | # assignment       right-to-left   both\n  \\|=  | # assignment       right-to-left   both\n  <<=  | # assignment       right-to-left   both\n  >>=    # assignment       right-to-left   both"
+				},
+				{
+					"name": "keyword.operator.bitwise.rhai",
+					"match": "(?x)\n  <<   | # bitwise-shift    left-to-right   both\n  >>   | # bitwise-shift    left-to-right   both\n  &    | # bitwise-and      left-to-right   both\n  \\^   | # bitwise-xor      left-to-right   both\n  \\|     # bitwise-or       left-to-right   both"
+				},
+				{
+					"name": "keyword.operator.relational.rhai",
+					"match": "(?x)\n  <=     | # relational     left-to-right   both\n  >=     | # relational     left-to-right   both\n  <(?!-) | # relational     left-to-right   both\n  (?<!-)>  # relational     left-to-right   both"
+				},
+				{
+					"name": "keyword.operator.comparison.rhai",
+					"match": "(?x)\n  ==(?!=) | # equality       left-to-right   both\n  !=(?!=)   # equality       left-to-right   both"
+				},
+				{
+					"name": "keyword.operator.arithmetic.rhai",
+					"match": "(?x)\n  /         | # division        left-to-right   both\n  %         | # modulus         left-to-right   both\n  \\*\\*      | # power           left-to-right   both\n  \\*(?!\\))  | # multiplication  left-to-right   both\n  \\+(?!\\+)  | # addition        left-to-right   both\n  -(?![>-])   # subtraction     left-to-right   both"
+				},
+				{
+					"name": "keyword.operator.range.exclusive.rhai",
+					"match": "\\.\\.(?![\\.=])"
+				},
+				{
+					"name": "keyword.operator.range.inclusive.rhai",
+					"match": "\\.\\.="
+				},
+				{
+					"name": "keyword.operator.accessor.rhai punctuation.accessor.rhai",
+					"match": "\\.(?!\\.)|\\?\\."
+				},
+				{
+					"name": "punctuation.separator.switch.case.rhai",
+					"match": "=>"
+				},
+				{
+					"name": "invalid.illegal.operator.rhai",
+					"match": "(\\(\\*|\\*\\)|\\+\\+|--|\\.\\.\\.+|~|#(?!{)|@|\\?|\\$(?!{)|->|<-|===|!==|\\:=|\\:\\:<)"
+				}
+			]
+		},
+		"literal-labels": {
+			"patterns": [
+				{
+					"begin": "(?x)\n  (?<!\\?)(?<!\\?\\s)\n    (?=((\")((?:[^\\:\"]|\\\\\")*)(\"))\\s*:)",
+					"end": ":",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.separator.key-value.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#literal-string"
+						}
+					]
+				},
+				{
+					"name": "constant.other.object.key.rhai",
+					"match": "(?<!\\.|\\?|\\?\\s)([_a-zA-Z]\\w*)\\s*(:)(?!\\:)",
+					"captures": {
+						"1": {
+							"name": "string.unquoted.label.rhai"
+						},
+						"2": {
+							"name": "punctuation.separator.key-value.rhai"
+						}
+					}
+				}
+			]
+		},
+		"literal-number": {
+			"patterns": [
+				{
+					"name": "constant.numeric.rhai",
+					"match": "(?xi)\n  (?:\n    \\b0b[0-1][_0-1]*|                         # binary\n    \\b0o[0-7][_0-7]*|                         # octal\n    \\b0x[\\da-f][_\\da-f]*|                     # hex\n    (\\B[+\\-])?\\b\\d[_\\d]*\\.\\d[_\\d]*(e[+\\-]?\\d[_\\d]*)?| # e.g. 999.999, 999.99e+123\n    (\\B[+\\-])?\\b\\d[_\\d]*\\.(?!\\.)\\B|           # e.g. 999.\n    (\\B[+\\-])?\\b\\d[_\\d]*(e[+\\-]?\\d[_\\d]*)?    # e.g. 999, 999e+123\n  )"
+				}
+			]
+		},
+		"literal-punctuation": {
+			"patterns": [
+				{
+					"name": "punctuation.terminator.statement.rhai",
+					"match": "\\;"
+				},
+				{
+					"name": "meta.delimiter.comma.rhai",
+					"match": "\\,"
+				}
+			]
+		},
+		"literal-template-string": {
+			"patterns": [
+				{
+					"name": "string.interpolated.rhai",
+					"begin": "`",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.begin.rhai"
+						}
+					},
+					"end": "`",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.end.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#string-content"
+						},
+						{
+							"name": "meta.interpolation.rhai",
+							"begin": "\\${",
+							"beginCaptures": {
+								"0": {
+									"name": "punctuation.section.interpolation.begin.rhai"
+								}
+							},
+							"end": "}",
+							"endCaptures": {
+								"0": {
+									"name": "punctuation.section.interpolation.end.rhai"
+								}
+							},
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		"literal-string": {
+			"patterns": [
+				{
+					"name": "string.quoted.single.rhai",
+					"match": "('([^'\\\\]|\\\\([tnr'\\\\]|x\\h{2}|u\\h{4}|U\\h{8}))')",
+					"patterns": [
+						{
+							"match": "\\\\([tnr'\\\\]|x\\h{2}|u\\h{4}|U\\h{8})",
+							"name": "constant.character.escape.rhai"
+						}
+					]
+				},
+				{
+					"name": "string.quoted.double.rhai",
+					"begin": "(\")",
+					"beginCaptures": {
+						"1": {
+							"name": "punctuation.definition.string.begin.rhai"
+						}
+					},
+					"end": "(\")",
+					"endCaptures": {
+						"1": {
+							"name": "punctuation.definition.string.end.rhai"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#string-content"
+						},
+						{
+							"name": "invalid.illegal.newline.rhai",
+							"match": "(?<!\\\\)\\n"
+						},
+						{
+							"name": "constant.character.escape.newline.rhai punctuation.separator.continuation",
+							"match": "\\\\\\n"
+						}
+					]
+				}
+			]
+		},
+		"string-content": {
+			"patterns": [
+				{
+					"name": "constant.character.escape.rhai",
+					"match": "\\\\(x[\\da-fA-F]{2}|u[\\da-fA-F]{4}|U[\\da-fA-F]{8}|t|r|n|\\\\)"
+				},
+				{
+					"name": "invalid.illegal.escape.rhai",
+					"match": "\\\\[^xuUtrn\\\\\\n]"
+				}
+			]
+		},
+		"literal-namespace": {
+			"patterns": [
+				{
+					"include": "#literal-language-namespace"
+				},
+				{
+					"name": "meta.path.rhai",
+					"match": "([_a-zA-Z]\\w*)\\s*(\\:\\:)(?!<)",
+					"captures": {
+						"1": {
+							"name": "entity.name.namespace.rhai"
+						},
+						"2": {
+							"name": "punctuation.separator.namespace.rhai"
+						}
+					}
+				},
+				{
+					"match": "(?<=\\:\\:)(\\s*([_a-zA-Z]\\w*))\\s*(?!\\:\\:)",
+					"captures": {
+						"1": {
+							"name": "meta.path.rhai"
+						},
+						"2": {
+							"name": "variable.other.constant.rhai"
+						}
+					}
+				}
+			]
+		},
+		"literal-variable": {
+			"patterns": [
+				{
+					"name": "variable.other.constant.rhai",
+					"match": "[A-Z][_\\dA-Z]*\\b"
+				},
+				{
+					"match": "(?<!\\.)\\s*([_a-zA-Z]\\w*)\\s*(?=(\\.|\\?\\.))",
+					"captures": {
+						"1": {
+							"name": "variable.other.object.rhai"
+						}
+					}
+				},
+				{
+					"match": "(?<=(\\.|\\?\\.))\\s*([_a-zA-Z]\\w*)",
+					"captures": {
+						"1": {
+							"name": "variable.other.property.rhai entity.name.property.rhai"
+						}
+					}
+				},
+				{
+					"name": "variable.other.readwrite.rhai",
+					"match": "[_a-zA-Z]\\w*"
+				}
+			]
+		},
+		"support": {
+			"patterns": [
+				{
+					"name": "support.function.rhai",
+					"match": "\\b(print|debug|Fn|call|curry|eval|type_of|is_def_var|is_def_fn|is_shared)\\b"
+				},
+				{
+					"name": "invalid.illegal.keyword.rhai",
+					"match": "\\b(var|static|shared|goto|exit|match|case|public|protected|new|use|with|module|package|super|thread|spawn|go|await|async|sync|yield|default|void|null|nil)\\b"
+				}
+			]
+		}
+	}
+}

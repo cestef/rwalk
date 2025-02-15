@@ -1,0 +1,155 @@
+import { Callout } from "nextra/components"
+
+## Getting started
+
+A quick guide to get you started right away with `rwalk`. This tool's philosophy is to provide a simple and fast way to scan websites for files and directories.
+
+API documentation is available on [docs.rs](https://docs.rs/rwalk).
+
+## Installation
+
+The easiest way to install `rwalk` is to use the pre-built binaries. You can also install it using `cargo`, the Rust package manager.
+The pre-built binaries are available for macOS, Linux and Windows and can be downloaded from the [releases page](https://github.com/cestef/rwalk/releases).
+
+### Using homebrew (recommended)
+
+```bash copy
+brew install cestef/tap/rwalk
+```
+
+### Using cargo
+
+```bash copy
+cargo install rwalk
+```
+
+or with [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall):
+
+```bash copy
+cargo binstall rwalk
+```
+
+This will directly download the binary from the latest release and install it in `~/.cargo/bin`.
+
+### From source
+
+```bash copy
+git clone https://github.com/cestef/rwalk
+cd rwalk
+cargo install --path .
+```
+
+## Usage
+
+### Modes
+
+The core concept of `rwalk` revolves around different **scanning modes**. Each of these modes is designed to provide a different way to scan a website. The available modes are:
+
+-   [`recursive`](./modes.md#recursive): Start from a given path and check each of its subdirectories
+-   [`classic`](./modes.md#classic): Standard Fuzzing mode, where you provide a list of patterns to check
+-   [`spider`](./modes.md#spider): Start from a given path and follow all links found until a certain depth
+
+The mode can be specified using the `--mode` (`-m`) option. If not specified, the mode will be automatically detected based on the provided arguments. To read more about the modes, check the [modes documentation](./modes.md).
+
+### Basic usage
+
+To get a list of all available options, you can run:
+
+```bash copy
+rwalk --help
+```
+
+A markdown version of the help message is also available [here](./options.md).
+
+The basic syntax for running `rwalk` is as follows:
+
+```ansi
+[0;35mrwalk [0;36m[OPTIONS][0m [0;33m[URL][0m [0;32m[FILE:KEY][0m...
+```
+
+Where:
+
+-   ` [0;36m[OPTIONS]{:ansi}` are the various options that can be used to customize the scan.
+-   ` [0;33m[URL]{:ansi}` is the target URL (`http://example.com`)
+-   ` [0;32m[FILE:KEY]{:ansi}` are the wordlists to use for fuzzing. Each wordlist is identified by an optional key, which is used to reference it in some options. (`/path/to/wordlist:KEY`)
+
+## Examples
+
+In these examples, we will use the [`onelistforallmicro.txt`](https://raw.githubusercontent.com/six2dez/OneListForAll/main/onelistforallmicro.txt).
+You can download it using `curl`:
+
+```bash copy
+curl https://raw.githubusercontent.com/six2dez/OneListForAll/main/onelistforallmicro.txt -o common.txt
+```
+
+In most of our examples, [ffuf.me](http://ffuf.me) will be used as the target URL. A huge thanks to [BuildHackSecure](https://github.com/BuildHackSecure/ffufme) for providing this service.
+
+### Recursive mode
+
+```ansi
+[0;35mrwalk[0m http://ffuf.me/cd/recursion common.txt [0;33m-d 3[0m
+```
+
+We are scanning the `/cd/recursion` path with a depth of 3 (`[0;33m-d 3[0m{:ansi}`).
+
+This should output:
+
+```ansi
+[0;32m✓[0m [0;2m200[0m /cd/recursion ([0;2mdir[0m)[0m
+[0;2m└─ [0;31m✖[0m [0;2m403[0m /admin ([0;2mdir[0m)[0m
+[0;2m   └─ [0;31m✖[0m [0;2m403[0m /users ([0;2mdir[0m)[0m
+[0;2m      └─ [0;32m✓[0m [0;2m200[0m /96 ([0;2mtext/html[0m)[0m
+```
+
+### Classic mode
+
+For this example, we will try to find any path leading to a `development.log` or `class` file.
+
+We will create a file named `files.txt` with the following content:
+
+```txt copy
+development.log
+class
+```
+
+Then we can run:
+
+```ansi
+[0;35mrwalk[0m http://ffuf.me/cd/[0;32mW1[0m/[0;33mFILE[0m common.txt:[0;32mW1[0m files.txt:[0;33mFILE[0m
+```
+
+Note that the `[0;32mW1{:ansi}` and `[0;33mFILE{:ansi}` keys are used to reference the wordlists in the command.
+
+Expected output:
+
+```ansi
+[38;5;178m⚠[0m [0;2m404[0m /cd ([0;2mdir[0m)[0m
+[0;2m├─ [0;32m✓[0m [0;2m200[0m /basic/class ([0;2mtext/html[0m)[0m
+[0;2m└─ [0;32m✓[0m [0;2m200[0m /basic/development.log ([0;2mtext/html[0m)[0m
+```
+
+### Spider mode
+
+```ansi
+[0;35mrwalk[0m https://cstef.dev/ -m spider -d 3 [0;34m--subdomains[0m
+```
+
+
+<Callout>
+    By default, the spider mode will only follow links on the same domain. The `[0;34m--subdomains[0m{:ansi}` flag will make it follow links to subdomains as well. You can also use `--external` to follow links to external domains.
+</Callout>
+
+```ansi
+[0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m
+[0;2m├─ [0m🔍 ctf.cstef.dev[0m
+[0;2m│  └─ [0;32m✓[0m [0;2m200[0m /api/login ([0;2mtext/html[0m)[0m
+[0;2m├─ [0m🔍 blog.cstef.dev[0m
+[0;2m│  └─ [0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m
+[0;2m└─ [0m🔍 cstef.dev[0m
+[0;2m   ├─ [0;32m✓[0m [0;2m200[0m / ([0;2mdir[0m)[0m
+[0;2m   ├─ [0;32m✓[0m [0;2m200[0m /android-chrome-512x512.png ([0;2mimage/png[0m)[0m
+[0;2m   ├─ [0;32m✓[0m [0;2m200[0m /favicon.ico ([0;2mimage/vnd.microsoft.icon[0m)[0m
+[0;2m   └─ [0;32m✓[0m [0;2m200[0m /assets ([0;2mtext/css[0m)[0m
+[0;2m      ├─ [0;32m✓[0m [0;2m200[0m /index-81baf222.css ([0;2mtext/css[0m)[0m
+[0;2m      └─ [0;32m✓[0m [0;2m200[0m /index-d18fbe59.js ([0;2mapplication/javascript[0m)[0m
+```
