@@ -86,9 +86,9 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub force_recursion: bool,
 
-    /// Output file, defaults to stdout
+    /// Save responses to a file, supported: json, csv, txt, md
     #[clap(short, long)]
-    pub output: Option<String>,
+    pub output: Option<PathBuf>,
 
     #[merge(skip)]
     #[clap(short, long)]
