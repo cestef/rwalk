@@ -11,7 +11,7 @@ use url::Url;
 pub mod parse;
 pub mod utils;
 
-use crate::{constants::THREADS_PER_CORE, types::EngineMode};
+use crate::{constants::THREADS_PER_CORE, types::EngineMode, utils::types::IntRange};
 use clap::builder::EnumValueParser;
 #[derive(Debug, Parser, Clone, Merge, Deserialize)]
 #[clap(version = utils::version(), long_version = utils::long_version())]
@@ -52,7 +52,7 @@ pub struct Opts {
     /// What status codes to retry on
     #[clap(short, long, visible_alias = "retry-on")]
     #[merge(strategy = merge_overwrite)]
-    pub retry_codes: Vec<u16>,
+    pub retry_codes: Vec<IntRange<u16>>,
     /// Only use HTTP/1
     #[clap(long)]
     #[merge(strategy = merge::bool::overwrite_false)]

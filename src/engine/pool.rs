@@ -7,9 +7,10 @@ use crate::{
         constants::{
             DEFAULT_RESPONSE_FILTER, PROGRESS_CHARS, PROGRESS_TEMPLATE, PROGRESS_UPDATE_INTERVAL,
         },
-        format::{warning, WARNING},
+        format::WARNING,
         throttle::SimpleThrottler,
         ticker::RequestTickerNoReset,
+        types::IntRange,
     },
     wordlist::Wordlist,
     worker::{
@@ -47,7 +48,7 @@ pub struct PoolConfig {
     pub mode: EngineMode,
     pub rps: Option<u64>,
     pub retries: usize,
-    pub retry_codes: Vec<u16>,
+    pub retry_codes: Vec<IntRange<u16>>,
     pub force_recursion: bool,
     pub show: Vec<String>,
     pub max_depth: usize,
@@ -303,7 +304,7 @@ impl WorkerPool {
                     let response = self.process_request(&task).await?;
                     self.ticker.tick();
                     self.pb.inc(1);
-                    if self.config.retry_codes.contains(&response.status) {
+                    if self.config.retry_codes.iter().any(|e| e.contains(response.status)) {
                         if task.retry < self.config.retries {
                             let mut task = task.clone();
                             task.retry();
@@ -359,11 +360,13 @@ impl WorkerPool {
                     self.global_queue.push(task);
                     self.pb.set_length(self.global_queue.len() as u64);
                 } else {
-                    warning!(
-                        "Failed to fetch {} after {} retries: {e}",
-                        task.url,
-                        self.config.retries
-                    );
+                    self.pb.println(format!(
+                        "{} Failed to fetch {} after {} retries ({})",
+                        WARNING.yellow(),
+                        task.url.bold(),
+                        self.config.retries.yellow(),
+                        e
+                    ));
                 }
 
                 let res = RwalkResponse::from_error(e, task.url.clone().parse()?, task.depth);

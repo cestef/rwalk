@@ -35,7 +35,7 @@ impl ValueEnum for EngineMode {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Deserialize)]
 pub struct IntRange<T>
 where
     T: PrimInt,
