@@ -47,6 +47,7 @@ pub struct PoolConfig {
     pub mode: EngineMode,
     pub rps: Option<u64>,
     pub retries: usize,
+    pub force_recursion: bool,
 }
 
 // Worker configuration
@@ -176,7 +177,7 @@ impl WorkerPool {
             base_url: opts.url.clone(),
             mode: opts.mode,
             rps: opts.throttle,
-
+            force_recursion: opts.force_recursion,
             retries: opts.retries,
         };
 
@@ -220,26 +221,7 @@ impl WorkerPool {
         let global_ = global.clone();
         let pb = self.pb.clone();
         let ticker = self.ticker.clone();
-        // let pb_ = pb.clone();
 
-        // let mut progress_rx = shutdown_rx.resubscribe();
-
-        // tokio::spawn(async move {
-        //     loop {
-        //         tokio::select! {
-        //             _ = tokio::time::sleep(PROGRESS_UPDATE_INTERVAL) => {
-        //                 pb_.set_position(
-        //                     pb_.length()
-        //                         .unwrap_or_default()
-        //                         .saturating_sub(global.len() as u64),
-        //                 );
-        //             }
-        //             _ = progress_rx.recv() => {
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // });
         pb.enable_steady_tick(PROGRESS_UPDATE_INTERVAL);
 
         let worker_rx = shutdown_rx.resubscribe();
@@ -280,12 +262,13 @@ impl WorkerPool {
         stealers: Arc<Vec<Stealer<Task>>>,
         shutdown_rx: broadcast::Receiver<bool>,
     ) -> Result<Vec<JoinHandle<Result<()>>>> {
+        let self_ = Arc::new(self); // prevents us from cloning the entire struct for each worker
         workers
             .into_iter()
             .map(|worker| {
-                let stealers = stealers.clone();
-                let results = self.results.clone();
-                let self_ = self.clone();
+                let stealers = stealers.clone(); // Arc
+                let results = self_.results.clone(); // Arc
+                let self_ = self_.clone(); // Arc
                 let shutdown_rx = shutdown_rx.resubscribe();
 
                 let handle = tokio::spawn(async move {
@@ -298,7 +281,7 @@ impl WorkerPool {
     }
 
     async fn worker(
-        self,
+        &self,
         worker: Worker<Task>,
         stealers: &Vec<Stealer<Task>>,
         results: Arc<HashMap<String, RwalkResponse>>,

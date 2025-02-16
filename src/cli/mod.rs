@@ -77,6 +77,11 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub force: bool,
 
+    /// Force the recursion, even if the URL is not detected as a directory
+    #[clap(long, visible_alias = "fr")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    pub force_recursion: bool,
+
     /// Output file, defaults to stdout
     #[clap(short, long)]
     pub output: Option<String>,
