@@ -18,26 +18,32 @@ pub struct RecursiveHandler {
 impl ResponseHandler for RecursiveHandler {
     fn handle(&self, response: RwalkResponse, pool: &WorkerPool) -> Result<()> {
         // If it's a directory and passes filters, we should recursively scan it
-        if pool.config.force_recursion || directory::check(&response) {
-            pool.pb.println(format::response(&response));
+        if response.depth < pool.config.max_depth {
+            if pool.config.force_recursion || directory::check(&response) {
+                pool.pb
+                    .println(format::response(&response, &pool.config.show));
 
-            let pool = Arc::new(pool);
-            let response = Arc::new(response);
-            let total = AtomicU64::new(0);
+                let pool = Arc::new(pool);
+                let response = Arc::new(response);
+                let total = AtomicU64::new(0);
 
-            pool.wordlists.par_iter().try_for_each(|wordlist| {
-                let pool = Arc::clone(&pool);
-                let response = Arc::clone(&response);
-                total.fetch_add(wordlist.len() as u64, std::sync::atomic::Ordering::Relaxed);
-                wordlist.inject_into(&pool.global_queue, &response.url, response.depth + 1)
-            })?;
+                pool.wordlists.par_iter().try_for_each(|wordlist| {
+                    let pool = Arc::clone(&pool);
+                    let response = Arc::clone(&response);
+                    total.fetch_add(wordlist.len() as u64, std::sync::atomic::Ordering::Relaxed);
+                    wordlist.inject_into(&pool.global_queue, &response.url, response.depth + 1)
+                })?;
 
-            pool.pb.set_length(
-                pool.pb.length().unwrap() + total.load(std::sync::atomic::Ordering::Relaxed),
-            );
+                pool.pb.set_length(
+                    pool.pb.length().unwrap() + total.load(std::sync::atomic::Ordering::Relaxed),
+                );
+            } else {
+                pool.pb
+                    .println(format::skip(&response, format::SkipReason::NonDirectory));
+            }
         } else {
             pool.pb
-                .println(format::skip(&response, format::SkipReason::NonDirectory));
+                .println(format::skip(&response, format::SkipReason::MaxDepth));
         }
 
         Ok(())

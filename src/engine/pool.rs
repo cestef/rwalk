@@ -7,7 +7,7 @@ use crate::{
         constants::{
             DEFAULT_RESPONSE_FILTER, PROGRESS_CHARS, PROGRESS_TEMPLATE, PROGRESS_UPDATE_INTERVAL,
         },
-        format::warning,
+        format::{warning, WARNING},
         throttle::SimpleThrottler,
         ticker::RequestTickerNoReset,
     },
@@ -47,17 +47,20 @@ pub struct PoolConfig {
     pub mode: EngineMode,
     pub rps: Option<u64>,
     pub retries: usize,
+    pub retry_codes: Vec<u16>,
     pub force_recursion: bool,
+    pub show: Vec<String>,
+    pub max_depth: usize,
 }
 
 // Worker configuration
 #[derive(Clone)]
 pub struct WorkerConfig {
-    client: Client,
+    pub client: Client,
     pub filterer: Filterer<RwalkResponse>,
     pub handler: Arc<Box<dyn ResponseHandler>>,
-    throttler: Option<Arc<SimpleThrottler>>,
-    needs_body: bool,
+    pub throttler: Option<Arc<SimpleThrottler>>,
+    pub needs_body: bool,
 }
 
 #[derive(Clone)]
@@ -179,6 +182,9 @@ impl WorkerPool {
             rps: opts.throttle,
             force_recursion: opts.force_recursion,
             retries: opts.retries,
+            retry_codes: opts.retry_codes.clone(),
+            show: opts.show.clone(),
+            max_depth: opts.depth,
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -289,16 +295,32 @@ impl WorkerPool {
     ) -> Result<()> {
         while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
             tokio::select! {
-                // biased;
-
                 _ = async {
-                    if let Some(throttler) = self.worker_config.throttler.as_ref() {
+                    if let Some(ref throttler) = self.worker_config.throttler {
                         throttler.wait_for_request().await;
                     }
 
                     let response = self.process_request(&task).await?;
                     self.ticker.tick();
                     self.pb.inc(1);
+                    if self.config.retry_codes.contains(&response.status) {
+                        if task.retry < self.config.retries {
+                            let mut task = task.clone();
+                            task.retry();
+                            self.global_queue.push(task);
+                            self.pb.set_length(self.pb.length().unwrap() + 1);
+                        } else {
+                            self.pb.println(format!(
+                                "{} Failed to fetch {} after {} retries ({})",
+                                WARNING.yellow(),
+                                task.url.bold(),
+                                self.config.retries.yellow(),
+                                response.status.dimmed()
+                            ));
+                        }
+
+                        return Ok::<(), crate::error::RwalkError>(());
+                    }
                     if self.worker_config.filterer.filter(&response) {
                         self.worker_config.handler.handle(response.clone(), &self)?;
                         results.insert(response.url.to_string(), response);

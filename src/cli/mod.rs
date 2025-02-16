@@ -42,13 +42,17 @@ pub struct Opts {
     #[clap(long, visible_alias = "rate")]
     pub throttle: Option<u64>,
     /// Maximum depth in recursive mode
-    #[clap(short, long, default_value = "3")]
+    #[clap(short, long, default_value = "0")]
     #[merge(strategy = merge_overwrite)]
     pub depth: usize,
     /// Maximum retries for failed requests
     #[clap(short, long, default_value = "3", visible_alias = "retry")]
     #[merge(strategy = merge_overwrite)]
     pub retries: usize,
+    /// What status codes to retry on
+    #[clap(short, long, visible_alias = "retry-on")]
+    #[merge(strategy = merge_overwrite)]
+    pub retry_codes: Vec<u16>,
     /// Only use HTTP/1
     #[clap(long)]
     #[merge(strategy = merge::bool::overwrite_false)]

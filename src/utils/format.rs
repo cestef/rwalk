@@ -4,13 +4,26 @@ use owo_colors::OwoColorize;
 
 use crate::worker::utils::RwalkResponse;
 
-pub fn response(response: &RwalkResponse) -> String {
+pub fn response(response: &RwalkResponse, show: &Vec<String>) -> String {
     format!(
-        "{} {} {}",
+        "{} {} {} {}",
         display_status_code(response.status),
         display_url(response.url.as_str()),
-        display_time(response.time.as_nanos())
+        display_time(response.time.as_nanos()),
+        display_show(response, show)
     )
+}
+
+fn display_show(response: &RwalkResponse, show: &Vec<String>) -> String {
+    let mut show = show.iter().map(|s| s.to_lowercase());
+    let mut output = String::new();
+    while let Some(s) = show.next() {
+        match s.as_str() {
+            "size" => output.push_str(&response.body.as_ref().map_or(0, |e| e.len()).to_string()),
+            _ => {}
+        }
+    }
+    output
 }
 
 fn display_url(url: &str) -> Cow<'_, str> {
@@ -78,6 +91,11 @@ fn icon_for_status_code(s: u16) -> &'static str {
 //     format!("{} {}", "✓".green(), msg)
 // }
 
+pub const WARNING: &str = "⚠";
+pub const ERROR: &str = "✖";
+pub const INFO: &str = "ℹ";
+pub const SUCCESS: &str = "✓";
+
 #[macro_export]
 macro_rules! success {
     ($($arg:tt)*) => {
@@ -113,12 +131,14 @@ pub(crate) use warning;
 
 pub enum SkipReason {
     NonDirectory,
+    MaxDepth,
 }
 
 impl Display for SkipReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SkipReason::NonDirectory => write!(f, "not a directory"),
+            SkipReason::MaxDepth => write!(f, "max depth reached"),
         }
     }
 }

@@ -23,7 +23,8 @@ pub struct TemplateHandler {
 
 impl ResponseHandler for TemplateHandler {
     fn handle(&self, response: RwalkResponse, pool: &WorkerPool) -> Result<()> {
-        pool.pb.println(format::response(&response));
+        pool.pb
+            .println(format::response(&response, &pool.config.show));
         Ok(())
     }
 
