@@ -37,7 +37,6 @@ impl ResponseHandler for TemplateHandler {
     fn init(&self, pool: &WorkerPool) -> Result<()> {
         let urls = self.generate_urls(&pool.wordlists, &pool.config.base_url.to_string())?;
 
-        // Push URLs to queue in parallel chunks
         urls.par_chunks(pool.config.threads).for_each(|chunk| {
             for url in chunk {
                 pool.global_queue.push(Task::new(url.to_string(), 0));
@@ -59,7 +58,6 @@ impl TemplateHandler {
 
         pb.set_message("Generating URLs for");
 
-        // Find all template markers and their positions in the URL
         let positions: HashMap<CowStr, Vec<_>> = wordlists
             .iter()
             .map(|w| {
@@ -75,21 +73,17 @@ impl TemplateHandler {
             return Err(error!("No template markers found in URL"));
         }
 
-        // Create iterator of word references for each wordlist
         let word_iters: Vec<_> = wordlists.iter().map(|wl| wl.words.iter()).collect();
 
-        // Generate all combinations using MultiProduct
         let combinations = word_iters
             .into_iter()
             .multi_cartesian_product()
             .par_bridge();
 
-        // For each combination, create a URL by replacing template markers
         let urls: Vec<String> = combinations
             .map(|words| {
                 let mut url = base_url.to_string();
                 for (wordlist, word) in wordlists.iter().zip(words) {
-                    // Replace all occurrences of this template marker
                     if let Some(positions) = positions.get(&wordlist.key) {
                         for &pos in positions {
                             url.replace_range(pos..pos + wordlist.key.len(), word);
