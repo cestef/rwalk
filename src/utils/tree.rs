@@ -64,7 +64,6 @@ impl TreeItem for Node {
             .map(|(key, value)| {
                 let mut child = value.clone();
                 child.name = key.clone();
-
                 child
             })
             .collect();
@@ -90,7 +89,7 @@ impl TreeItem for Node {
 pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
     let mut root = Node {
         name: String::new(),
-        ..Node::default()
+        ..Default::default()
     };
 
     for entry in urls.iter() {
@@ -115,18 +114,18 @@ pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
 fn insert_path(node: &mut Node, components: &[&str], response: &RwalkResponse) {
     if components.is_empty() {
         node.is_endpoint = true;
+        node.status = response.status;
         return;
     }
 
     let component = components[0];
-
     let child = node
         .children
         .entry(component.to_string())
         .or_insert_with(|| Node {
             name: String::new(),
             status: response.status,
-            ..Node::default()
+            ..Default::default()
         });
 
     insert_path(child, &components[1..], response);

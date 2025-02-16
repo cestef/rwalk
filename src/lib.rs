@@ -3,6 +3,7 @@
 use engine::WorkerPool;
 
 use cli::Opts;
+use indicatif::HumanDuration;
 use owo_colors::OwoColorize;
 use utils::{constants, error, tree, types};
 
@@ -18,7 +19,9 @@ pub mod worker;
 pub(crate) use error::error;
 pub use error::*;
 
-pub async fn run(opts: Opts) -> Result<f64> {
+pub async fn run(opts: Opts) -> Result<()> {
+    let start = std::time::Instant::now();
+
     // Check if the website is reachable
     if !opts.force {
         let url = opts.url.clone();
@@ -40,8 +43,16 @@ pub async fn run(opts: Opts) -> Result<f64> {
     } else {
         pool.worker_config.handler.init(&pool)?;
     }
-
-    info!("{}\n", pool.worker_config.filterer.filter.as_ref().unwrap());
+    info!(
+        "Press {} to {} the scan",
+        "Ctrl+C".bold(),
+        if opts.no_save {
+            "exit"
+        } else {
+            "save and exit"
+        }
+    );
+    // info!("{}\n", pool.worker_config.filterer.filter.as_ref().unwrap());
 
     let shutdown_tx_clone = shutdown_tx.clone();
 
@@ -63,5 +74,12 @@ pub async fn run(opts: Opts) -> Result<f64> {
     let (results, rate) = pool.run(rx).await?;
 
     tree::display_url_tree(&opts.url, &results);
-    Ok(rate)
+
+    success!(
+        "Done in {} with an average of {} req/s",
+        format!("{:#}", HumanDuration(start.elapsed())).bold(),
+        rate.round().bold()
+    );
+
+    Ok(())
 }

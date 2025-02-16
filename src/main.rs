@@ -1,7 +1,5 @@
 use clap::Parser;
-use indicatif::HumanDuration;
 use merge::Merge;
-use owo_colors::OwoColorize;
 use rwalk::{
     cli::{utils, Opts},
     run, RwalkError,
@@ -55,15 +53,7 @@ async fn main() -> miette::Result<()> {
         return Ok(());
     }
 
-    let start = std::time::Instant::now();
-
-    let rate = run(opts).await?;
-
-    rwalk::success!(
-        "Done in {} with an average of {} req/s",
-        format!("{:#}", HumanDuration(start.elapsed())).bold(),
-        rate.round().bold()
-    );
+    run(opts).await?;
 
     Ok(())
 }
