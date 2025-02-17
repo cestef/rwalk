@@ -50,7 +50,7 @@ pub struct Opts {
     #[merge(strategy = merge_overwrite)]
     pub retries: usize,
     /// What status codes to retry on
-    #[clap(short, long, visible_alias = "retry-on")]
+    #[clap(long, visible_alias = "retry-on")]
     #[merge(strategy = merge_overwrite)]
     pub retry_codes: Vec<IntRange<u16>>,
     /// Only use HTTP/1
