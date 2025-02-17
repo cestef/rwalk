@@ -119,7 +119,7 @@ impl<'a> ExprParser<'a> {
             Some(Err(e)) => Err(e.clone()),
             None => Err(SyntaxError {
                 src: self.input.to_string(),
-                span: (self.input.len(), 0).into(),
+                span: (self.input.len() - 1, 0).into(),
                 message: format!("Expected {:?}, found end of input", expected),
             }),
         }
@@ -216,7 +216,7 @@ impl<'a> ExprParser<'a> {
             Some(Err(e)) => Err(e.clone()),
             None => Err(SyntaxError {
                 src: self.input.to_string(),
-                span: (self.input.len(), 0).into(),
+                span: (self.input.len() - 1, 0).into(),
                 message: "Unexpected end of input".to_string(),
             }),
         }

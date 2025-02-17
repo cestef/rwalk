@@ -1,12 +1,15 @@
 use crate::{
-    error,
     utils::{constants::STEAL_BATCH_LIMIT, directory},
     Result, RwalkError,
 };
 use crossbeam::deque::{Injector, Stealer, Worker};
 use dashmap::DashMap as HashMap;
 use serde::{Deserialize, Serialize};
-use std::{iter, str::FromStr};
+use std::{
+    fmt::{self, Display},
+    iter,
+    str::FromStr,
+};
 
 pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer<T>]) -> Option<T> {
     // Pop a task from the local queue, if not empty.
@@ -37,10 +40,10 @@ pub struct RwalkResponse {
     pub r#type: ResponseType,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ResponseType {
     Directory,
-    File,
+    File(Option<String>),
     Error,
 }
 
@@ -50,9 +53,18 @@ impl FromStr for ResponseType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "directory" | "dir" | "d" => Ok(ResponseType::Directory),
-            "file" | "f" => Ok(ResponseType::File),
             "error" | "e" => Ok(ResponseType::Error),
-            _ => Err(error!("Invalid type filter value: {}", s)),
+            e => Ok(ResponseType::File(Some(e.to_string()))),
+        }
+    }
+}
+
+impl Display for ResponseType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ResponseType::Directory => write!(f, "directory"),
+            ResponseType::File(t) => write!(f, "file:{}", t.as_deref().unwrap_or("")),
+            ResponseType::Error => write!(f, "error"),
         }
     }
 }
@@ -66,11 +78,15 @@ impl RwalkResponse {
     ) -> Result<Self> {
         let status = response.status().as_u16();
         let url = response.url().clone();
-        let headers = response
+        let headers: HashMap<String, String> = response
             .headers()
             .iter()
             .filter_map(|(k, v)| Some((k.as_str().to_string(), v.to_str().ok()?.to_string())))
             .collect();
+
+        let file_type = headers
+            .get("content-type")
+            .map(|s| s.splitn(2, ';').next().unwrap().to_string());
 
         let body = if parse_body {
             Some(response.text().await?)
@@ -85,7 +101,7 @@ impl RwalkResponse {
             url,
             time: start.elapsed(),
             depth,
-            r#type: ResponseType::File,
+            r#type: ResponseType::File(file_type),
         };
 
         if directory::check(&res) {

@@ -38,12 +38,18 @@ impl ResponseHandler for RecursiveHandler {
                     pool.pb.length().unwrap() + total.load(std::sync::atomic::Ordering::Relaxed),
                 );
             } else {
-                pool.pb
-                    .println(format::skip(&response, format::SkipReason::NonDirectory));
+                pool.pb.println(format::skip(
+                    &response,
+                    format::SkipReason::NonDirectory,
+                    &pool.config.show,
+                ));
             }
         } else {
-            pool.pb
-                .println(format::skip(&response, format::SkipReason::MaxDepth));
+            pool.pb.println(format::skip(
+                &response,
+                format::SkipReason::MaxDepth,
+                &pool.config.show,
+            ));
         }
 
         Ok(())

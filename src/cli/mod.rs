@@ -28,8 +28,9 @@ pub struct Opts {
     #[merge(strategy = merge_overwrite)]
     pub threads: usize,
     /// List of filters to apply to responses, name:value, see --list-filters
-    #[clap(short, long, value_parser = parse_filter)]
-    pub filter: Option<String>,
+    #[clap(short, long, value_parser = parse_filter, visible_alias = "filter")]
+    #[merge(strategy = merge::vec::append)]
+    pub filters: Vec<String>,
     /// List of transformations to apply to wordlists, [key:]name[:value], see --list-transforms
     #[clap(short, long, value_parser = parse_keyed_key_or_keyval, value_delimiter = ';', visible_alias = "transform")]
     #[merge(strategy = merge::vec::append)]
@@ -70,7 +71,7 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub no_save: bool,
     /// Extra information to display on hits
-    #[clap(short, long)]
+    #[clap(short, long, value_delimiter = ',')]
     #[merge(strategy = merge::vec::append)]
     pub show: Vec<String>,
     /// Wordlist filters, see --list-filters
