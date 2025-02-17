@@ -93,6 +93,8 @@ pub async fn run(opts: Opts) -> Result<()> {
             }
 
             std::fs::write(e, out)?;
+
+            info!("Results saved to {}", e.display().bold());
         }
         _ => {
             tree::display_url_tree(&opts.url, &results);
