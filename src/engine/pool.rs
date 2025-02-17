@@ -185,7 +185,7 @@ impl WorkerPool {
             retries: opts.retries,
             retry_codes: opts.retry_codes.clone(),
             show: opts.show.clone(),
-            max_depth: opts.depth,
+            max_depth: opts.depth - 1,
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -207,10 +207,15 @@ impl WorkerPool {
     }
 
     fn create_filterer(opts: &Opts) -> Result<Filterer<RwalkResponse>> {
-        let filter = opts
-            .filter
-            .as_deref()
-            .unwrap_or_else(|| DEFAULT_RESPONSE_FILTER);
+        // let filter = opts
+        //     .filters
+        //     .as_deref()
+        //     .unwrap_or_else(|| DEFAULT_RESPONSE_FILTER);
+        let filter = if opts.filters.is_empty() {
+            DEFAULT_RESPONSE_FILTER.to_string()
+        } else {
+            opts.filters.join(" & ")
+        };
         let filter = ResponseFilterRegistry::construct(&filter)?;
         Ok(Filterer::new(Some(filter)))
     }

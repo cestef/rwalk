@@ -1,5 +1,6 @@
 use std::{borrow::Cow, fmt::Display};
 
+use indicatif::HumanBytes;
 use owo_colors::OwoColorize;
 
 use crate::worker::utils::RwalkResponse;
@@ -15,15 +16,28 @@ pub fn response(response: &RwalkResponse, show: &Vec<String>) -> String {
 }
 
 fn display_show(response: &RwalkResponse, show: &Vec<String>) -> String {
-    let mut show = show.iter().map(|s| s.to_lowercase());
-    let mut output = String::new();
-    while let Some(s) = show.next() {
-        match s.as_str() {
-            "size" => output.push_str(&response.body.as_ref().map_or(0, |e| e.len()).to_string()),
-            _ => {}
-        }
+    let out = show
+        .iter()
+        .filter_map(|e| {
+            let key = e.to_lowercase();
+            let value = match key.as_str() {
+                "size" => response
+                    .body
+                    .as_ref()
+                    .map_or("".to_string(), |b| HumanBytes(b.len() as u64).to_string()),
+                "type" => response.r#type.to_string(),
+                _ => return None,
+            };
+
+            Some(format!("{}: {}", key, value.bold()).dimmed().to_string())
+        })
+        .collect::<Vec<String>>();
+
+    if out.is_empty() {
+        return "".to_string();
     }
-    output
+
+    format!("| {}", out.join(", "))
 }
 
 fn display_url(url: &str) -> Cow<'_, str> {
@@ -143,13 +157,14 @@ impl Display for SkipReason {
     }
 }
 
-pub fn skip(response: &RwalkResponse, reason: SkipReason) -> String {
+pub fn skip(response: &RwalkResponse, reason: SkipReason, show: &Vec<String>) -> String {
     format!(
-        "{} {} {} {} {}",
+        "{} {} {} {} {} {}",
         "↷".blue(),
         response.status.dimmed(),
         display_url(response.url.as_str()),
         display_time(response.time.as_nanos()),
-        format!("({})", reason).dimmed()
+        format!("({})", reason).dimmed(),
+        display_show(response, show)
     )
 }
