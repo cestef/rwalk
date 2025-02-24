@@ -49,6 +49,10 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::toml_error))]
     #[error(transparent)]
     TomlError(#[from] toml::de::Error),
+
+    #[diagnostic(code(rwalk::clap_error))]
+    #[error(transparent)]
+    ClapError(#[from] clap::Error),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]

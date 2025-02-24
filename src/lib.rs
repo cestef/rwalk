@@ -23,8 +23,11 @@ pub async fn run(opts: Opts) -> Result<()> {
     let start = std::time::Instant::now();
 
     // Check if the website is reachable
+    let url = opts
+        .url
+        .clone()
+        .ok_or_else(|| error!("The URL is missing"))?;
     if !opts.force {
-        let url = opts.url.clone();
         let host = url.host_str().ok_or_else(|| error!("Invalid URL"))?;
         let scheme = url.scheme();
         reqwest::get(&format!("{scheme}://{host}"))
@@ -43,6 +46,7 @@ pub async fn run(opts: Opts) -> Result<()> {
     } else {
         pool.worker_config.handler.init(&pool)?;
     }
+
     info!(
         "Press {} to {} the scan",
         "Ctrl+C".bold(),
@@ -97,7 +101,7 @@ pub async fn run(opts: Opts) -> Result<()> {
             info!("Results saved to {}", e.display().bold());
         }
         _ => {
-            tree::display_url_tree(&opts.url, &results);
+            tree::display_url_tree(&url, &results);
         }
     }
 

@@ -16,11 +16,11 @@ use clap::builder::EnumValueParser;
 #[derive(Debug, Parser, Clone, Merge, Deserialize)]
 #[clap(version = utils::version(), long_version = utils::long_version())]
 pub struct Opts {
-    #[clap(value_parser = parse_url, required = true)]
+    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms"]))]
     #[merge(strategy = merge_overwrite)]
-    pub url: Url,
+    pub url: Option<Url>,
     /// Wordlist file(s) to use, path[:key]
-    #[clap(value_parser = parse_wordlist, required = true)]
+    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms"]))]
     #[merge(strategy = merge::vec::append)]
     pub wordlists: Vec<(String, String)>,
     /// Number of threads to use, defaults to num. of cores * 10

@@ -17,6 +17,7 @@ use crate::{
         filters::ResponseFilterRegistry,
         utils::{self, RwalkResponse},
     },
+    RwalkError,
 };
 
 use crossbeam::deque::{Injector, Steal, Stealer, Worker};
@@ -178,7 +179,10 @@ impl WorkerPool {
     ) -> Result<(Self, broadcast::Sender<bool>)> {
         let config = PoolConfig {
             threads: opts.threads,
-            base_url: opts.url.clone(),
+            base_url: opts
+                .url
+                .clone()
+                .ok_or_else(|| crate::error!("No URL provided (This should never happen)"))?,
             mode: opts.mode,
             rps: opts.throttle,
             force_recursion: opts.force_recursion,
