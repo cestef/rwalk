@@ -14,28 +14,32 @@ pub mod utils;
 use crate::{constants::THREADS_PER_CORE, types::EngineMode, utils::types::IntRange};
 use clap::builder::EnumValueParser;
 #[derive(Debug, Parser, Clone, Merge, Deserialize)]
-#[clap(version = utils::version(), long_version = utils::long_version())]
+#[clap(version = utils::version(), long_version = utils::long_version(), disable_help_flag = true)]
 pub struct Opts {
-    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms"]))]
+    /// Show this help message
+    #[clap(short, long)]
+    #[merge(skip)]
+    pub help: bool,
+    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help"]))]
     #[merge(strategy = merge_overwrite)]
     pub url: Option<Url>,
-    /// Wordlist file(s) to use, path[:key]
-    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms"]))]
+    /// Wordlist file(s) to use, `path[:key]`
+    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms", "help"]))]
     #[merge(strategy = merge::vec::append)]
     pub wordlists: Vec<(String, String)>,
-    /// Number of threads to use, defaults to num. of cores * 10
+    /// Number of threads to use, defaults to `num_cores * 10`
     #[clap(short = 'T', long, default_value_t = num_cpus::get() * THREADS_PER_CORE)]
     #[merge(strategy = merge_overwrite)]
     pub threads: usize,
-    /// List of filters to apply to responses, name:value, see --list-filters
-    #[clap(short, long, value_parser = parse_filter, visible_alias = "filter")]
+    /// List of filters to apply to responses, see `--list-filters`
+    #[clap(short, long, value_parser = parse_filter, visible_alias = "filter", value_name ="EXPR")]
     #[merge(strategy = merge::vec::append)]
     pub filters: Vec<String>,
-    /// List of transformations to apply to wordlists, [key:]name[:value], see --list-transforms
-    #[clap(short, long, value_parser = parse_keyed_key_or_keyval, value_delimiter = ';', visible_alias = "transform")]
+    /// List of transformations to apply to wordlists, see `--list-transforms`
+    #[clap(short, long, value_parser = parse_keyed_key_or_keyval, value_delimiter = ';', visible_alias = "transform", value_name = "TRANSFORM")]
     #[merge(strategy = merge::vec::append)]
     pub transforms: Vec<(HashSet<String>, String, Option<String>)>,
-    /// Fuzzing mode, one of: recursive (r), template (t)
+    /// Fuzzing mode
     #[clap(short, long, default_value = "recursive", value_parser = EnumValueParser::<EngineMode>::new())]
     #[merge(strategy = merge_overwrite)]
     pub mode: EngineMode,
@@ -75,7 +79,7 @@ pub struct Opts {
     #[merge(strategy = merge::vec::append)]
     pub show: Vec<String>,
     /// Wordlist filters, see --list-filters
-    #[clap(short, long, visible_alias = "wf")]
+    #[clap(short, long, visible_alias = "wf", value_name = "EXPR")]
     pub wordlist_filter: Option<String>,
     /// Force the scan, even if the target is unreachable
     #[clap(long)]

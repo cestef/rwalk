@@ -1,9 +1,11 @@
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_help::Printer;
 use merge::Merge;
 use rwalk::{
     cli::{utils, Opts},
     run, RwalkError,
 };
+use termimad::ansi;
 use tracing::debug;
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -42,6 +44,44 @@ async fn main() -> miette::Result<()> {
     }
 
     // println!("{}", table::from_opts(&opts));
+
+    if opts.help {
+        static INTRO: &str = "
+*rwalk* is a web fuzzer that allows you to granularly control the fuzzing process.
+
+It supports:
+- fuzzing modes: *r* for `recursive` and *t* for `template`
+- filters: *status*, *headers*, ... (see `--list-filters`)
+- transforms: *encode*, *case*, ... (see `--list-transforms`)
+
+Complete documentation is available at ~~https://rwalk.cstef.dev~~
+";
+        static OPTIONS_TEMPLATE: &str = r#"
+**Options:**
+|:-:|:-:|:-:|
+|short|long|description|
+|:-:|:-|:-|
+${option-lines
+|${short}|󠀠${long} *${value-long-braced}* |${help}${possible_values}${default} |
+}
+|-
+"#;
+
+        let mut printer = Printer::new(Opts::command())
+            .without("author")
+            .with("introduction", INTRO)
+            .with("options", OPTIONS_TEMPLATE);
+        let skin = printer.skin_mut();
+        skin.headers[0].compound_style.set_fg(ansi(217));
+        skin.bold.set_fg(ansi(217));
+        skin.italic = termimad::CompoundStyle::with_fg(ansi(217));
+        skin.strikeout =
+            termimad::CompoundStyle::with_attr(termimad::crossterm::style::Attribute::Underdashed);
+
+        skin.table_border_chars = termimad::ROUNDED_TABLE_BORDER_CHARS;
+        printer.print_help();
+        return Ok(());
+    }
 
     if opts.list_filters {
         utils::list_filters();
