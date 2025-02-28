@@ -80,6 +80,7 @@ pub struct WorkerPool {
 pub struct WorkerState {
     pending_tasks: Vec<Task>,
     completed_results: Vec<(String, RwalkResponse)>,
+    base_url: Url,
 }
 
 impl WorkerPool {
@@ -87,6 +88,7 @@ impl WorkerPool {
         path: P,
         global_queue: Arc<Injector<Task>>,
         results: Arc<HashMap<String, RwalkResponse>>,
+        base_url: Url,
     ) -> Result<()> {
         // Collect pending tasks from the global queue
         let mut pending_tasks = Vec::new();
@@ -103,6 +105,7 @@ impl WorkerPool {
         let state = WorkerState {
             pending_tasks,
             completed_results,
+            base_url,
         };
 
         let writer = BufWriter::new(File::create(path)?);
@@ -111,8 +114,16 @@ impl WorkerPool {
     }
 
     pub fn load_state<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let reader = BufReader::new(File::open(path)?);
+        let file =
+            File::open(path).map_err(|e| crate::error!(source = e, "Failed to open state file"))?;
+        let reader = BufReader::new(file);
         let state: WorkerState = serde_json::from_reader(reader)?;
+
+        if state.base_url != self.config.base_url {
+            return Err(crate::error!(
+                "State file does not match the current base URL"
+            ));
+        }
 
         // Restore pending tasks to global queue
         for task in state.pending_tasks {
@@ -237,6 +248,7 @@ impl WorkerPool {
         let global_ = global.clone();
         let pb = self.pb.clone();
         let ticker = self.ticker.clone();
+        let base_url = self.config.base_url.clone();
 
         pb.enable_steady_tick(PROGRESS_UPDATE_INTERVAL);
 
@@ -258,7 +270,7 @@ impl WorkerPool {
             e = shutdown_rx.recv() => {
                 if matches!(e, Ok(true)) {
                     // Save state before returning
-                    Self::save_state("rwalk.state", global_.clone(), results.clone())?;
+                    Self::save_state("rwalk.state", global_.clone(), results.clone(), base_url)?;
                 }
                 pb.finish_and_clear();
                 Ok((results, ticker.get_rate()))

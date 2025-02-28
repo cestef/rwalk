@@ -12,8 +12,12 @@ pub enum RwalkError {
     SyntaxError(#[from] SyntaxError),
 
     #[diagnostic(code(rwalk::error))]
-    #[error("{0}")]
-    Error(String),
+    #[error("{message}")]
+    Error {
+        message: String,
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
 
     #[diagnostic(code(rwalk::http_error))]
     #[error(transparent)]
@@ -69,8 +73,17 @@ pub struct SyntaxError {
 pub type Result<T, U = RwalkError> = std::result::Result<T, U>;
 
 macro_rules! error {
+    (source = $source:expr, $($arg:tt)*) => {
+        (RwalkError::Error {
+            message: format!($($arg)*),
+            source: Some(Box::new($source)),
+        })
+    };
     ($($arg:tt)*) => {
-        RwalkError::Error(format!($($arg)*))
+        (RwalkError::Error {
+            message: format!($($arg)*),
+            source: None,
+        })
     };
 }
 
