@@ -46,8 +46,8 @@ tabled = { version = "0.18.0", features = ["ansi"] }
 ptree = "0.5.2"
 merge = "0.1.0"
 toml = "0.8.20"
-clap-help = "1.3.2"
 termimad = "0.31.2"
+terminal-light = "1.7.0"
 
 [profile.dev]
 debug = false

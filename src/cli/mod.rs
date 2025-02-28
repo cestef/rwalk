@@ -20,6 +20,7 @@ pub struct Opts {
     #[clap(short, long)]
     #[merge(skip)]
     pub help: bool,
+
     #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help"]))]
     #[merge(strategy = merge_overwrite)]
     pub url: Option<Url>,
@@ -95,14 +96,17 @@ pub struct Opts {
     #[clap(short, long)]
     pub output: Option<PathBuf>,
 
+    /// Load configuration from a file, merges with command line arguments
     #[merge(skip)]
     #[clap(short, long)]
     pub config: Option<PathBuf>,
 
+    /// List available filters (wordlist and response)
     #[merge(skip)]
     #[clap(long)]
     pub list_filters: bool,
 
+    /// List available wordlist transforms
     #[merge(skip)]
     #[clap(long)]
     pub list_transforms: bool,

@@ -274,17 +274,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clap-help"
-version = "1.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc01b70b5fd7e87b2ae778cfd151120355002f44ab1504e9943151a52cae8171"
-dependencies = [
- "clap",
- "termimad",
- "terminal-light",
-]
-
-[[package]]
 name = "clap_builder"
 version = "4.5.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2103,7 +2092,6 @@ dependencies = [
  "atomic_float",
  "base64 0.22.1",
  "clap",
- "clap-help",
  "cowstr",
  "crossbeam",
  "dashmap",
@@ -2126,6 +2114,7 @@ dependencies = [
  "serde_json",
  "tabled",
  "termimad",
+ "terminal-light",
  "thiserror 2.0.11",
  "tokio",
  "toml",
