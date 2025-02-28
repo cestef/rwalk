@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::{constants::THREADS_PER_CORE, types::EngineMode, utils::types::IntRange};
+use clap::builder::EnumValueParser;
 use clap::Parser;
 use cowstr::CowStr;
 use dashmap::DashSet as HashSet;
@@ -8,24 +10,26 @@ use parse::{parse_filter, parse_keyed_key_or_keyval, parse_url, parse_wordlist};
 use serde::Deserialize;
 use url::Url;
 
+pub mod help;
 pub mod parse;
 pub mod utils;
 
-use crate::{constants::THREADS_PER_CORE, types::EngineMode, utils::types::IntRange};
-use clap::builder::EnumValueParser;
 #[derive(Debug, Parser, Clone, Merge, Deserialize)]
 #[clap(version = utils::version(), long_version = utils::long_version(), disable_help_flag = true)]
 pub struct Opts {
     /// Show this help message
-    #[clap(short, long)]
+    #[clap(short)]
     #[merge(skip)]
     pub help: bool,
-
-    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help"]))]
+    #[clap(long = "help", hide = true)]
+    #[merge(skip)]
+    pub help_long: bool,
+    /// URL to scan
+    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long"]))]
     #[merge(strategy = merge_overwrite)]
     pub url: Option<Url>,
     /// Wordlist file(s) to use, `path[:key]`
-    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms", "help"]))]
+    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long"]))]
     #[merge(strategy = merge::vec::append)]
     pub wordlists: Vec<(String, String)>,
     /// Number of threads to use, defaults to `num_cores * 10`
@@ -71,7 +75,7 @@ pub struct Opts {
     #[clap(long)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub resume: bool,
-    /// Don't save state on Ctrl+C
+    /// Don't save state on `Ctrl+C`
     #[clap(long)]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub no_save: bool,
@@ -79,7 +83,7 @@ pub struct Opts {
     #[clap(short, long, value_delimiter = ',')]
     #[merge(strategy = merge::vec::append)]
     pub show: Vec<String>,
-    /// Wordlist filters, see --list-filters
+    /// Wordlist filters, see `--list-filters`
     #[clap(short, long, visible_alias = "wf", value_name = "EXPR")]
     pub wordlist_filter: Option<String>,
     /// Force the scan, even if the target is unreachable
@@ -92,7 +96,7 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub force_recursion: bool,
 
-    /// Save responses to a file, supported: json, csv, txt, md
+    /// Save responses to a file, supported: `json`, `csv`, `txt`, `md`
     #[clap(short, long)]
     pub output: Option<PathBuf>,
 
