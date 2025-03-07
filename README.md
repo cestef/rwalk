@@ -3,15 +3,7 @@
 </p>
 
 <p align="center">
-    <a href="https://crates.io/crates/rwalk" style="text-decoration: none;">
-        <img src="https://img.shields.io/github/actions/workflow/status/cestef/rwalk/release.yml?labelColor=%231e1e1e&color=%231e1e1e" alt="Crates.io" />
-    </a>
-    <a href="https://img.shields.io/github/v/release/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" style="text-decoration: none;">
-        <img src="https://img.shields.io/github/v/release/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" alt="Release" />
-    </a>
-    <a href="LICENSE" style="text-decoration: none;">
-        <img src="https://img.shields.io/github/license/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" alt="License" />
-    </a>
+    <a href="https://crates.io/crates/rwalk" style="text-decoration: none;"><img src="https://img.shields.io/github/actions/workflow/status/cestef/rwalk/release.yml?labelColor=%231e1e1e&color=%231e1e1e" alt="Crates.io" /></a> <a href="https://img.shields.io/github/v/release/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" style="text-decoration: none;"><img src="https://img.shields.io/github/v/release/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" alt="Release" /></a> <a href="LICENSE" style="text-decoration: none;"><img src="https://img.shields.io/github/license/cestef/rwalk?labelColor=%231e1e1e&color=%231e1e1e" alt="License" /></a>
 </p>
 
 > [!WARNING]
@@ -25,6 +17,7 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 ## Quick Installation
 
 ### On [Nix](https://nixos.org)
+
 ```bash
 # without flakes:
 nix-env -iA nixpkgs.rwalk
