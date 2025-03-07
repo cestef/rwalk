@@ -200,7 +200,7 @@ impl WorkerPool {
             retries: opts.retries,
             retry_codes: opts.retry_codes.clone(),
             show: opts.show.clone(),
-            max_depth: opts.depth - 1,
+            max_depth: opts.depth.overflowing_sub(1).0,
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -379,7 +379,7 @@ impl WorkerPool {
                     let mut task = task.clone();
                     task.retry();
                     self.global_queue.push(task);
-                    self.pb.set_length(self.global_queue.len() as u64);
+                    self.pb.set_length(self.pb.length().unwrap() + 1);
                 } else {
                     self.pb.println(format!(
                         "{} Failed to fetch {} after {} retries ({})",
