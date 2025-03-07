@@ -2113,6 +2113,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tabled",
+ "term_size",
  "termimad",
  "terminal-light",
  "thiserror 2.0.11",
@@ -2536,6 +2537,16 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "term_size"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e4129646ca0ed8f45d09b929036bafad5377103edd06e50bf574b353d2b08d9"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]

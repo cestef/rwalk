@@ -150,17 +150,18 @@ Complete documentation is available at ~~https://rwalk.cstef.dev~~
             }),
         ]);
     }
-
-    println!(
-        "{}",
-        table
-            .build()
-            .with(Style::modern_rounded())
-            .modify(
-                Rows::new(0..=1).and(Columns::new(0..=2)),
-                BorderColor::filled(Color::new("\u{1b}[2m", "\u{1b}[0m"))
-            )
-            .modify(Rows::single(0), Color::UNDERLINE | Color::BOLD)
-            .modify(Columns::first(), Alignment::center())
-    );
+    let mut built = table.build();
+    let built = built
+        .with(Style::modern_rounded())
+        .modify(
+            Rows::new(0..=1).and(Columns::new(0..=2)),
+            BorderColor::filled(Color::new("\u{1b}[2m", "\u{1b}[0m")),
+        )
+        .modify(Rows::single(0), Color::UNDERLINE | Color::BOLD)
+        .modify(Columns::first(), Alignment::center());
+    if built.total_width() > term_size::dimensions().map_or(80, |(w, _)| w) {
+        let _ = Opts::command().print_long_help();
+    } else {
+        println!("{}", built);
+    }
 }

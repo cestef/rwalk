@@ -48,6 +48,7 @@ merge = "0.1.0"
 toml = "0.8.20"
 termimad = "0.31.2"
 terminal-light = "1.7.0"
+term_size = "0.3.2"
 
 [profile.dev]
 debug = false

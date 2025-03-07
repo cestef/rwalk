@@ -15,7 +15,7 @@ pub mod parse;
 pub mod utils;
 
 #[derive(Debug, Parser, Clone, Merge, Deserialize)]
-#[clap(version = utils::version(), long_version = utils::long_version(), disable_help_flag = true)]
+#[clap(version = utils::version(), long_version = utils::long_version(), disable_help_flag = true, help_template = "{options}")]
 pub struct Opts {
     /// Show this help message
     #[clap(short)]
