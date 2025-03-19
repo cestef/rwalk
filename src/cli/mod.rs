@@ -126,7 +126,7 @@ pub struct Opts {
     pub bell: bool,
 
     /// HTTP method to use
-    #[clap(short, long, value_parser = EnumValueParser::<HTTPMethod>::new(), default_value = "GET")]
+    #[clap(short = 'X', long, value_parser = EnumValueParser::<HTTPMethod>::new(), default_value = "GET")]
     #[merge(strategy = merge_overwrite)]
     pub method: HTTPMethod,
 }
