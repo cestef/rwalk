@@ -14,47 +14,11 @@ It is designed to be fast in [**recursive scans**](https://rwalk.cstef.dev/docs/
 
 Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features such as **parameter fuzzing**, **header discovery**, etc.
 
-## Quick Installation
-
-### On [Nix](https://nixos.org)
+## Testing Locally
 
 ```bash
-# without flakes:
-nix-env -iA nixpkgs.rwalk
-# with flakes:
-nix profile install nixpkgs#rwalk
+cargo install --git https://github.com/cestef/rwalk --branch dev
 ```
-
-### From [homebrew](https://brew.sh) <!-- omit in toc -->
-
-```bash
-brew install cestef/tap/rwalk
-```
-
-### With [cargo-binstall](https://github.com/cargo-bins/cargo-binstall) <!-- omit in toc -->
-
-```bash
-cargo binstall rwalk
-```
-
-### From [crates.io](https://crates.io/crates/rwalk) <!-- omit in toc -->
-
-```bash
-cargo install rwalk
-```
-
-### From [AUR](https://aur.archlinux.org/packages/rwalk) <!-- omit in toc -->
-
-```bash
-paru -S rwalk
-```
-
-<small>
-    <p align="center">
-        <i>You can also download the latest binary from the <a href="https://github.com/cestef/rwalk/releases/latest">releases page</a>.</i>
-    </p>
-</small>
-
 
 ## Contributing
 
