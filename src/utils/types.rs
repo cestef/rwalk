@@ -2,7 +2,6 @@ use clap::ValueEnum;
 use num_traits::PrimInt;
 use serde::Deserialize;
 use std::{fmt::Display, str::FromStr};
-use tracing::Value;
 
 use crate::{
     error::{syntax_error, RwalkError, SyntaxError},

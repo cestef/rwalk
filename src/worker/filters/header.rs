@@ -6,10 +6,10 @@ response_filter!(
     HeaderFilter,
     (String, String),
     needs_body = false,
-    |res: &RwalkResponse, keyval: &(String, String)| res
+    |res: &RwalkResponse, keyval: &(String, String)| Ok(res
         .headers
         .get(&keyval.0)
-        .map_or(false, |r| r.value() == &keyval.1),
+        .map_or(false, |r| r.value() == &keyval.1)),
     "header",
     ["h"],
     transform = |raw: String| parse_keyval_with_sep(&raw, '=')

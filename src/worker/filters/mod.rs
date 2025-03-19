@@ -3,6 +3,7 @@ mod ends;
 mod header;
 mod length;
 mod regex;
+mod script;
 mod starts;
 mod status;
 mod time;
@@ -30,7 +31,8 @@ create_registry!(
         time::TimeFilter,
         regex::RegexFilter,
         header::HeaderFilter,
-        r#type::TypeFilter
+        r#type::TypeFilter,
+        script::ScriptFilter,
     ]
 );
 
@@ -86,11 +88,11 @@ macro_rules! response_filter {
         }
 
         impl Filter<RwalkResponse> for $filter_name {
-            fn filter(&self, item: &RwalkResponse) -> bool {
+            fn filter(&self, item: &RwalkResponse) -> Result<bool> {
                 if let Some(ref depth) = self.depth {
                     if !depth.contains(&item.depth) {
                         // Skip if the depth does not match
-                        return true;
+                        return Ok(true);
                     }
                 }
                 $filter_fn(item, &self.value)

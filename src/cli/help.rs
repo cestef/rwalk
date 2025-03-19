@@ -159,7 +159,7 @@ Complete documentation is available at ~~https://rwalk.cstef.dev~~
         )
         .modify(Rows::single(0), Color::UNDERLINE | Color::BOLD)
         .modify(Columns::first(), Alignment::center());
-    if built.total_width() > term_size::dimensions().map_or(80, |(w, _)| w) {
+    if built.total_width() > terminal_size::terminal_size().map_or(80, |(w, _)| w.0 as usize) {
         let _ = Opts::command().print_long_help();
     } else {
         println!("{}", built);

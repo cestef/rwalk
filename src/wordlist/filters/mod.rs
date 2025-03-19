@@ -73,10 +73,10 @@ macro_rules! wordlist_filter {
         }
 
         impl Filter<(CowStr, CowStr)> for $filter_name {
-            fn filter(&self, item: &(CowStr, CowStr)) -> bool {
+            fn filter(&self, item: &(CowStr, CowStr)) -> Result<bool> {
                 if let Some(filter) = &self.filter {
                     if !filter.contains(&item.0) {
-                        return true;
+                        return Ok(true);
                     }
                 }
                 $filter_fn(&item.1, &self.value)

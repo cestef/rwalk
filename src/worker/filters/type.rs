@@ -5,7 +5,7 @@ response_filter!(
     TypeFilter,
     ResponseType,
     needs_body = false,
-    |res: &RwalkResponse, expected: &ResponseType| res.r#type == *expected,
+    |res: &RwalkResponse, expected: &ResponseType| Ok(res.r#type == *expected),
     "type",
     ["t"],
     transform = |raw: String| raw.parse::<ResponseType>()

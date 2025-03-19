@@ -87,7 +87,7 @@ impl<'a> WordlistProcessor<'a> {
                     .entry(key.clone())
                     .or_insert_with(DashSet::new)
                     .insert(word.clone())
-                    && filterer.filter(&(key.clone(), word.clone()))
+                    && filterer.filter(&(key.clone(), word.clone()))?
                 {
                     words.push(word);
                 }

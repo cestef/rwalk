@@ -57,6 +57,10 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::clap_error))]
     #[error(transparent)]
     ClapError(#[from] clap::Error),
+
+    #[diagnostic(code(rwalk::rhai_error))]
+    #[error("Script error: {0}")]
+    RhaiError(String),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]

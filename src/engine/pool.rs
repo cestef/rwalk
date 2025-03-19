@@ -163,7 +163,7 @@ impl WorkerPool {
             filterer: filterer.clone(),
             handler: Arc::new(handler),
             throttler: config.rps.map(|max| Arc::new(SimpleThrottler::new(max))),
-            needs_body: filterer.needs_body(), // Precompute if any filter needs body
+            needs_body: filterer.needs_body()?, // Precompute if any filter needs body
         };
 
         let (shutdown_tx, _) = broadcast::channel(1);
@@ -227,10 +227,6 @@ impl WorkerPool {
     }
 
     fn create_filterer(opts: &Opts) -> Result<Filterer<RwalkResponse>> {
-        // let filter = opts
-        //     .filters
-        //     .as_deref()
-        //     .unwrap_or_else(|| DEFAULT_RESPONSE_FILTER);
         let filter = if opts.filters.is_empty() {
             DEFAULT_RESPONSE_FILTER.to_string()
         } else {
@@ -263,12 +259,13 @@ impl WorkerPool {
 
         // Wait for either completion or shutdown signal
         tokio::select! {
-            _ = async {
+            res = async {
                 for handle in handles {
                     handle.await??;
                 }
                 Ok::<(), crate::error::RwalkError>(())
             } => {
+                res?;
                 pb.finish_and_clear();
                 Ok((results, ticker.get_rate()))
             }
@@ -322,7 +319,7 @@ impl WorkerPool {
     ) -> Result<()> {
         while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
             tokio::select! {
-                _ = async {
+                res = async {
                     if let Some(ref throttler) = self.worker_config.throttler {
                         throttler.wait_for_request().await;
                     }
@@ -348,7 +345,7 @@ impl WorkerPool {
 
                         return Ok::<(), crate::error::RwalkError>(());
                     }
-                    if self.worker_config.filterer.filter(&response) {
+                    if self.worker_config.filterer.filter(&response)? {
                         self.worker_config.handler.handle(response.clone(), &self)?;
                         if self.config.bell {
                             bell();
@@ -357,7 +354,9 @@ impl WorkerPool {
                     }
 
                     Ok::<(), crate::error::RwalkError>(())
-                } => {}
+                } => {
+                    res?;
+                }
 
                 _ = shutdown_rx.recv() => {
                     break;
