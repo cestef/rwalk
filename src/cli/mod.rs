@@ -17,13 +17,14 @@ pub mod utils;
 #[derive(Debug, Parser, Clone, Merge, Deserialize)]
 #[clap(version = utils::version(), long_version = utils::long_version(), disable_help_flag = true, help_template = "{options}")]
 pub struct Opts {
-    /// Show this help message
-    #[clap(short)]
+    #[clap(short, hide = true)]
     #[merge(skip)]
     pub help: bool,
+
     #[clap(long = "help", hide = true)]
     #[merge(skip)]
     pub help_long: bool,
+
     /// URL to scan
     #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long"]))]
     #[merge(strategy = merge_overwrite)]

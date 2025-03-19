@@ -103,7 +103,7 @@ Complete documentation is available at ~~https://rwalk.cstef.dev~~
                     format!(
                         "--{s}{aliases} *{value}*",
                         aliases = if !aliases.is_empty() {
-                            format!(", --{}", aliases.join(", "))
+                            format!(", --{}", aliases.join(", --"))
                         } else {
                             "".to_string()
                         }
