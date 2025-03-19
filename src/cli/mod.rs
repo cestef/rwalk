@@ -114,6 +114,11 @@ pub struct Opts {
     #[merge(skip)]
     #[clap(long)]
     pub list_transforms: bool,
+
+    /// Ring the terminal bell on hits
+    #[clap(long, visible_alias = "ding", visible_alias = "dong")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    pub bell: bool,
 }
 
 fn display_wordlists(wordlists: &Vec<(CowStr, CowStr)>) -> String {

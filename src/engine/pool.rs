@@ -4,6 +4,7 @@ use crate::{
     filters::Filterer,
     types::EngineMode,
     utils::{
+        bell,
         constants::{
             DEFAULT_RESPONSE_FILTER, PROGRESS_CHARS, PROGRESS_TEMPLATE, PROGRESS_UPDATE_INTERVAL,
         },
@@ -53,6 +54,7 @@ pub struct PoolConfig {
     pub force_recursion: bool,
     pub show: Vec<String>,
     pub max_depth: usize,
+    pub bell: bool,
 }
 
 // Worker configuration
@@ -201,6 +203,7 @@ impl WorkerPool {
             retry_codes: opts.retry_codes.clone(),
             show: opts.show.clone(),
             max_depth: opts.depth.overflowing_sub(1).0,
+            bell: opts.bell,
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -345,6 +348,9 @@ impl WorkerPool {
                     }
                     if self.worker_config.filterer.filter(&response) {
                         self.worker_config.handler.handle(response.clone(), &self)?;
+                        if self.config.bell {
+                            bell();
+                        }
                         results.insert(response.url.to_string(), response);
                     }
 
