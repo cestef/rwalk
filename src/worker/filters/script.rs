@@ -20,12 +20,13 @@ response_filter!(
     "script",
     ["rhai"],
     transform = |arg: String| -> Result<(AST, Arc<Engine>)> {
-        let engine = Arc::new(Engine::new());
+        let mut engine = Engine::new();
+        engine.build_type::<RwalkResponse>();
         let contents = std::fs::read_to_string(&arg)?;
         let ast = engine
             .compile(&contents)
             .map_err(|e| RwalkError::RhaiError(e.to_string()))?;
 
-        Ok((ast, engine))
+        Ok((ast, Arc::new(engine)))
     }
 );

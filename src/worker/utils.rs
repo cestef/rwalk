@@ -4,6 +4,8 @@ use crate::{
 };
 use crossbeam::deque::{Injector, Stealer, Worker};
 use dashmap::DashMap as HashMap;
+use rhai::{CustomType, TypeBuilder};
+
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Display},
@@ -29,7 +31,7 @@ pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer
     })
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, CustomType)]
 pub struct RwalkResponse {
     pub status: u16,
     pub headers: HashMap<String, String>,
