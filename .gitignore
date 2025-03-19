@@ -2,3 +2,4 @@
 rwalk.state
 common.txt
 *.filter
+*.rhai

@@ -37,7 +37,7 @@ pub struct Opts {
     #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "resume"]))]
     #[merge(strategy = merge::vec::append)]
     pub wordlists: Vec<(String, String)>,
-    /// Number of threads to use, defaults to `num_cores * 10`
+    /// Number of threads to use, defaults to `num_cores * 5`
     #[clap(short = 'T', long, default_value_t = num_cpus::get() * THREADS_PER_CORE)]
     #[merge(strategy = merge_overwrite)]
     pub threads: usize,
