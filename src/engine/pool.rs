@@ -55,6 +55,7 @@ pub struct PoolConfig {
     pub show: Vec<String>,
     pub max_depth: usize,
     pub bell: bool,
+    pub method: reqwest::Method,
 }
 
 // Worker configuration
@@ -204,6 +205,7 @@ impl WorkerPool {
             show: opts.show.clone(),
             max_depth: opts.depth.overflowing_sub(1).0,
             bell: opts.bell,
+            method: opts.method.into(),
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -368,7 +370,12 @@ impl WorkerPool {
 
     async fn process_request(&self, task: &Task) -> Result<RwalkResponse> {
         let start = std::time::Instant::now();
-        let res = self.worker_config.client.get(task.url.clone()).send().await;
+        let res = self
+            .worker_config
+            .client
+            .request(self.config.method.clone(), task.url.clone())
+            .send()
+            .await;
         match res {
             Ok(res) => {
                 let res = RwalkResponse::from_response(

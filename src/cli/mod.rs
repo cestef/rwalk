@@ -1,6 +1,10 @@
 use std::path::PathBuf;
 
-use crate::{constants::THREADS_PER_CORE, types::EngineMode, utils::types::IntRange};
+use crate::{
+    constants::THREADS_PER_CORE,
+    types::EngineMode,
+    utils::types::{HTTPMethod, IntRange},
+};
 use clap::builder::EnumValueParser;
 use clap::Parser;
 use cowstr::CowStr;
@@ -120,6 +124,11 @@ pub struct Opts {
     #[clap(long, visible_alias = "ding", visible_alias = "dong")]
     #[merge(strategy = merge::bool::overwrite_false)]
     pub bell: bool,
+
+    /// HTTP method to use
+    #[clap(short, long, value_parser = EnumValueParser::<HTTPMethod>::new(), default_value = "GET")]
+    #[merge(strategy = merge_overwrite)]
+    pub method: HTTPMethod,
 }
 
 fn display_wordlists(wordlists: &Vec<(CowStr, CowStr)>) -> String {

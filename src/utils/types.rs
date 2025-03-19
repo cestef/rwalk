@@ -2,6 +2,7 @@ use clap::ValueEnum;
 use num_traits::PrimInt;
 use serde::Deserialize;
 use std::{fmt::Display, str::FromStr};
+use tracing::Value;
 
 use crate::{
     error::{syntax_error, RwalkError, SyntaxError},
@@ -35,6 +36,68 @@ impl ValueEnum for EngineMode {
     }
 }
 
+#[derive(Debug, Clone, Copy, Deserialize)]
+pub enum HTTPMethod {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    PATCH,
+    HEAD,
+    OPTIONS,
+    TRACE,
+}
+
+impl Into<reqwest::Method> for HTTPMethod {
+    fn into(self) -> reqwest::Method {
+        match self {
+            HTTPMethod::GET => reqwest::Method::GET,
+            HTTPMethod::POST => reqwest::Method::POST,
+            HTTPMethod::PUT => reqwest::Method::PUT,
+            HTTPMethod::DELETE => reqwest::Method::DELETE,
+            HTTPMethod::PATCH => reqwest::Method::PATCH,
+            HTTPMethod::HEAD => reqwest::Method::HEAD,
+            HTTPMethod::OPTIONS => reqwest::Method::OPTIONS,
+            HTTPMethod::TRACE => reqwest::Method::TRACE,
+        }
+    }
+}
+
+impl ValueEnum for HTTPMethod {
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        match self {
+            HTTPMethod::GET => Some(clap::builder::PossibleValue::new("GET").help("HTTP GET")),
+            HTTPMethod::POST => Some(clap::builder::PossibleValue::new("POST").help("HTTP POST")),
+            HTTPMethod::PUT => Some(clap::builder::PossibleValue::new("PUT").help("HTTP PUT")),
+            HTTPMethod::DELETE => {
+                Some(clap::builder::PossibleValue::new("DELETE").help("HTTP DELETE"))
+            }
+            HTTPMethod::PATCH => {
+                Some(clap::builder::PossibleValue::new("PATCH").help("HTTP PATCH"))
+            }
+            HTTPMethod::HEAD => Some(clap::builder::PossibleValue::new("HEAD").help("HTTP HEAD")),
+            HTTPMethod::OPTIONS => {
+                Some(clap::builder::PossibleValue::new("OPTIONS").help("HTTP OPTIONS"))
+            }
+            HTTPMethod::TRACE => {
+                Some(clap::builder::PossibleValue::new("TRACE").help("HTTP TRACE"))
+            }
+        }
+    }
+
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            HTTPMethod::GET,
+            HTTPMethod::POST,
+            HTTPMethod::PUT,
+            HTTPMethod::DELETE,
+            HTTPMethod::PATCH,
+            HTTPMethod::HEAD,
+            HTTPMethod::OPTIONS,
+            HTTPMethod::TRACE,
+        ]
+    }
+}
 #[derive(Clone, Copy, Deserialize)]
 pub struct IntRange<T>
 where
