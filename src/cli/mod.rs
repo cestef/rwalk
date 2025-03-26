@@ -32,11 +32,11 @@ pub struct Opts {
     pub help_long: bool,
 
     /// URL to scan
-    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "list_all"]))]
+    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "list"]))]
     #[merge(strategy = merge_overwrite)]
     pub url: Option<Url>,
     /// Wordlist file(s) to use, `path[:key]`
-    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "resume", "list_all"]))]
+    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "resume", "list"]))]
     #[merge(strategy = merge::vec::append)]
     pub wordlists: Vec<(String, String)>,
     /// Number of threads to use, defaults to `num_cores * 5`
