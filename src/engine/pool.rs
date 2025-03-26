@@ -59,7 +59,7 @@ pub struct PoolConfig {
     pub max_depth: usize,
     pub bell: bool,
     pub method: reqwest::Method,
-    pub headers: HashMap<usize, HeaderMap>,
+    pub headers: Option<HashMap<usize, HeaderMap>>,
 }
 
 // Worker configuration
@@ -195,17 +195,23 @@ impl WorkerPool {
         opts: &Opts,
         wordlists: Vec<Wordlist>,
     ) -> Result<(Self, broadcast::Sender<bool>)> {
-        let headers = HashMap::new();
+        let headers = if opts.headers.is_empty() {
+            None
+        } else {
+            let headers = HashMap::new();
 
-        for (depths, name, value) in opts.headers.iter() {
-            for depth in depths.iter() {
-                let depth: usize = depth.parse()?;
-                let mut map = headers.entry(depth).or_insert_with(HeaderMap::new);
-                let name = HeaderName::from_bytes(name.as_bytes())?;
-                let value = HeaderValue::from_str(value)?;
-                map.insert(name, value);
+            for (depths, name, value) in opts.headers.iter() {
+                for depth in depths.iter() {
+                    let depth: usize = depth.parse()?;
+                    let mut map = headers.entry(depth).or_insert_with(HeaderMap::new);
+                    let name = HeaderName::from_bytes(name.as_bytes())?;
+                    let value = HeaderValue::from_str(value)?;
+                    map.insert(name, value);
+                }
             }
-        }
+
+            Some(headers)
+        };
 
         let config = PoolConfig {
             threads: opts.threads,
@@ -392,7 +398,12 @@ impl WorkerPool {
             .client
             .request(self.config.method.clone(), task.url.clone());
 
-        if let Some(headers) = self.config.headers.get(&task.depth) {
+        if let Some(headers) = self
+            .config
+            .headers
+            .as_ref()
+            .and_then(|h| h.get(&task.depth))
+        {
             req = req.headers(headers.clone());
         }
 
