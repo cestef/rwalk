@@ -65,22 +65,14 @@ impl Into<reqwest::Method> for HTTPMethod {
 impl ValueEnum for HTTPMethod {
     fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
         match self {
-            HTTPMethod::GET => Some(clap::builder::PossibleValue::new("GET").help("HTTP GET")),
-            HTTPMethod::POST => Some(clap::builder::PossibleValue::new("POST").help("HTTP POST")),
-            HTTPMethod::PUT => Some(clap::builder::PossibleValue::new("PUT").help("HTTP PUT")),
-            HTTPMethod::DELETE => {
-                Some(clap::builder::PossibleValue::new("DELETE").help("HTTP DELETE"))
-            }
-            HTTPMethod::PATCH => {
-                Some(clap::builder::PossibleValue::new("PATCH").help("HTTP PATCH"))
-            }
-            HTTPMethod::HEAD => Some(clap::builder::PossibleValue::new("HEAD").help("HTTP HEAD")),
-            HTTPMethod::OPTIONS => {
-                Some(clap::builder::PossibleValue::new("OPTIONS").help("HTTP OPTIONS"))
-            }
-            HTTPMethod::TRACE => {
-                Some(clap::builder::PossibleValue::new("TRACE").help("HTTP TRACE"))
-            }
+            HTTPMethod::GET => Some(clap::builder::PossibleValue::new("GET")),
+            HTTPMethod::POST => Some(clap::builder::PossibleValue::new("POST")),
+            HTTPMethod::PUT => Some(clap::builder::PossibleValue::new("PUT")),
+            HTTPMethod::DELETE => Some(clap::builder::PossibleValue::new("DELETE")),
+            HTTPMethod::PATCH => Some(clap::builder::PossibleValue::new("PATCH")),
+            HTTPMethod::HEAD => Some(clap::builder::PossibleValue::new("HEAD")),
+            HTTPMethod::OPTIONS => Some(clap::builder::PossibleValue::new("OPTIONS")),
+            HTTPMethod::TRACE => Some(clap::builder::PossibleValue::new("TRACE")),
         }
     }
 

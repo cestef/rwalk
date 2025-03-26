@@ -32,7 +32,7 @@ pub struct Opts {
     pub help_long: bool,
 
     /// URL to scan
-    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "list"]))]
+    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "list"]), help_heading = "test")]
     #[merge(strategy = merge_overwrite)]
     pub url: Option<Url>,
     /// Wordlist file(s) to use, `path[:key]`
