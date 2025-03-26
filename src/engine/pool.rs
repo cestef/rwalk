@@ -25,7 +25,10 @@ use crossbeam::deque::{Injector, Steal, Stealer, Worker};
 use dashmap::DashMap as HashMap;
 use indicatif::ProgressBar;
 use owo_colors::OwoColorize;
-use reqwest::Client;
+use reqwest::{
+    header::{HeaderMap, HeaderName, HeaderValue},
+    Client,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
@@ -56,6 +59,7 @@ pub struct PoolConfig {
     pub max_depth: usize,
     pub bell: bool,
     pub method: reqwest::Method,
+    pub headers: HashMap<usize, HeaderMap>,
 }
 
 // Worker configuration
@@ -191,6 +195,18 @@ impl WorkerPool {
         opts: &Opts,
         wordlists: Vec<Wordlist>,
     ) -> Result<(Self, broadcast::Sender<bool>)> {
+        let headers = HashMap::new();
+
+        for (depths, name, value) in opts.headers.iter() {
+            for depth in depths.iter() {
+                let depth: usize = depth.parse()?;
+                let mut map = headers.entry(depth).or_insert_with(HeaderMap::new);
+                let name = HeaderName::from_bytes(name.as_bytes())?;
+                let value = HeaderValue::from_str(value)?;
+                map.insert(name, value);
+            }
+        }
+
         let config = PoolConfig {
             threads: opts.threads,
             base_url: opts
@@ -206,6 +222,7 @@ impl WorkerPool {
             max_depth: opts.depth.overflowing_sub(1).0,
             bell: opts.bell,
             method: opts.method.into(),
+            headers,
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -369,12 +386,18 @@ impl WorkerPool {
 
     async fn process_request(&self, task: &Task) -> Result<RwalkResponse> {
         let start = std::time::Instant::now();
-        let res = self
+
+        let mut req = self
             .worker_config
             .client
-            .request(self.config.method.clone(), task.url.clone())
-            .send()
-            .await;
+            .request(self.config.method.clone(), task.url.clone());
+
+        if let Some(headers) = self.config.headers.get(&task.depth) {
+            req = req.headers(headers.clone());
+        }
+
+        let res = req.send().await;
+
         match res {
             Ok(res) => {
                 let res = RwalkResponse::from_response(

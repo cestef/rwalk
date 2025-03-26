@@ -10,7 +10,9 @@ use clap::Parser;
 use cowstr::CowStr;
 use dashmap::DashSet as HashSet;
 use merge::Merge;
-use parse::{parse_filter, parse_keyed_key_or_keyval, parse_url, parse_wordlist};
+use parse::{
+    parse_filter, parse_keyed_key_or_keyval, parse_keyed_keyval, parse_url, parse_wordlist,
+};
 use serde::Deserialize;
 use url::Url;
 
@@ -129,6 +131,11 @@ pub struct Opts {
     #[clap(short = 'X', long, value_parser = EnumValueParser::<HTTPMethod>::new(), default_value = "GET")]
     #[merge(strategy = merge_overwrite)]
     pub method: HTTPMethod,
+
+    /// Headers to send with the request, `name:value`
+    #[clap(short = 'H', long, value_delimiter = ';', value_name = "HEADER", value_parser = parse_keyed_keyval)]
+    #[merge(strategy = merge::vec::append)]
+    pub headers: Vec<(HashSet<String>, String, String)>,
 }
 
 fn display_wordlists(wordlists: &Vec<(CowStr, CowStr)>) -> String {

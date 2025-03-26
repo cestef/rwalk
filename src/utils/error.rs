@@ -1,4 +1,5 @@
 use miette::{Diagnostic, SourceSpan};
+use reqwest::header::{InvalidHeaderName, InvalidHeaderValue};
 use thiserror::Error;
 
 #[derive(Error, Diagnostic, Debug)]
@@ -61,6 +62,14 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::rhai_error))]
     #[error("Script error: {0}")]
     RhaiError(String),
+
+    #[diagnostic(code(rwalk::invalid_header_value))]
+    #[error(transparent)]
+    InvalidHeaderValue(#[from] InvalidHeaderValue),
+
+    #[diagnostic(code(rwalk::invalid_header_name))]
+    #[error(transparent)]
+    InvalidHeaderName(#[from] InvalidHeaderName),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]
