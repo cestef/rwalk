@@ -43,8 +43,6 @@ async fn main() -> miette::Result<()> {
         debug!("merged: {:#?}", opts);
     }
 
-    // println!("{}", table::from_opts(&opts));
-
     if opts.help || opts.help_long {
         help::print(opts.help_long);
         return Ok(());
@@ -56,6 +54,13 @@ async fn main() -> miette::Result<()> {
     }
 
     if opts.list_transforms {
+        utils::list_transforms();
+        return Ok(());
+    }
+
+    if opts.list_all {
+        utils::list_filters();
+        println!();
         utils::list_transforms();
         return Ok(());
     }
