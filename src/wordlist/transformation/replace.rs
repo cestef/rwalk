@@ -25,11 +25,11 @@ impl Transform<String> for ReplaceTransformer {
     }
 
     fn name() -> &'static str {
-        "prefix"
+        "replace"
     }
 
     fn aliases() -> &'static [&'static str] {
-        &["p", "pre"]
+        &["rp", "sub"]
     }
 
     fn construct(arg: Option<&str>) -> Result<Box<dyn Transform<String>>> {

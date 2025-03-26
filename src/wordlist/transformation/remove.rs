@@ -15,11 +15,11 @@ impl Transform<String> for RemoveTransformer {
     }
 
     fn name() -> &'static str {
-        "prefix"
+        "remove"
     }
 
     fn aliases() -> &'static [&'static str] {
-        &["p", "pre"]
+        &["r", "rm"]
     }
 
     fn construct(arg: Option<&str>) -> Result<Box<dyn Transform<String>>> {
