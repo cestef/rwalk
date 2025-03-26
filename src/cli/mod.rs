@@ -157,22 +157,22 @@ pub struct Opts {
 
     /// Load configuration from a file, merges with command line arguments
     #[merge(skip)]
-    #[clap(short, long, help_heading = "Application Control")]
+    #[clap(short, long, help_heading = "Miscellaneous")]
     pub config: Option<PathBuf>,
 
     /// List available filters (wordlist and response)
     #[merge(skip)]
-    #[clap(long, help_heading = "Application Control")]
+    #[clap(long, help_heading = "Miscellaneous")]
     pub list_filters: bool,
 
     /// List available wordlist transforms
     #[merge(skip)]
-    #[clap(long, help_heading = "Application Control")]
+    #[clap(long, help_heading = "Miscellaneous")]
     pub list_transforms: bool,
 
     /// List both available filters and wordlist transforms
     #[merge(skip)]
-    #[clap(long, help_heading = "Application Control")]
+    #[clap(long, help_heading = "Miscellaneous")]
     pub list: bool,
 }
 

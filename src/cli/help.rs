@@ -71,15 +71,7 @@ Complete documentation is available at ~~https://rwalk.cstef.dev~~
         return;
     }
     let mut long_help = Opts::command().render_long_help().ansi().to_string();
-    /*Arguments:
-      [URL]
-              URL to scan
-
-      [WORDLISTS]...
-              Wordlist file(s) to use, `path[:key]`
-
-    Options: */
-    // Remove arguments and options title
+    // Remove arguments and options sections
     long_help = long_help.split("Arguments:").skip(1).collect();
     long_help = long_help.split("Options:").skip(1).collect();
 
