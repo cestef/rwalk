@@ -125,7 +125,7 @@ pub struct Opts {
     /// List both available filters and wordlist transforms
     #[merge(skip)]
     #[clap(long)]
-    pub list_all: bool,
+    pub list: bool,
 
     /// Ring the terminal bell on hits
     #[clap(long, visible_alias = "ding", visible_alias = "dong")]

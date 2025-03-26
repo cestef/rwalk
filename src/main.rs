@@ -58,7 +58,7 @@ async fn main() -> miette::Result<()> {
         return Ok(());
     }
 
-    if opts.list_all {
+    if opts.list {
         utils::list_filters();
         println!();
         utils::list_transforms();
