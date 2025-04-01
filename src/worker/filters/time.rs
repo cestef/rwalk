@@ -8,7 +8,7 @@ response_filter!(
     needs_body = false,
     |res: &RwalkResponse, range: &Vec<IntRange<u64>>| Ok(range
         .iter()
-        .any(|r| r.contains(res.time.as_secs()))),
+        .any(|r| r.contains((res.time / 1_000_000) as u64))),
     "time",
     ["elapsed", "t"],
     transform = |raw: String| raw.split(',').map(|s| s.parse()).collect::<Result<_>>()

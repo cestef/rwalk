@@ -114,7 +114,7 @@ pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
 fn insert_path(node: &mut Node, components: &[&str], response: &RwalkResponse) {
     if components.is_empty() {
         node.is_endpoint = true;
-        node.status = response.status;
+        node.status = response.status as u16;
         return;
     }
 
@@ -124,7 +124,7 @@ fn insert_path(node: &mut Node, components: &[&str], response: &RwalkResponse) {
         .entry(component.to_string())
         .or_insert_with(|| Node {
             name: String::new(),
-            status: response.status,
+            status: response.status as u16,
             ..Default::default()
         });
 

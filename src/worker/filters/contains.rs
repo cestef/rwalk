@@ -4,7 +4,7 @@ response_filter!(
     ContainsFilter,
     String,
     needs_body = true,
-    |res: &RwalkResponse, sub: &String| Ok(res.body.as_ref().map_or(false, |e| e.contains(sub))),
+    |res: &RwalkResponse, sub: &String| Ok(res.body.contains(sub)),
     "contains",
     "c"
 );

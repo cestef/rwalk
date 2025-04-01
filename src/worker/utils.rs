@@ -3,11 +3,11 @@ use crate::{
     Result, RwalkError,
 };
 use crossbeam::deque::{Injector, Stealer, Worker};
-use dashmap::DashMap as HashMap;
 use rhai::{CustomType, TypeBuilder};
 
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::BTreeMap,
     fmt::{self, Display},
     iter,
     str::FromStr,
@@ -31,14 +31,15 @@ pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer
     })
 }
 
+// Most of the numeric types are i64 here to allow for easy interop with rhai
 #[derive(Debug, Clone, Serialize, Deserialize, CustomType)]
 pub struct RwalkResponse {
-    pub status: u16,
-    pub headers: HashMap<String, String>,
-    pub body: Option<String>,
+    pub status: i64,        // u16
+    pub headers: rhai::Map, // reqwest::header::HeaderMap
+    pub body: String,
     pub url: url::Url,
-    pub time: std::time::Duration,
-    pub depth: usize,
+    pub time: i64,  // std::time::Duration
+    pub depth: i64, // usize
     pub r#type: ResponseType,
 }
 
@@ -78,22 +79,27 @@ impl RwalkResponse {
         start: std::time::Instant,
         depth: usize,
     ) -> Result<Self> {
-        let status = response.status().as_u16();
+        let status = response.status().as_u16() as i64;
         let url = response.url().clone();
-        let headers: HashMap<String, String> = response
+        let headers: rhai::Map = response
             .headers()
             .iter()
-            .filter_map(|(k, v)| Some((k.as_str().to_string(), v.to_str().ok()?.to_string())))
+            .filter_map(|(k, v)| Some((k.as_str().into(), v.to_str().ok()?.into())))
             .collect();
 
-        let file_type = headers
-            .get("content-type")
-            .map(|s| s.splitn(2, ';').next().unwrap().to_string());
+        let file_type = headers.get("content-type").map(|s| {
+            s.as_immutable_string_ref()
+                .unwrap()
+                .splitn(2, ';')
+                .next()
+                .unwrap()
+                .to_string()
+        });
 
         let body = if parse_body {
-            Some(response.text().await?)
+            response.text().await?
         } else {
-            None
+            String::new()
         };
 
         let mut res = Self {
@@ -101,8 +107,8 @@ impl RwalkResponse {
             headers,
             body,
             url,
-            time: start.elapsed(),
-            depth,
+            time: start.elapsed().as_micros() as i64,
+            depth: depth as i64,
             r#type: ResponseType::File(file_type),
         };
 
@@ -114,20 +120,18 @@ impl RwalkResponse {
     }
 
     pub fn from_error(e: reqwest::Error, url: url::Url, depth: usize) -> Self {
-        let status = e.status().map_or(0, |s| s.as_u16());
-        let headers = HashMap::new();
-        let body = Some(e.to_string());
-        let time = std::time::Duration::default();
-        let r#type = ResponseType::Error;
+        let status = e.status().map_or(0, |s| s.as_u16() as i64);
+        let headers = BTreeMap::new();
+        let body = e.to_string();
 
         Self {
             status,
             headers,
             body,
             url,
-            time,
-            depth,
-            r#type,
+            time: 0,
+            depth: depth as i64,
+            r#type: ResponseType::Error,
         }
     }
 }

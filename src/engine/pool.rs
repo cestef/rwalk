@@ -22,7 +22,7 @@ use crate::{
 };
 
 use crossbeam::deque::{Injector, Steal, Stealer, Worker};
-use dashmap::DashMap as HashMap;
+use dashmap::DashMap;
 use indicatif::ProgressBar;
 use owo_colors::OwoColorize;
 use reqwest::{
@@ -31,6 +31,7 @@ use reqwest::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     fs::File,
     io::{BufReader, BufWriter},
     path::Path,
@@ -80,7 +81,7 @@ pub struct WorkerPool {
     pub wordlists: Arc<Vec<Wordlist>>,
     pub pb: ProgressBar,
     pub ticker: Arc<RequestTickerNoReset>,
-    pub results: Arc<HashMap<String, RwalkResponse>>,
+    pub results: Arc<DashMap<String, RwalkResponse>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -94,7 +95,7 @@ impl WorkerPool {
     pub fn save_state<P: AsRef<Path>>(
         path: P,
         global_queue: Arc<Injector<Task>>,
-        results: Arc<HashMap<String, RwalkResponse>>,
+        results: Arc<DashMap<String, RwalkResponse>>,
         base_url: Url,
     ) -> Result<()> {
         // Collect pending tasks from the global queue
@@ -185,7 +186,7 @@ impl WorkerPool {
                         .progress_chars(PROGRESS_CHARS),
                 ),
                 ticker: RequestTickerNoReset::new(),
-                results: Arc::new(HashMap::new()),
+                results: Arc::new(DashMap::new()),
             },
             shutdown_tx,
         ))
@@ -198,12 +199,12 @@ impl WorkerPool {
         let headers = if opts.headers.is_empty() {
             None
         } else {
-            let headers = HashMap::new();
+            let mut headers = HashMap::new();
 
             for (depths, name, value) in opts.headers.iter() {
                 for depth in depths.iter() {
                     let depth: usize = depth.parse()?;
-                    let mut map = headers.entry(depth).or_insert_with(HeaderMap::new);
+                    let map = headers.entry(depth).or_insert_with(HeaderMap::new);
                     let name = HeaderName::from_bytes(name.as_bytes())?;
                     let value = HeaderValue::from_str(value)?;
                     map.insert(name, value);
@@ -262,7 +263,7 @@ impl WorkerPool {
     pub async fn run(
         self,
         mut shutdown_rx: broadcast::Receiver<bool>,
-    ) -> Result<(Arc<HashMap<String, RwalkResponse>>, f64)> {
+    ) -> Result<(Arc<DashMap<String, RwalkResponse>>, f64)> {
         let workers = self.create_workers();
         let stealers = Arc::new(workers.iter().map(|w| w.stealer()).collect::<Vec<_>>());
 
@@ -337,7 +338,7 @@ impl WorkerPool {
         &self,
         worker: Worker<Task>,
         stealers: &Vec<Stealer<Task>>,
-        results: Arc<HashMap<String, RwalkResponse>>,
+        results: Arc<DashMap<String, RwalkResponse>>,
         mut shutdown_rx: broadcast::Receiver<bool>,
     ) -> Result<()> {
         while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
@@ -350,7 +351,7 @@ impl WorkerPool {
                     let response = self.process_request(&task).await?;
                     self.ticker.tick();
                     self.pb.inc(1);
-                    if self.config.retry_codes.iter().any(|e| e.contains(response.status)) {
+                    if self.config.retry_codes.iter().any(|e| e.contains(response.status as u16)) {
                         if task.retry < self.config.retries {
                             let mut task = task.clone();
                             task.retry();

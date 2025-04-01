@@ -90,7 +90,7 @@ macro_rules! response_filter {
         impl Filter<RwalkResponse> for $filter_name {
             fn filter(&self, item: &RwalkResponse) -> Result<bool> {
                 if let Some(ref depth) = self.depth {
-                    if !depth.contains(&item.depth) {
+                    if !depth.contains(&(item.depth as usize)) {
                         // Skip if the depth does not match
                         return Ok(true);
                     }

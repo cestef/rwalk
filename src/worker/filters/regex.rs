@@ -6,7 +6,7 @@ response_filter!(
     RegexFilter,
     Regex,
     needs_body = true,
-    |res: &RwalkResponse, re: &Regex| Ok(res.body.as_ref().map_or(false, |e| re.is_match(e))),
+    |res: &RwalkResponse, re: &Regex| Ok(re.is_match(&res.body)),
     "regex",
     ["r"],
     transform = |raw: String| Regex::new(&raw)

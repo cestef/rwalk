@@ -10,12 +10,7 @@ pub fn csv(data: &DashMap<String, RwalkResponse>) -> String {
         let (url, response) = e.pair();
         csv.push_str(&format!(
             "{},{},{:?},{:?},{},{}\n",
-            url,
-            response.status,
-            response.depth,
-            response.r#type,
-            response.time.as_millis(),
-            response.body.as_deref().unwrap_or(&"None".to_string()),
+            url, response.status, response.depth, response.r#type, response.time, response.body,
         ));
     }
 
@@ -29,12 +24,7 @@ pub fn txt(data: &DashMap<String, RwalkResponse>) -> String {
         let (url, response) = e.pair();
         txt.push_str(&format!(
             "{}\n\tstatus: {}\n\tdepth: {:?}\n\ttype: {:?}\n\ttime: {}ms\n\tbody: {}\n",
-            url,
-            response.status,
-            response.depth,
-            response.r#type,
-            response.time.as_millis(),
-            response.body.as_deref().unwrap_or(&"None".to_string()),
+            url, response.status, response.depth, response.r#type, response.time, response.body,
         ));
     }
 
@@ -44,18 +34,13 @@ pub fn txt(data: &DashMap<String, RwalkResponse>) -> String {
 pub fn md(data: &DashMap<String, RwalkResponse>) -> String {
     let mut md = String::new();
     md.push_str("| url | status | depth | type | time | body |\n");
-    md.push_str("| --- | --- | --- | --- | --- | --- |\n");
+    md.push_str("| --- | ------ | ----- | ---- | ---- | ---- |\n");
 
     for e in data.iter() {
         let (url, response) = e.pair();
         md.push_str(&format!(
             "| {} | {} | {:?} | {:?} | {}ms | {} |\n",
-            url,
-            response.status,
-            response.depth,
-            response.r#type,
-            response.time.as_millis(),
-            response.body.as_deref().unwrap_or(&"None".to_string()),
+            url, response.status, response.depth, response.r#type, response.time, response.body,
         ));
     }
 

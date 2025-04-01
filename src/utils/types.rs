@@ -170,25 +170,18 @@ where
     }
 }
 
-impl std::fmt::Debug for IntRange<u16>
-// Status codes are u16
-{
+impl std::fmt::Debug for IntRange<u16> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let result = range_to_string(self, Some(&|v| color_for_status_code(&v.to_string(), *v)));
         write!(f, "{}", result)
     }
 }
-impl std::fmt::Debug for IntRange<usize>
-// Status codes are u16
-{
+impl std::fmt::Debug for IntRange<usize> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", range_to_string(self, None))
     }
 }
-
-impl std::fmt::Debug for IntRange<u64>
-// Status codes are u16
-{
+impl std::fmt::Debug for IntRange<u64> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", range_to_string(self, None))
     }

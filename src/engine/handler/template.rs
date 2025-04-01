@@ -101,7 +101,7 @@ impl TemplateHandler {
         success!(
             "Generated {} URLs in {}",
             urls.len().to_string().bold(),
-            display_time(pb.elapsed().as_nanos())
+            display_time(pb.elapsed().as_millis() as i64)
         );
 
         Ok(urls)

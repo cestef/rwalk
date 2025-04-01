@@ -4,7 +4,7 @@ response_filter!(
     StartsFilter,
     String,
     needs_body = true,
-    |res: &RwalkResponse, sub: &String| Ok(res.body.as_ref().map_or(false, |e| e.starts_with(sub))),
+    |res: &RwalkResponse, sub: &String| Ok(res.body.starts_with(sub)),
     "starts",
     "begin"
 );

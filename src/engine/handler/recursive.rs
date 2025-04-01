@@ -18,7 +18,7 @@ pub struct RecursiveHandler {
 impl ResponseHandler for RecursiveHandler {
     fn handle(&self, response: RwalkResponse, pool: &WorkerPool) -> Result<()> {
         // If it's a directory and passes filters, we should recursively scan it
-        if response.depth < pool.config.max_depth {
+        if (response.depth as usize) < pool.config.max_depth {
             if pool.config.force_recursion || directory::check(&response) {
                 pool.pb
                     .println(format::response(&response, &pool.config.show));
@@ -31,7 +31,11 @@ impl ResponseHandler for RecursiveHandler {
                     let pool = Arc::clone(&pool);
                     let response = Arc::clone(&response);
                     total.fetch_add(wordlist.len() as u64, std::sync::atomic::Ordering::Relaxed);
-                    wordlist.inject_into(&pool.global_queue, &response.url, response.depth + 1)
+                    wordlist.inject_into(
+                        &pool.global_queue,
+                        &response.url,
+                        response.depth as usize + 1,
+                    )
                 })?;
 
                 pool.pb.set_length(

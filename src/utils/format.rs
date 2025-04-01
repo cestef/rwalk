@@ -8,9 +8,9 @@ use crate::worker::utils::RwalkResponse;
 pub fn response(response: &RwalkResponse, show: &Vec<String>) -> String {
     format!(
         "{} {} {} {}",
-        display_status_code(response.status),
+        display_status_code(response.status as u16),
         display_url(response.url.as_str()),
-        display_time(response.time.as_nanos()),
+        display_time(response.time),
         display_show(response, show)
     )
 }
@@ -21,10 +21,7 @@ fn display_show(response: &RwalkResponse, show: &Vec<String>) -> String {
         .filter_map(|e| {
             let key = e.to_lowercase();
             let value = match key.as_str() {
-                "size" => response
-                    .body
-                    .as_ref()
-                    .map_or("".to_string(), |b| HumanBytes(b.len() as u64).to_string()),
+                "size" => HumanBytes(response.body.len() as u64).to_string(),
                 "type" => response.r#type.to_string(),
                 _ => return None,
             };
@@ -44,8 +41,8 @@ fn display_url(url: &str) -> Cow<'_, str> {
     urlencoding::decode(url).unwrap_or(url.into())
 }
 
-pub fn display_time(t: u128) -> String {
-    let t = t as f64 / 1_000_000.0;
+pub fn display_time(t: i64) -> String {
+    let t = t as f64 / 1_000.0;
     let mut unit: &str = "ms";
     let mut value: f64 = t;
     if t < 1.0 {
@@ -163,7 +160,7 @@ pub fn skip(response: &RwalkResponse, reason: SkipReason, show: &Vec<String>) ->
         "↷".blue(),
         response.status.dimmed(),
         display_url(response.url.as_str()),
-        display_time(response.time.as_nanos()),
+        display_time(response.time),
         format!("({})", reason).dimmed(),
         display_show(response, show)
     )
