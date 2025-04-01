@@ -3,7 +3,9 @@ use clap::Parser;
 use merge::Merge;
 use rwalk::{
     cli::{help, utils, Opts},
-    run, RwalkError,
+    run,
+    utils::types::ListType,
+    RwalkError,
 };
 
 use tracing::debug;
@@ -48,20 +50,16 @@ async fn main() -> miette::Result<()> {
         return Ok(());
     }
 
-    if opts.list_filters {
-        utils::list_filters();
-        return Ok(());
-    }
-
-    if opts.list_transforms {
-        utils::list_transforms();
-        return Ok(());
-    }
-
-    if opts.list {
-        utils::list_filters();
-        println!();
-        utils::list_transforms();
+    if let Some(list) = opts.list {
+        match list {
+            ListType::Filters => utils::list_filters(),
+            ListType::Transforms => utils::list_transforms(),
+            ListType::All => {
+                utils::list_filters();
+                println!();
+                utils::list_transforms();
+            }
+        }
         return Ok(());
     }
 

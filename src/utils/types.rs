@@ -9,6 +9,31 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, Deserialize)]
+pub enum ListType {
+    Filters,
+    Transforms,
+    All,
+}
+
+impl ValueEnum for ListType {
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        match self {
+            ListType::Filters => {
+                Some(clap::builder::PossibleValue::new("filters").aliases(&["filter", "f"]))
+            }
+            ListType::Transforms => {
+                Some(clap::builder::PossibleValue::new("transforms").aliases(&["transform", "t"]))
+            }
+            ListType::All => Some(clap::builder::PossibleValue::new("all")),
+        }
+    }
+
+    fn value_variants<'a>() -> &'a [Self] {
+        &[ListType::Filters, ListType::Transforms, ListType::All]
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
 pub enum EngineMode {
     Recursive,
     Template,

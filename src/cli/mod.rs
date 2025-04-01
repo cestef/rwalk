@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     constants::THREADS_PER_CORE,
     types::EngineMode,
-    utils::types::{HTTPMethod, IntRange},
+    utils::types::{HTTPMethod, IntRange, ListType},
 };
 use clap::builder::EnumValueParser;
 use clap::Parser;
@@ -32,12 +32,12 @@ pub struct Opts {
     pub help_long: bool,
 
     /// URL to scan
-    #[clap(value_parser = parse_url, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "list"]))]
+    #[clap(value_parser = parse_url, required_unless_present_any(["list", "help", "help_long", "list"]))]
     #[merge(strategy = merge_overwrite)]
     pub url: Option<Url>,
 
     /// Wordlist file(s) to use, `path[:key]`
-    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list_filters", "list_transforms", "help", "help_long", "resume", "list"]))]
+    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list", "help", "help_long", "resume", "list"]))]
     #[merge(strategy = merge::vec::append)]
     pub wordlists: Vec<(String, String)>,
 
@@ -160,20 +160,10 @@ pub struct Opts {
     #[clap(short, long, help_heading = "Miscellaneous")]
     pub config: Option<PathBuf>,
 
-    /// List available filters (wordlist and response)
-    #[merge(skip)]
-    #[clap(long, help_heading = "Miscellaneous")]
-    pub list_filters: bool,
-
-    /// List available wordlist transforms
-    #[merge(skip)]
-    #[clap(long, help_heading = "Miscellaneous")]
-    pub list_transforms: bool,
-
     /// List both available filters and wordlist transforms
     #[merge(skip)]
-    #[clap(long, help_heading = "Miscellaneous")]
-    pub list: bool,
+    #[clap(long, help_heading = "Miscellaneous", value_parser = EnumValueParser::<ListType>::new())]
+    pub list: Option<ListType>,
 }
 
 fn display_wordlists(wordlists: &Vec<(CowStr, CowStr)>) -> String {
