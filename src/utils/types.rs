@@ -320,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_parse_invalid_end() {
-        assert_syntax_error("10-abc", (3, 6), "Invalid end value: 'abc'");
+        assert_syntax_error("10-abc", (3, 3), "Invalid end value: 'abc'");
     }
 
     #[test]
@@ -330,7 +330,7 @@ mod tests {
 
     #[test]
     fn test_parse_invalid_operator_value() {
-        assert_syntax_error(">abc", (1, 4), "Invalid numeric value: 'abc'");
+        assert_syntax_error(">abc", (1, 3), "Invalid numeric value: 'abc'");
     }
 
     #[test]
