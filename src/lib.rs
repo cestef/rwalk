@@ -56,7 +56,6 @@ pub async fn run(opts: Opts) -> Result<()> {
             "save and exit"
         }
     );
-    // info!("{}\n", pool.worker_config.filterer.filter.as_ref().unwrap());
 
     let shutdown_tx_clone = shutdown_tx.clone();
 

@@ -7,7 +7,6 @@ use crate::{
 };
 use clap::builder::EnumValueParser;
 use clap::Parser;
-use cowstr::CowStr;
 use dashmap::DashSet as HashSet;
 use merge::Merge;
 use parse::{
@@ -164,14 +163,6 @@ pub struct Opts {
     #[merge(skip)]
     #[clap(long, help_heading = "Miscellaneous", value_parser = EnumValueParser::<ListType>::new())]
     pub list: Option<ListType>,
-}
-
-fn display_wordlists(wordlists: &Vec<(CowStr, CowStr)>) -> String {
-    wordlists
-        .iter()
-        .map(|(path, key)| format!("{}:{}", path, key))
-        .collect::<Vec<String>>()
-        .join(", ")
 }
 
 fn merge_overwrite<T>(a: &mut T, b: T) {
