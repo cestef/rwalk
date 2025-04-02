@@ -1,0 +1,8 @@
+@import "./syntax-theme.css";
+@import "tailwindcss";
+
+@plugin "@tailwindcss/typography";
+
+body {
+	@apply font-mono antialiased;
+}
