@@ -31,12 +31,12 @@ pub struct Opts {
     pub help_long: bool,
 
     /// URL to scan
-    #[clap(value_parser = parse_url, required_unless_present_any(["list", "help", "help_long", "list"]))]
+    #[clap(value_parser = parse_url, required_unless_present_any(["list", "help", "help_long", "list", "generate_markdown"]))]
     #[merge(strategy = merge_overwrite)]
     pub url: Option<Url>,
 
     /// Wordlist file(s) to use, `path[:key]`
-    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list", "help", "help_long", "resume", "list"]))]
+    #[clap(value_parser = parse_wordlist, required_unless_present_any(["list", "help", "help_long", "resume", "list", "generate_markdown"]))]
     #[merge(strategy = merge::vec::append)]
     pub wordlists: Vec<(String, String)>,
 
@@ -163,6 +163,11 @@ pub struct Opts {
     #[merge(skip)]
     #[clap(long, help_heading = "Miscellaneous", value_parser = EnumValueParser::<ListType>::new())]
     pub list: Option<ListType>,
+
+    /// Generate markdown help
+    #[merge(skip)]
+    #[clap(long, hide = true)]
+    pub generate_markdown: bool,
 }
 
 fn merge_overwrite<T>(a: &mut T, b: T) {

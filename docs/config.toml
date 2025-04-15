@@ -3,6 +3,7 @@ minify_html = true
 compile_sass = false
 
 build_search_index = true
+
 [search]
 index_format = "fuse_javascript"
 include_description = true
@@ -15,8 +16,3 @@ render_emoji = true
 bottom_footnotes = true
 
 highlight_theme = "css"
-
-
-# highlight_themes_css = [
-#     { theme = "charcoal", filename = "../styles/syntax-theme.css" },
-# ]

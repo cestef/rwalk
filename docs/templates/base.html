@@ -2,30 +2,47 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <title>{% block title %}rwalk{% endblock %}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="{{ get_url(path="css/main.css") | safe }}" />
-  <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.basic.min.js" crossorigin="anonymous"></script>
-  
-  <script src="{{ get_url(path="js/main.js") | safe }}" defer></script>
-  <script src="{{ get_url(path="search_index.en.js") | safe }}" defer></script>
+    <meta charset="utf-8">
+    <title>{% block title %}rwalk{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{{ get_url(path='css/main.css') | safe }}" />
+    <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.basic.min.js" crossorigin="anonymous"></script>
+
+    <script src="{{ get_url(path='js/main.js') | safe }}" defer></script>
+    <script src="{{ get_url(path='search_index.en.js') | safe }}" defer></script>
 </head>
 
 
 <body class="min-h-[100svh]">
     <header>
         <nav class="flex justify-between items-center p-4">
-            <a href="{{ get_url(path="") | safe }}" class="text-2xl font-bold">rwalk</a>
+            <span class="flex items-center gap-4">
+                {%block nav_button %}{%endblock%}
+                <a href="{{ get_url(path='') | safe }}" class="text-2xl font-bold">rwalk</a>
+            </span>
             <div class="flex gap-4">
-                <a href="{{ get_url(path="@/docs/_index.md") | safe }}" class="text-lg">Docs</a>
-                <a href="https://github.com/cestef/rwalk" class="text-lg">GitHub</a>
+                <a href="{{ get_url(path='@/docs/get-started.md') | safe }}" class="text-lg hover:font-bold">Docs</a> |
+                <a href="https://github.com/cestef/rwalk" class="text-lg hover:font-bold">GitHub</a>
             </div>
         </nav>
     </header>
-    <main class="">
-        {%block main%}{%endblock%}
-    </main>
-    <footer></footer>
+    <main id="scroll-element"><div class="mb-24">{% block main %} {% endblock %}</div></main>  
+    <div class="bg-secondary text-primary-foreground w-fit fixed bottom-4 float-right right-8 transition-all duration-200 opacity-0"
+        title="Scroll to top" id="scroll-to-top">
+        <div id="scroll-fill" class="bg-primary h-full absolute -z-10"></div>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"
+            class="h-6 w-6 mx-4 md:my-2 my-1 fill-primary-foreground">
+            <path
+                d="M3.47 7.78a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0l4.25 4.25a.751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018L9 4.81v7.44a.75.75 0 0 1-1.5 0V4.81L4.53 7.78a.75.75 0 0 1-1.06 0Z">
+            </path>
+        </svg>
+    </div>
+    <div id="goto-popup"
+        class="w-[50svw] md:w-96 bg-popover absolute left-1/2 top-1/3 transform -translate-x-1/2 -translate-y-1/2 hidden shadow-lg">
+        <input type="text" class="w-full h-8 lg:h-12 px-2 py-1 lg:px-4 lg:py-2" id="goto-input" placeholder="Search"
+            autocomplete="off" />
+        <div class="w-full h-0.5 bg-muted"></div>
+        <div id="goto-results" class="w-full max-h-96 overflow-y-auto flex flex-col"></div>
+    </div>
 </body>

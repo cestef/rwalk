@@ -1,5 +1,6 @@
 use clap::Parser;
 
+use clap_markdown::MarkdownOptions;
 use merge::Merge;
 use rwalk::{
     cli::{help, utils, Opts},
@@ -36,17 +37,24 @@ async fn main() -> miette::Result<()> {
 
     let mut opts = Opts::parse();
     debug!("{:#?}", opts);
-    if let Some(ref config) = opts.config {
-        let config = tokio::fs::read_to_string(config)
-            .await
-            .map_err(RwalkError::from)?;
-        let config: Opts = toml::from_str(&config).map_err(RwalkError::from)?;
-        opts.merge(config);
-        debug!("merged: {:#?}", opts);
-    }
 
     if opts.help || opts.help_long {
         help::print(opts.help_long);
+        return Ok(());
+    }
+
+    if opts.generate_markdown {
+        let mut markdown = clap_markdown::help_markdown_custom::<Opts>(
+            &MarkdownOptions::new()
+                .show_footer(false)
+                .show_table_of_contents(false),
+        );
+        markdown = markdown
+            .split_at(markdown.find("**Usage:**").unwrap_or(0))
+            .1
+            .to_string();
+        const FRONTMATTER: &str = "+++\ntitle = \"Options\"\nweight = 20\n+++\n";
+        print!("{FRONTMATTER}\n{markdown}");
         return Ok(());
     }
 
@@ -61,6 +69,15 @@ async fn main() -> miette::Result<()> {
             }
         }
         return Ok(());
+    }
+
+    if let Some(ref config) = opts.config {
+        let config = tokio::fs::read_to_string(config)
+            .await
+            .map_err(RwalkError::from)?;
+        let config: Opts = toml::from_str(&config).map_err(RwalkError::from)?;
+        opts.merge(config);
+        debug!("merged: {:#?}", opts);
     }
 
     run(opts).await?;

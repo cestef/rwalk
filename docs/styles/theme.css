@@ -1,0 +1,183 @@
+:root {
+	/* Monochromatic palette inspired by the YCTF logo */
+	--color-red-rgb: 251, 73, 52;
+	--color-red: #fb4934;
+	--color-orange-rgb: 254, 128, 25;
+	--color-orange: #fe8019;
+	--color-yellow-rgb: 250, 189, 47;
+	--color-yellow: #fabd2f;
+	--color-green-rgb: 152, 151, 26;
+	--color-green: #98971a;
+	--color-cyan-rgb: 104, 157, 106;
+	--color-cyan: #689d6a;
+	--color-blue-rgb: 131, 165, 152;
+	--color-blue: #83a598;
+	--color-purple-rgb: 177, 98, 134;
+	--color-purple: #b16286;
+	--color-pink-rgb: 215, 153, 33;
+	--color-pink: #d79921;
+
+	--background: 0 0% 100%;
+	--foreground: 0 0% 15%;
+
+	--card: 0 0% 98%;
+	--card-foreground: 0 0% 15%;
+	--popover: 0 0% 99%;
+	--popover-foreground: 0 0% 15%;
+	--modal: 0 0% 100%;
+	--modal-foreground: 0 0% 15%;
+
+	--primary: 0 0% 15%;
+	--primary-foreground: 0 0% 100%;
+	--primary-hover: 0 0% 25%;
+	--secondary: 0 0% 92%;
+	--secondary-foreground: 0 0% 15%;
+	--secondary-hover: 0 0% 88%;
+
+	--muted: 0 0% 92%;
+	--muted-foreground: 0 0% 40%;
+	--accent: 0 0% 90%;
+	--accent-foreground: 0 0% 15%;
+	--accent-hover: 0 0% 85%;
+
+	--destructive: 0 0% 40%;
+	--destructive-foreground: 0 0% 100%;
+	--destructive-hover: 0 0% 35%;
+	--success: 0 0% 40%;
+	--success-foreground: 0 0% 100%;
+	--success-hover: 0 0% 35%;
+	--warning: 0 0% 80%;
+	--warning-foreground: 0 0% 15%;
+	--info: 0 0% 60%;
+	--info-foreground: 0 0% 15%;
+
+	--border: 0 0% 85%;
+	--border-hover: 0 0% 75%;
+	--input: 0 0% 85%;
+	--input-focus: 0 0% 75%;
+	--ring: 0 0% 15%;
+	--radius: 0.25rem;
+
+	--chart-1: 0 0% 25%;
+	--chart-2: 0 0% 40%;
+	--chart-3: 0 0% 55%;
+	--chart-4: 0 0% 70%;
+	--chart-5: 0 0% 85%;
+
+	--ansi-black: #3c3836;
+	--ansi-black-dim: #3c383680;
+	--ansi-red: #9d0006;
+	--ansi-red-dim: #9d000680;
+	--ansi-green: #79740e;
+	--ansi-green-dim: #79740e80;
+	--ansi-yellow: #b57614;
+	--ansi-yellow-dim: #b5761480;
+	--ansi-blue: #076678;
+	--ansi-blue-dim: #07667880;
+	--ansi-magenta: #8f3f71;
+	--ansi-magenta-dim: #8f3f7180;
+	--ansi-cyan: #427b58;
+	--ansi-cyan-dim: #427b5880;
+	--ansi-white: #928374;
+	--ansi-white-dim: #92837480;
+	--ansi-bright-black: #7c6f64;
+	--ansi-bright-black-dim: #7c6f6480;
+	--ansi-bright-red: #cc241d;
+	--ansi-bright-red-dim: #cc241d80;
+	--ansi-bright-green: #98971a;
+	--ansi-bright-green-dim: #98971a80;
+	--ansi-bright-yellow: #d79921;
+	--ansi-bright-yellow-dim: #d7992180;
+	--ansi-bright-blue: #458588;
+	--ansi-bright-blue-dim: #45858880;
+	--ansi-bright-magenta: #b16286;
+	--ansi-bright-magenta-dim: #b1628680;
+	--ansi-bright-cyan: #689d6a;
+	--ansi-bright-cyan-dim: #689d6a80;
+	--ansi-bright-white: #a89984;
+	--ansi-bright-white-dim: #a8998480;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: 0 0% 10%;
+		--foreground: 0 0% 90%;
+
+		--card: 0 0% 12%;
+		--card-foreground: 0 0% 90%;
+		--popover: 0 0% 14%;
+		--popover-foreground: 0 0% 90%;
+		--modal: 0 0% 12%;
+		--modal-foreground: 0 0% 90%;
+
+		--primary: 0 0% 90%;
+		--primary-foreground: 0 0% 10%;
+		--primary-hover: 0 0% 85%;
+		--secondary: 0 0% 18%;
+		--secondary-foreground: 0 0% 90%;
+		--secondary-hover: 0 0% 22%;
+
+		--muted: 0 0% 18%;
+		--muted-foreground: 0 0% 65%;
+		--accent: 0 0% 20%;
+		--accent-foreground: 0 0% 90%;
+		--accent-hover: 0 0% 25%;
+
+		--destructive: 0 0% 60%;
+		--destructive-foreground: 0 0% 10%;
+		--destructive-hover: 0 0% 65%;
+		--success: 0 0% 60%;
+		--success-foreground: 0 0% 10%;
+		--success-hover: 0 0% 65%;
+		--warning: 0 0% 70%;
+		--warning-foreground: 0 0% 10%;
+		--info: 0 0% 50%;
+		--info-foreground: 0 0% 10%;
+
+		--border: 0 0% 20%;
+		--border-hover: 0 0% 25%;
+		--input: 0 0% 20%;
+		--input-focus: 0 0% 25%;
+		--ring: 0 0% 80%;
+		--radius: 0.25rem;
+
+		--chart-1: 0 0% 75%;
+		--chart-2: 0 0% 60%;
+		--chart-3: 0 0% 45%;
+		--chart-4: 0 0% 30%;
+		--chart-5: 0 0% 15%;
+
+		--ansi-black: #1d2021;
+		--ansi-black-dim: #1d202180;
+		--ansi-red: #cc241d;
+		--ansi-red-dim: #cc241d80;
+		--ansi-green: #98971a;
+		--ansi-green-dim: #98971a80;
+		--ansi-yellow: #d79921;
+		--ansi-yellow-dim: #d7992180;
+		--ansi-blue: #458588;
+		--ansi-blue-dim: #45858880;
+		--ansi-magenta: #b16286;
+		--ansi-magenta-dim: #b1628680;
+		--ansi-cyan: #689d6a;
+		--ansi-cyan-dim: #689d6a80;
+		--ansi-white: #a89984;
+		--ansi-white-dim: #a8998480;
+		--ansi-bright-black: #928374;
+		--ansi-bright-black-dim: #92837480;
+		--ansi-bright-red: #fb4934;
+		--ansi-bright-red-dim: #fb493480;
+		--ansi-bright-green: #b8bb26;
+		--ansi-bright-green-dim: #b8bb2680;
+		--ansi-bright-yellow: #fabd2f;
+		--ansi-bright-yellow-dim: #fabd2f80;
+		--ansi-bright-blue: #83a598;
+		--ansi-bright-blue-dim: #83a59880;
+		--ansi-bright-magenta: #d3869b;
+		--ansi-bright-magenta-dim: #d3869b80;
+		--ansi-bright-cyan: #8ec07c;
+		--ansi-bright-cyan-dim: #8ec07c80;
+		--ansi-bright-white: #ebdbb2;
+		--ansi-bright-white-dim: #ebdbb280;
+	}
+}

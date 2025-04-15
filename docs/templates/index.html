@@ -2,6 +2,34 @@
 
 {%block main%}
 
+<div class="container flex flex-col items-center justify-center h-[calc(100svh-64px)] px-4 py-8 mx-auto">
+    <h1 class="text-5xl sm:text-6xl md:text-7xl font-extrabold text-center text-wrap">
+        Bruteforcing with taste.
+    </h1>
+    <div class="flex flex-row gap-2 items-center justify-center mt-8">
+        <a 
+            href="{{ get_url(path="@/docs/get-started.md") | safe }}"
+            class="px-5 py-3 mt-4 text-2xl bg-accent text-accent-foreground shadow-sm hover:bg-accent/80 transition-colors duration-200 flex items-center justify-center gap-4 group"
+        >
+            Get Started
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-chevron-right-icon stroke-accent-foreground lucide-chevron-right h-[1em] w-[1em] group-hover:translate-x-1 transition-all duration-200 opacity-0 group-hover:opacity-100 delay-200 group-hover:delay-200">
+                    <path d="m9 18 6-6-6-6" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="stroke-accent-foreground lucide lucide-book-icon lucide-book h-[.95em] w-[.95em] group-hover:translate-x-2 transition-all duration-200 opacity-100 group-hover:opacity-0 absolute top-0 left-0 right-0 bottom-0 m-auto delay-200 group-hover:delay-200">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
+                </svg>
+            </div>
+        </a>
+    </div>
+</div>
+
+<h1 class="-z-10 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10rem] sm:text-[15rem] md:text-[20rem] lg:text-[25rem] xl:text-[30rem] font-extrabold text-center text-foreground/30 opacity-10">
+    rwalk
+</h1>
 
 
 {%endblock%}

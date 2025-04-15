@@ -52,13 +52,10 @@ terminal_size = "0.4.2"
 rhai = { version = "1.21.0", features = ["sync", "serde"] }
 smartstring = "1.0.1"
 criterion = { version = "0.5.1", features = ["async", "async_tokio"] }
+clap-markdown = "0.1.4"
 
 [profile.dev]
 debug = false
 # strip = true
 # lto = true
 # codegen-units = 1
-
-[[bench]]
-name = "test"
-harness = false

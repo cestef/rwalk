@@ -1,0 +1,115 @@
+{%extends "base.html"%}
+
+{% block nav_button %}
+<button id="sidebar-toggle" class="md:hidden cursor-pointer" aria-label="Toggle Sidebar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+</button>
+{% endblock %}
+
+{% block main %}
+{%- set section = get_section(path="docs/_index.md") -%}
+
+<div class="relative flex flex-col md:flex-row min-h-screen">
+    <aside id="docs-sidebar"
+        class="fixed md:sticky bg-background top-0 left-0 w-64 h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto z-40">
+        <div class="flex justify-between items-center p-4">
+            <h2 class="text-xl font-semibold">Documentation</h2>
+            <button id="sidebar-close" class="md:hidden p-2 focus:outline-none cursor-pointer"
+                aria-label="Close Sidebar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <nav class="p-4">
+            <ul class="space-y-2">
+                {% for page in section.pages %}
+                <li
+                    class="{% if current_path and page.path == current_path %}bg-accent font-bold{% else %} hover:bg-accent/50 transition-colors duration-200 {% endif %}">
+                    <a href="{{ page.permalink }}" class="block py-2 px-3 transition-colors duration-200">
+                        {{ page.title }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
+    </aside>
+
+    <article class="flex-1 p-4 md:ml-64 bg-background wrap-break-word">
+        {% if page %}
+        <h1 class="text-3xl font-bold mb-6">{{ page.title }}</h1>
+        {{ page.content | safe }}
+        {% else %}
+        <h1 class="text-3xl font-bold mb-6">{{ section.title }}</h1>
+
+        {% if section.pages | length > 0 %}
+        <div class="mt-8">
+            <h2 class="text-2xl font-semibold mb-4">Documentation Pages</h2>
+            <ul class="space-y-4">
+                {% for page in section.pages %}
+                <li class="border-b border-gray-200 pb-4">
+                    <a href="{{ page.permalink }}" class="text-lg text-blue-600 hover:underline">
+                        {{ page.title }}
+                    </a>
+                    {% if page.description %}
+                    <p class="mt-1 text-gray-600">{{ page.description }}</p>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% else %}
+        Root
+        {% endif %}
+        {% endif %}
+    </article>
+
+</div>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('docs-sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebarClose = document.getElementById('sidebar-close');
+
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+        }
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        sidebarClose.addEventListener('click', closeSidebar);
+
+        document.addEventListener('click', function (event) {
+            const isMobile = window.innerWidth < 768;
+            const isOutsideSidebar = !sidebar.contains(event.target) && !sidebarToggle.contains(event.target);
+            const isSidebarOpen = !sidebar.classList.contains('-translate-x-full');
+
+            if (isMobile && isOutsideSidebar && isSidebarOpen) {
+                closeSidebar();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth >= 768) {
+                openSidebar();
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,8 +1,142 @@
-@import "./syntax-theme.css";
 @import "tailwindcss";
+@import "./theme.css";
+@import "./callouts.css";
+@import "./syntax.css";
 
 @plugin "@tailwindcss/typography";
 
+@theme {
+	--color-border: hsl(var(--border));
+	--color-input: hsl(var(--input));
+	--color-ring: hsl(var(--ring));
+	--color-background: hsl(var(--background));
+	--color-foreground: hsl(var(--foreground));
+	--color-primary: hsl(var(--primary));
+	--color-primary-foreground: hsl(var(--primary-foreground));
+	--color-secondary: hsl(var(--secondary));
+	--color-secondary-foreground: hsl(var(--secondary-foreground));
+	--color-destructive: hsl(var(--destructive));
+	--color-destructive-foreground: hsl(var(--destructive-foreground));
+	--color-success: hsl(var(--success));
+	--color-success-foreground: hsl(var(--success-foreground));
+	--color-muted: hsl(var(--muted));
+	--color-muted-foreground: hsl(var(--muted-foreground));
+	--color-accent: hsl(var(--accent));
+	--color-accent-foreground: hsl(var(--accent-foreground));
+	--color-popover: hsl(var(--popover));
+	--color-popover-foreground: hsl(var(--popover-foreground));
+	--color-card: hsl(var(--card));
+	--color-card-foreground: hsl(var(--card-foreground));
+}
+
 body {
-	@apply font-mono antialiased;
+	@apply bg-background font-mono text-foreground;
+}
+
+html {
+	scrollbar-color: var(--color-ring) rgba(0, 0, 0, 0);
+}
+
+html,
+body {
+	height: 100%;
+	overflow: hidden;
+}
+
+main {
+	max-height: 100svh;
+	overflow-y: auto;
+}
+
+.prose {
+	@apply xl:max-w-[72ch];
+}
+
+details {
+	@apply border border-border rounded-lg px-4 py-2 my-4;
+}
+
+summary {
+	@apply cursor-pointer;
+}
+
+details figure:has(pre) {
+	@apply lg:mx-0;
+}
+
+figure[data-copy="true"] #copy-button {
+	@apply block;
+}
+
+article,
+article img {
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 0px !important;
+	margin-bottom: 0px !important;
+}
+
+article img:not(.typst-doc) {
+	@apply rounded-lg;
+}
+
+.copy-button {
+	@apply absolute top-0 right-0 px-4 py-2 text-sm text-muted-foreground cursor-pointer;
+}
+
+pre[data-copy] {
+	@apply relative;
+}
+
+img.emoji {
+	border-radius: 0px !important;
+	display: inline-block;
+	height: 1em;
+	width: 1em;
+	margin: 0 0.05em 0 0.1em;
+	vertical-align: -0.1em;
+}
+
+details > summary::marker {
+	content: "[+] ";
+	@apply text-muted-foreground;
+}
+
+details[open] > summary::marker {
+	content: "[-] ";
+	@apply text-muted;
+}
+
+details summary p {
+	display: inline;
+	margin: 0;
+}
+
+input {
+	@apply focus:ring-0 focus:outline-none;
+}
+
+/* .goto-result:not(:last-child) {
+	@apply border-b border-muted;
+} */
+
+.goto-result,
+.goto-no-result {
+	@apply px-2 py-1 lg:px-4 lg:py-2;
+}
+
+.goto-result:hover {
+	@apply bg-background/90;
+}
+
+.goto-result.selected {
+	@apply bg-primary text-primary-foreground;
+}
+
+.goto-no-result {
+	@apply text-destructive;
+}
+
+article {
+	@apply prose dark:prose-invert max-w-[74ch] mx-auto px-4;
 }
