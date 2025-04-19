@@ -85,6 +85,7 @@ pub struct Opts {
 
     /// Request timeout in seconds
     #[clap(long, default_value = DEFAULT_TIMEOUT.to_string(), env, hide_env = true, visible_alias = "to", help_heading = Some("Requests"))]
+    #[merge(strategy = merge_overwrite)]
     pub timeout: Option<usize>,
 
     /// User agent
@@ -93,6 +94,7 @@ pub struct Opts {
 
     /// HTTP method
     #[clap(short = 'X', long, default_value = DEFAULT_METHOD, value_parser = parse_method, env, hide_env=true, help_heading = Some("Requests"))]
+    #[merge(strategy = merge_overwrite)]
     pub method: Option<String>,
 
     /// Data to send with the request
@@ -120,6 +122,7 @@ pub struct Opts {
         env,
         hide_env = true
     )]
+    #[merge(strategy = merge_overwrite)]
     pub follow_redirects: Option<usize>,
 
     /// Configuration file
@@ -192,6 +195,7 @@ pub struct Opts {
 
     /// Custom save file
     #[clap(long, default_value = Some(DEFAULT_SAVE_FILE), help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
+    #[merge(strategy = merge_overwrite)]
     pub save_file: Option<String>,
 
     /// Don't save the state in case you abort
@@ -329,6 +333,10 @@ pub struct Opts {
     /// Random wait time range in seconds between requests, e.g. 0.5-1.5
     #[clap(long, help_heading = Some("Requests"), env, hide_env=true)]
     pub wait: Option<String>,
+}
+
+fn merge_overwrite<T>(a: &mut T, b: T) {
+    *a = b;
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
