@@ -202,7 +202,7 @@ impl TreeItem for TreeNode<String> {
                     .unwrap()
                     .path_segments()
                     .unwrap()
-                    .last()
+                    .next_back()
                     .unwrap()
             )
         )?;

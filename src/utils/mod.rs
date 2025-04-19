@@ -192,7 +192,7 @@ pub fn save_to_file(
     tree: Arc<Mutex<Tree<TreeData>>>,
 ) -> Result<()> {
     let output = opts.output.clone().unwrap();
-    let file_type = output.split('.').last().unwrap_or(DEFAULT_FILE_TYPE);
+    let file_type = output.split('.').next_back().unwrap_or(DEFAULT_FILE_TYPE);
     let mut file = std::fs::File::create(opts.output.clone().unwrap())?;
 
     match file_type {
