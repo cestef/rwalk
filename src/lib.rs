@@ -5,6 +5,7 @@ use engine::WorkerPool;
 use cli::Opts;
 use indicatif::HumanDuration;
 use owo_colors::OwoColorize;
+use tracing::debug;
 use utils::{constants, error, tree, types};
 
 use wordlist::processor::WordlistProcessor;
@@ -37,6 +38,7 @@ pub async fn run(opts: Opts) -> Result<()> {
 
     // Process wordlists
     let processor = WordlistProcessor::new(&opts);
+    debug!("Processing wordlists: {:#?}", opts.wordlists);
     let wordlists = processor.process_wordlists().await?;
 
     let (pool, shutdown_tx) = WorkerPool::from_opts(&opts, wordlists)?;

@@ -10,8 +10,12 @@ use crate::{
 };
 use cowstr::CowStr;
 use dashmap::{DashMap, DashSet};
+use tracing::debug;
 
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use tokio::{
     fs::File,
     io::{AsyncBufReadExt, BufReader},
@@ -71,6 +75,9 @@ impl<'a> WordlistProcessor<'a> {
         filterer: &Filterer<(CowStr, CowStr)>,
         shared_words: &DashMap<CowStr, DashSet<CowStr>>,
     ) -> Result<Wordlist> {
+        debug!("Processing wordlist: {}", path);
+        let path = PathBuf::from(&*path).canonicalize()?;
+        debug!("Canonicalized path: {}", path.display());
         let file = File::open(&*path).await?;
         let reader = BufReader::new(file);
         let mut lines = reader.lines();

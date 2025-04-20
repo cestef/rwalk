@@ -122,6 +122,32 @@ macro_rules! create_registry {
             }
         }
     };
+
+    // Command registry pattern
+    (
+        command,
+        $static_name:ident,
+        $ctx_type:ty,
+        [$($implementor:ty),* $(,)?]
+    ) => {
+        type CommandConstructor = fn() -> Box<dyn Command<$ctx_type>>;
+
+        create_registry!(@base
+            $static_name,
+            CommandConstructor,
+            [$($implementor),*]
+        );
+
+        impl $static_name {
+            pub fn construct(name: &str) -> Result<Box<dyn Command<$ctx_type>>> {
+                let name = ALIASES.get(name).copied().unwrap_or(name);
+                match REGISTRY.get(name) {
+                    Some(constructor) => Ok(constructor()),
+                    None => Err(crate::error!("Unknown command: {}", name)),
+                }
+            }
+        }
+    };
 }
 
 pub(crate) use create_registry;

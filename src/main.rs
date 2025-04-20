@@ -3,7 +3,7 @@ use clap::Parser;
 use clap_markdown::MarkdownOptions;
 use merge::Merge;
 use rwalk::{
-    cli::{help, utils, Opts},
+    cli::{help, interactive, utils, Opts},
     run,
     utils::types::ListType,
     RwalkError,
@@ -29,6 +29,11 @@ async fn main() -> miette::Result<()> {
                 )
                 .add_directive(
                     "reqwest=off"
+                        .parse()
+                        .map_err(|e| miette::miette!("Failed to parse directive: {}", e))?,
+                )
+                .add_directive(
+                    "rustyline=off"
                         .parse()
                         .map_err(|e| miette::miette!("Failed to parse directive: {}", e))?,
                 ),
@@ -80,7 +85,10 @@ async fn main() -> miette::Result<()> {
         debug!("merged: {:#?}", opts);
     }
 
-    run(opts).await?;
-
-    Ok(())
+    Ok(if opts.interactive {
+        opts.interactive = false;
+        interactive::run(opts).await?
+    } else {
+        run(opts).await?
+    })
 }

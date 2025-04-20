@@ -70,6 +70,10 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::invalid_header_name))]
     #[error(transparent)]
     InvalidHeaderName(#[from] InvalidHeaderName),
+
+    #[diagnostic(code(rwalk::readline_error))]
+    #[error(transparent)]
+    ReadlineError(#[from] rustyline::error::ReadlineError),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]
