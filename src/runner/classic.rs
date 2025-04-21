@@ -100,11 +100,11 @@ impl Classic {
             let response = client.execute(request).await;
             if let Some(ref wait) = opts.wait {
                 let (min, max) = wait.split_once('-').unwrap_or_default();
-                let min = min.parse::<u64>().unwrap_or(0);
-                let max = max.parse::<u64>().unwrap_or(0);
-                if max > 0 {
-                    let sleep_duration =
-                        Duration::from_secs(min + rand::random::<u64>() % (max - min));
+                let min = min.parse::<f64>().unwrap_or(0.0);
+                let max = max.parse::<f64>().unwrap_or(0.0);
+                if max > 0.0 {
+                    let random_wait = rand::random::<f64>() * (max - min) + min;
+                    let sleep_duration = Duration::from_secs_f64(random_wait);
                     tokio::time::sleep(sleep_duration).await;
                 } else {
                     progress.println(format!(
