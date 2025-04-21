@@ -20,6 +20,16 @@ pub fn dynamic_fields_derive(input: TokenStream) -> TokenStream {
         _ => panic!("DynamicFields can only be derived for structs"),
     };
 
+    // Extract field names for later use in as_map
+    let field_names = fields.iter().map(|field| {
+        let field_name = &field.ident.as_ref().unwrap();
+        let field_name_str = field_name.to_string();
+        
+        quote! {
+            #field_name_str
+        }
+    }).collect::<Vec<_>>();
+
     // Create match arms for get method (simple fields only)
     let get_match_arms = fields.iter().map(|field| {
         let field_name = &field.ident.as_ref().unwrap();
@@ -61,6 +71,61 @@ pub fn dynamic_fields_derive(input: TokenStream) -> TokenStream {
                 match field_name {
                     #(#set_match_arms)*
                     _ => Err(format!("Field '{}' not found in struct", field_name)),
+                }
+            }
+
+            // Return all fields as a map of field name to value
+            pub fn as_map(&self) -> std::collections::HashMap<String, serde_json::Value> {
+                let mut map = std::collections::HashMap::new();
+                
+                // Add each field to the map
+                #(
+                    let name = #field_names;
+                    if let Some(value) = self.get(name) {
+                        map.insert(name.to_string(), value);
+                    }
+                )*
+                
+                map
+            }
+            
+            // List all available fields in the struct
+            pub fn fields(&self) -> Vec<String> {
+                vec![
+                    #(#field_names.to_string()),*
+                ]
+            }
+            
+            // Return all fields as a nested map that also expands nested objects
+            pub fn as_nested_map(&self) -> std::collections::HashMap<String, serde_json::Value> {
+                let mut result = std::collections::HashMap::new();
+                
+                // Process each top-level field
+                for field_name in self.fields() {
+                    if let Some(value) = self.get(&field_name) {
+                        Self::add_to_nested_map(&mut result, &field_name, value);
+                    }
+                }
+                
+                result
+            }
+            
+            // Helper method to recursively process nested fields
+            fn add_to_nested_map(
+                map: &mut std::collections::HashMap<String, serde_json::Value>, 
+                key: &str, 
+                value: serde_json::Value
+            ) {
+                // Add the value itself first
+                map.insert(key.to_string(), value.clone());
+                
+                // If it's an object, also add flattened keys
+                if let serde_json::Value::Object(obj) = &value {
+                    // Create a copy of the object to iterate through
+                    for (obj_key, obj_value) in obj.iter() {
+                        let nested_key = format!("{}.{}", key, obj_key);
+                        Self::add_to_nested_map(map, &nested_key, obj_value.clone());
+                    }
                 }
             }
 

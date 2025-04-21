@@ -1,3 +1,5 @@
+use owo_colors::OwoColorize;
+
 use super::{Command, CommandContext};
 use crate::Result;
 
@@ -6,8 +8,16 @@ pub struct ListCommand;
 #[async_trait::async_trait]
 impl Command<CommandContext> for ListCommand {
     async fn execute(&self, ctx: &mut CommandContext, _args: &str) -> Result<()> {
-        println!("Current options:");
-        println!("{:#?}", ctx.opts);
+        let fields = ctx.opts.as_nested_map();
+        let max_key_len = fields.iter().map(|(k, _)| k.len()).max().unwrap_or(0);
+        for (key, value) in fields {
+            println!(
+                "{} {dots} = {}",
+                key.bold(),
+                serde_json::to_string_pretty(&value)?.green(),
+                dots = "·".repeat(max_key_len - key.len()).dimmed(),
+            );
+        }
         Ok(())
     }
 
