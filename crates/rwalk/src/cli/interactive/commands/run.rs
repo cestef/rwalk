@@ -12,7 +12,7 @@ impl Command<CommandContext> for RunCommand {
     async fn execute(&self, ctx: &mut CommandContext, args: &str) -> Result<()> {
         let mut opts = ctx.opts.clone();
         if !args.is_empty() {
-            let args = args.trim().split_whitespace().collect::<Vec<_>>();
+            let args = args.split_whitespace().collect::<Vec<_>>();
             opts.merge(Opts::parse_from(["rwalk"].iter().chain(args.iter())));
         }
 

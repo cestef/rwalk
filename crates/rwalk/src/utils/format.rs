@@ -5,7 +5,7 @@ use owo_colors::OwoColorize;
 
 use crate::worker::utils::RwalkResponse;
 
-pub fn response(response: &RwalkResponse, show: &Vec<String>) -> String {
+pub fn response(response: &RwalkResponse, show: &[String]) -> String {
     format!(
         "{} {} {} {}",
         display_status_code(response.status as u16),
@@ -15,7 +15,7 @@ pub fn response(response: &RwalkResponse, show: &Vec<String>) -> String {
     )
 }
 
-fn display_show(response: &RwalkResponse, show: &Vec<String>) -> String {
+fn display_show(response: &RwalkResponse, show: &[String]) -> String {
     let out = show
         .iter()
         .filter_map(|e| {
@@ -154,7 +154,7 @@ impl Display for SkipReason {
     }
 }
 
-pub fn skip(response: &RwalkResponse, reason: SkipReason, show: &Vec<String>) -> String {
+pub fn skip(response: &RwalkResponse, reason: SkipReason, show: &[String]) -> String {
     format!(
         "{} {} {} {} {} {}",
         "↷".blue(),

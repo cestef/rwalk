@@ -86,15 +86,15 @@ impl<T> Evaluator<T, Box<dyn Filter<T>>> for FilterEvaluator {
 struct NeedsBodyEvaluator;
 
 impl<T> Evaluator<(), Box<dyn Filter<T>>> for NeedsBodyEvaluator {
-    fn evaluate(&self, expr: &FilterExpr<Box<dyn Filter<T>>>, item: &()) -> Result<bool> {
+    fn evaluate(&self, expr: &FilterExpr<Box<dyn Filter<T>>>, _item: &()) -> Result<bool> {
         match expr {
             FilterExpr::And(left, right) => {
-                Ok(self.evaluate(left, item)? || self.evaluate(right, item)?)
+                Ok(self.evaluate(left, _item)? || self.evaluate(right, _item)?)
             }
             FilterExpr::Or(left, right) => {
-                Ok(self.evaluate(left, item)? || self.evaluate(right, item)?)
+                Ok(self.evaluate(left, _item)? || self.evaluate(right, _item)?)
             }
-            FilterExpr::Not(expr) => self.evaluate(expr, item),
+            FilterExpr::Not(expr) => self.evaluate(expr, _item),
             FilterExpr::Value(filter) => Ok(filter.needs_body()),
             FilterExpr::Raw(_) => unreachable!(), // Should not happen after parsing
         }

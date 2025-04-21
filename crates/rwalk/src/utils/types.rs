@@ -1,14 +1,14 @@
 use clap::ValueEnum;
 use num_traits::PrimInt;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{fmt::Display, str::FromStr};
 
 use crate::{
-    error::{syntax_error, RwalkError, SyntaxError},
+    error::{RwalkError, SyntaxError, syntax_error},
     utils::format::color_for_status_code,
 };
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum ListType {
     Filters,
     Transforms,
@@ -19,10 +19,10 @@ impl ValueEnum for ListType {
     fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
         match self {
             ListType::Filters => {
-                Some(clap::builder::PossibleValue::new("filters").aliases(&["filter", "f"]))
+                Some(clap::builder::PossibleValue::new("filters").aliases(["filter", "f"]))
             }
             ListType::Transforms => {
-                Some(clap::builder::PossibleValue::new("transforms").aliases(&["transform", "t"]))
+                Some(clap::builder::PossibleValue::new("transforms").aliases(["transform", "t"]))
             }
             ListType::All => Some(clap::builder::PossibleValue::new("all")),
         }
@@ -33,7 +33,7 @@ impl ValueEnum for ListType {
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum EngineMode {
     Recursive,
     Template,
@@ -44,11 +44,11 @@ impl ValueEnum for EngineMode {
         match self {
             EngineMode::Recursive => Some(
                 clap::builder::PossibleValue::new("recursive")
-                    .aliases(&["r"])
+                    .aliases(["r"])
                     .help("Recursively fuzz the target, increasing the depth with each request"),
             ),
             EngineMode::Template => {
-                Some(clap::builder::PossibleValue::new("template").aliases(&["t"]).help(
+                Some(clap::builder::PossibleValue::new("template").aliases(["t"]).help(
                     "Use a template to generate payloads, replacing placeholders with wordlist values",
                 ))
             }
@@ -60,7 +60,7 @@ impl ValueEnum for EngineMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum HTTPMethod {
     GET,
     POST,
@@ -72,9 +72,9 @@ pub enum HTTPMethod {
     TRACE,
 }
 
-impl Into<reqwest::Method> for HTTPMethod {
-    fn into(self) -> reqwest::Method {
-        match self {
+impl From<HTTPMethod> for reqwest::Method {
+    fn from(val: HTTPMethod) -> Self {
+        match val {
             HTTPMethod::GET => reqwest::Method::GET,
             HTTPMethod::POST => reqwest::Method::POST,
             HTTPMethod::PUT => reqwest::Method::PUT,
@@ -114,7 +114,7 @@ impl ValueEnum for HTTPMethod {
         ]
     }
 }
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct IntRange<T>
 where
     T: PrimInt,
@@ -250,7 +250,7 @@ where
                         s,
                         "Invalid start value: '{}'",
                         parts[0]
-                    ))
+                    ));
                 }
             };
 
@@ -262,7 +262,7 @@ where
                         s,
                         "Invalid end value: '{}'",
                         parts[1]
-                    ))
+                    ));
                 }
             };
 

@@ -5,14 +5,15 @@ use crate::{
     types::EngineMode,
     utils::types::{HTTPMethod, IntRange, ListType},
 };
-use clap::builder::EnumValueParser;
 use clap::Parser;
+use clap::builder::EnumValueParser;
 use dashmap::DashSet as HashSet;
 use merge::Merge;
 use parse::{
     parse_filter, parse_keyed_key_or_keyval, parse_keyed_keyval, parse_url, parse_wordlist,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use set_field::DynamicFields;
 use url::Url;
 
 pub mod help;
@@ -28,7 +29,7 @@ const SUBCOMMANDS_FLAGS: [&str; 5] = [
     "interactive",
 ];
 
-#[derive(Debug, Parser, Clone, Merge, Deserialize)]
+#[derive(Debug, Parser, Clone, Merge, Deserialize, Serialize, DynamicFields)]
 #[clap(version = utils::version(), long_version = utils::long_version(), disable_help_flag = true, help_template = "{all-args}")]
 pub struct Opts {
     //

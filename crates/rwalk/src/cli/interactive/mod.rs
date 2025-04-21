@@ -1,5 +1,5 @@
 use super::Opts;
-use crate::{print_error, Result};
+use crate::{Result, print_error};
 use commands::{CommandContext, CommandRegistry};
 use helper::RwalkHelper;
 use owo_colors::OwoColorize;
@@ -37,10 +37,13 @@ pub async fn run(opts: Opts) -> Result<()> {
             None => (line, ""),
         };
 
-        let cmd = CommandRegistry::construct(command)?;
-
-        match cmd.execute(&mut ctx, args).await {
-            Ok(_) => {}
+        match CommandRegistry::construct(command) {
+            Ok(cmd) => match cmd.execute(&mut ctx, args).await {
+                Ok(_) => {}
+                Err(e) => {
+                    print_error!("{}", e);
+                }
+            },
             Err(e) => {
                 print_error!("{}", e);
             }

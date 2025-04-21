@@ -12,10 +12,7 @@ use cowstr::CowStr;
 use dashmap::{DashMap, DashSet};
 use tracing::debug;
 
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{path::PathBuf, sync::Arc};
 use tokio::{
     fs::File,
     io::{AsyncBufReadExt, BufReader},
@@ -92,7 +89,7 @@ impl<'a> WordlistProcessor<'a> {
                 // Only add if not seen before for this key
                 if shared_words
                     .entry(key.clone())
-                    .or_insert_with(DashSet::new)
+                    .or_default()
                     .insert(word.clone())
                     && filterer.filter(&(key.clone(), word.clone()))?
                 {

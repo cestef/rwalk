@@ -85,10 +85,11 @@ async fn main() -> miette::Result<()> {
         debug!("merged: {:#?}", opts);
     }
 
-    Ok(if opts.interactive {
+    if opts.interactive {
         opts.interactive = false;
         interactive::run(opts).await?
     } else {
         run(opts).await?
-    })
+    };
+    Ok(())
 }

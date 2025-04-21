@@ -1,4 +1,5 @@
 use crate::{
+    RwalkError,
     cli::Opts,
     error::Result,
     filters::Filterer,
@@ -18,7 +19,6 @@ use crate::{
         filters::ResponseFilterRegistry,
         utils::{self, RwalkResponse},
     },
-    RwalkError,
 };
 
 use crossbeam::deque::{Injector, Steal, Stealer, Worker};
@@ -26,8 +26,8 @@ use dashmap::DashMap;
 use indicatif::ProgressBar;
 use owo_colors::OwoColorize;
 use reqwest::{
-    header::{HeaderMap, HeaderName, HeaderValue},
     Client,
+    header::{HeaderMap, HeaderName, HeaderValue},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -42,8 +42,8 @@ use tokio::task::JoinHandle;
 use url::Url;
 
 use super::{
-    handler::{recursive::RecursiveHandler, template::TemplateHandler, ResponseHandler},
     Task,
+    handler::{ResponseHandler, recursive::RecursiveHandler, template::TemplateHandler},
 };
 
 // Configuration struct
@@ -233,8 +233,8 @@ impl WorkerPool {
         };
 
         let global_queue = Arc::new(Injector::new());
-        let client = Self::create_client(&opts)?;
-        let filterer = Self::create_filterer(&opts)?;
+        let client = Self::create_client(opts)?;
+        let filterer = Self::create_filterer(opts)?;
 
         Self::new(config, global_queue, client, filterer, wordlists)
     }
@@ -337,11 +337,11 @@ impl WorkerPool {
     async fn worker(
         &self,
         worker: Worker<Task>,
-        stealers: &Vec<Stealer<Task>>,
+        stealers: &[Stealer<Task>],
         results: Arc<DashMap<String, RwalkResponse>>,
         mut shutdown_rx: broadcast::Receiver<bool>,
     ) -> Result<()> {
-        while let Some(task) = utils::find_task(&worker, &self.global_queue, &stealers) {
+        while let Some(task) = utils::find_task(&worker, &self.global_queue, stealers) {
             tokio::select! {
                 res = async {
                     if let Some(ref throttler) = self.worker_config.throttler {
@@ -370,7 +370,7 @@ impl WorkerPool {
                         return Ok::<(), crate::error::RwalkError>(());
                     }
                     if self.worker_config.filterer.filter(&response)? {
-                        self.worker_config.handler.handle(response.clone(), &self)?;
+                        self.worker_config.handler.handle(response.clone(), self)?;
                         if self.config.bell {
                             bell();
                         }
@@ -412,14 +412,8 @@ impl WorkerPool {
 
         match res {
             Ok(res) => {
-                let res = RwalkResponse::from_response(
-                    res,
-                    self.worker_config.needs_body,
-                    start,
-                    task.depth,
-                )
-                .await;
-                res
+                RwalkResponse::from_response(res, self.worker_config.needs_body, start, task.depth)
+                    .await
             }
             Err(e) => {
                 if task.retry < self.config.retries {

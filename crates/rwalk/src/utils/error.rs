@@ -74,6 +74,14 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::readline_error))]
     #[error(transparent)]
     ReadlineError(#[from] rustyline::error::ReadlineError),
+
+    #[diagnostic(code(rwalk::invalid_command))]
+    #[error("Invalid command: {0}")]
+    InvalidCommand(String),
+
+    #[diagnostic(code(rwalk::invalid_value))]
+    #[error("Invalid value: {0}")]
+    InvalidValue(String),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]
@@ -97,10 +105,10 @@ macro_rules! error {
         })
     };
     ($($arg:tt)*) => {
-        (RwalkError::Error {
+        RwalkError::Error {
             message: format!($($arg)*),
             source: None,
-        })
+        }
     };
 }
 

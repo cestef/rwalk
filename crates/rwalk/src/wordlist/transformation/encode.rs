@@ -36,7 +36,7 @@ impl FromStr for EncodeFormat {
 impl Transform<String> for EncodeTransformer {
     fn transform(&self, item: &mut String) {
         match self.format {
-            EncodeFormat::Url => *item = urlencoding::encode(&item).into_owned(),
+            EncodeFormat::Url => *item = urlencoding::encode(item).into_owned(),
             EncodeFormat::Base64 => *item = base64::engine::general_purpose::STANDARD.encode(&item),
             EncodeFormat::Hex => *item = hex::encode(&item),
         }

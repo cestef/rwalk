@@ -89,8 +89,7 @@ impl RwalkResponse {
 
         let file_type = headers.get("content-type").map(|s| {
             s.as_immutable_string_ref()
-                .unwrap()
-                .splitn(2, ';')
+                .unwrap().split(';')
                 .next()
                 .unwrap()
                 .to_string()

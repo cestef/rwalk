@@ -76,10 +76,9 @@ pub fn parse_key_or_keyval(s: &str) -> Result<(String, Option<String>)> {
 pub fn parse_wordlist(s: &str) -> Result<(String, String)> {
     let res = parse_key_or_keyval(s)?;
     let res = (
-        res.0.into(),
+        res.0,
         res.1
-            .unwrap_or_else(|| DEFAULT_WORDLIST_KEY.to_string())
-            .into(),
+            .unwrap_or_else(|| DEFAULT_WORDLIST_KEY.to_string()),
     );
     Ok(res)
 }
@@ -118,8 +117,7 @@ fn parse_throttle_range(s: &str) -> Result<(u64, u64)> {
 
 // @file or raw string
 pub fn parse_filter(s: &str) -> Result<String> {
-    if s.starts_with('@') {
-        let path = &s[1..];
+    if let Some(path) = s.strip_prefix('@') {
         let content = std::fs::read_to_string(path)?;
         Ok(content)
     } else {

@@ -6,14 +6,14 @@ use rayon::prelude::*;
 use std::{collections::HashMap, time::Duration};
 
 use crate::{
+    Result,
     engine::{Task, WorkerPool},
-    error::{error, RwalkError},
+    error::{RwalkError, error},
     filters::Filterer,
     success,
     utils::format::{self, display_time},
     wordlist::Wordlist,
     worker::utils::RwalkResponse,
-    Result,
 };
 
 use super::ResponseHandler;
@@ -37,7 +37,7 @@ impl ResponseHandler for TemplateHandler {
     }
 
     fn init(&self, pool: &WorkerPool) -> Result<()> {
-        let urls = self.generate_urls(&pool.wordlists, &pool.config.base_url.to_string())?;
+        let urls = self.generate_urls(&pool.wordlists, pool.config.base_url.as_ref())?;
 
         urls.par_chunks(pool.config.threads).for_each(|chunk| {
             for url in chunk {
@@ -50,7 +50,7 @@ impl ResponseHandler for TemplateHandler {
 }
 
 impl TemplateHandler {
-    fn generate_urls(&self, wordlists: &Vec<Wordlist>, base_url: &str) -> Result<Vec<String>> {
+    fn generate_urls(&self, wordlists: &[Wordlist], base_url: &str) -> Result<Vec<String>> {
         let pb = ProgressBar::new(0).with_style(
             indicatif::ProgressStyle::default_bar()
                 .template("{spinner:.green} {msg} {elapsed_precise}")

@@ -80,22 +80,12 @@ pub async fn run(opts: Opts) -> Result<()> {
 
     match opts.output.as_deref() {
         Some(e) => {
-            let out;
-
-            match e.extension().and_then(|e| e.to_str()) {
-                Some("json") => {
-                    out = serde_json::to_string_pretty(&*results)?;
-                }
-                Some("csv") => {
-                    out = utils::output::csv(&results);
-                }
-                Some("md") => {
-                    out = utils::output::md(&results);
-                }
-                _ => {
-                    out = utils::output::txt(&results);
-                }
-            }
+            let out = match e.extension().and_then(|e| e.to_str()) {
+                Some("json") => serde_json::to_string_pretty(&*results)?,
+                Some("csv") => utils::output::csv(&results),
+                Some("md") => utils::output::md(&results),
+                _ => utils::output::txt(&results),
+            };
 
             std::fs::write(e, out)?;
 

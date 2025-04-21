@@ -17,7 +17,7 @@ struct Node {
 
 impl Node {
     fn simplify(&mut self) {
-        for (_, child) in &mut self.children {
+        for child in self.children.values_mut() {
             child.simplify();
         }
 
