@@ -1,22 +1,34 @@
+use std::sync::Arc;
+
 use super::Opts;
 use crate::{Result, print_error};
 use commands::{CommandContext, CommandRegistry};
 use helper::RwalkHelper;
 use owo_colors::OwoColorize;
-use rustyline::Editor;
+use rustyline::{Editor, config::Configurer};
+use tokio::sync::Mutex;
 mod commands;
 mod helper;
 
 pub async fn run(opts: Opts) -> Result<()> {
     let mut editor = Editor::new()?;
     editor.set_helper(Some(RwalkHelper));
-
-    let mut ctx = CommandContext { exit: false, opts };
+    editor.set_auto_add_history(true);
+    let editor = Arc::new(Mutex::new(editor));
+    let mut ctx = CommandContext {
+        exit: false,
+        opts,
+        editor: editor.clone(),
+    };
 
     println!("Welcome to rwalk interactive mode! Type 'help' for available commands.");
 
     while !ctx.exit {
-        let maybe_line = editor.readline("rwalk> ");
+        let maybe_line;
+        {
+            maybe_line = editor.lock().await.readline("rwalk> ");
+        }
+
         if matches!(
             maybe_line,
             Err(rustyline::error::ReadlineError::Interrupted | rustyline::error::ReadlineError::Eof)
@@ -29,8 +41,6 @@ pub async fn run(opts: Opts) -> Result<()> {
         if line.is_empty() {
             continue;
         }
-
-        editor.add_history_entry(line)?;
 
         let (command, args) = match line.find(' ') {
             Some(pos) => (&line[..pos], line[pos + 1..].trim()),

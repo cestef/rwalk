@@ -2,7 +2,7 @@ use super::{Command, CommandContext};
 use crate::{Result, RwalkError};
 
 #[derive(Debug)]
-pub struct SetCommand {}
+pub struct SetCommand;
 
 #[async_trait::async_trait]
 impl Command<CommandContext> for SetCommand {
@@ -49,6 +49,6 @@ impl Command<CommandContext> for SetCommand {
     where
         Self: Sized + 'static,
     {
-        Box::new(SetCommand {})
+        Box::new(SetCommand)
     }
 }

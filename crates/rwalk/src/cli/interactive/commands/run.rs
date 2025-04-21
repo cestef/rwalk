@@ -2,10 +2,10 @@ use clap::Parser;
 use merge::Merge;
 
 use super::{Command, CommandContext};
-use crate::{cli::Opts, run, Result};
+use crate::{Result, cli::Opts, run};
 
 #[derive(Debug)]
-pub struct RunCommand {}
+pub struct RunCommand;
 
 #[async_trait::async_trait]
 impl Command<CommandContext> for RunCommand {
@@ -36,6 +36,6 @@ impl Command<CommandContext> for RunCommand {
     where
         Self: Sized + 'static,
     {
-        Box::new(RunCommand {})
+        Box::new(RunCommand)
     }
 }

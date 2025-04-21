@@ -3,7 +3,7 @@ use crate::Result;
 use owo_colors::OwoColorize;
 
 #[derive(Debug)]
-pub struct HelpCommand {}
+pub struct HelpCommand;
 
 #[async_trait::async_trait]
 impl Command<CommandContext> for HelpCommand {
@@ -19,7 +19,7 @@ impl Command<CommandContext> for HelpCommand {
                 } else {
                     String::new()
                 },
-                cmd.help().italic()
+                cmd.help()
             );
         }
         Ok(())
@@ -41,6 +41,6 @@ impl Command<CommandContext> for HelpCommand {
     where
         Self: Sized + 'static,
     {
-        Box::new(HelpCommand {})
+        Box::new(HelpCommand)
     }
 }

@@ -2,31 +2,31 @@ use super::{Command, CommandContext};
 use crate::Result;
 
 #[derive(Debug)]
-pub struct ListCommand;
+pub struct ClearCommand;
+
 #[async_trait::async_trait]
-impl Command<CommandContext> for ListCommand {
+impl Command<CommandContext> for ClearCommand {
     async fn execute(&self, ctx: &mut CommandContext, _args: &str) -> Result<()> {
-        println!("Current options:");
-        println!("{:#?}", ctx.opts);
+        ctx.editor.lock().await.clear_screen()?;
         Ok(())
     }
 
     fn name() -> &'static str {
-        "list"
+        "clear"
     }
 
     fn aliases() -> &'static [&'static str] {
-        &["options", "ls"]
+        &["c", "cls"]
     }
 
     fn help(&self) -> &'static str {
-        "List current options"
+        "Clear the screen"
     }
 
     fn construct() -> Box<dyn Command<CommandContext>>
     where
         Self: Sized + 'static,
     {
-        Box::new(ListCommand)
+        Box::new(ClearCommand)
     }
 }

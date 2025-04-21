@@ -1,4 +1,6 @@
+mod clear;
 mod exit;
+mod get;
 mod help;
 mod list;
 mod run;
@@ -8,12 +10,18 @@ use crate::cli::Opts;
 use crate::utils::registry::create_registry;
 use crate::{Result, RwalkError};
 use once_cell::sync::Lazy;
+use rustyline::history::FileHistory;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+use super::helper::RwalkHelper;
 
 pub struct CommandContext {
     pub exit: bool,
     pub opts: Opts,
+    pub editor: Arc<Mutex<rustyline::Editor<RwalkHelper, FileHistory>>>,
 }
 
 #[async_trait::async_trait]
@@ -45,6 +53,8 @@ create_registry!(
         help::HelpCommand,
         run::RunCommand,
         list::ListCommand,
-        set::SetCommand
+        set::SetCommand,
+        get::GetCommand,
+        clear::ClearCommand
     ]
 );

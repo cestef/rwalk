@@ -2,7 +2,7 @@ use super::{Command, CommandContext};
 use crate::Result;
 
 #[derive(Debug)]
-pub struct ExitCommand {}
+pub struct ExitCommand;
 
 #[async_trait::async_trait]
 impl Command<CommandContext> for ExitCommand {
@@ -28,6 +28,6 @@ impl Command<CommandContext> for ExitCommand {
     where
         Self: Sized + 'static,
     {
-        Box::new(ExitCommand {})
+        Box::new(ExitCommand)
     }
 }
