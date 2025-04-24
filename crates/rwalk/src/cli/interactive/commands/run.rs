@@ -1,7 +1,7 @@
 use clap::Parser;
 use merge::Merge;
 
-use super::{Command, CommandContext};
+use super::{ArgType, Command, CommandContext};
 use crate::{Result, cli::Opts, run};
 
 #[derive(Debug)]
@@ -37,5 +37,9 @@ impl Command<CommandContext> for RunCommand {
         Self: Sized + 'static,
     {
         Box::new(RunCommand)
+    }
+
+    fn args(&self) -> Option<&'static [ArgType]> {
+        Some(&[ArgType::Url, ArgType::Path])
     }
 }

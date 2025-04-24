@@ -24,6 +24,18 @@ pub struct CommandContext {
     pub editor: Arc<Mutex<rustyline::Editor<RwalkHelper, FileHistory>>>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArgType {
+    Path,
+    OptionField,
+    Url,
+    String,
+    Int,
+    Float,
+    Bool,
+    Any,
+}
+
 #[async_trait::async_trait]
 pub trait Command<T>: Debug {
     async fn execute(&self, ctx: &mut T, args: &str) -> Result<()>;
@@ -42,6 +54,10 @@ pub trait Command<T>: Debug {
     fn construct() -> Box<dyn Command<T>>
     where
         Self: Sized + 'static;
+
+    fn args(&self) -> Option<&'static [ArgType]> {
+        None
+    }
 }
 
 create_registry!(

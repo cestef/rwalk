@@ -146,6 +146,10 @@ macro_rules! create_registry {
                     None => Err(crate::error!("Unknown command: {}", name)),
                 }
             }
+            pub fn exists(name: &str) -> bool {
+                let name = ALIASES.get(name).copied().unwrap_or(name);
+                REGISTRY.contains_key(name)
+            }
         }
     };
 }
