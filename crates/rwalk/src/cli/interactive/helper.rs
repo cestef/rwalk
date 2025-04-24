@@ -47,16 +47,13 @@ impl Highlighter for RwalkHelper {
     ) -> std::borrow::Cow<'c, str> {
         candidate.dimmed().to_string().into()
     }
+
     fn highlight_prompt<'b, 's: 'b, 'p: 'b>(
         &'s self,
         prompt: &'p str,
-        default: bool,
+        _default: bool,
     ) -> std::borrow::Cow<'b, str> {
-        if default {
-            format!("\x1b[1;34m{}\x1b[0m", prompt).into()
-        } else {
-            format!("\x1b[1;32m{}\x1b[0m", prompt).into()
-        }
+        prompt.blue().to_string().into()
     }
 }
 impl Hinter for RwalkHelper {
