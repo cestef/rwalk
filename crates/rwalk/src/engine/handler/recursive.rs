@@ -1,12 +1,12 @@
 use rayon::prelude::*;
-use std::sync::{atomic::AtomicU64, Arc};
+use std::sync::Arc;
 
 use crate::{
+    Result,
     engine::WorkerPool,
     filters::Filterer,
     utils::{directory, format},
     worker::utils::RwalkResponse,
-    Result,
 };
 
 use super::ResponseHandler;
@@ -23,14 +23,9 @@ impl ResponseHandler for RecursiveHandler {
                 pool.pb
                     .println(format::response(&response, &pool.config.show));
 
-                let pool = Arc::new(pool);
-                let response = Arc::new(response);
-                let total = AtomicU64::new(0);
+                let total_entries: u64 = pool.wordlists.iter().map(|w| w.len() as u64).sum();
 
                 pool.wordlists.par_iter().try_for_each(|wordlist| {
-                    let pool = Arc::clone(&pool);
-                    let response = Arc::clone(&response);
-                    total.fetch_add(wordlist.len() as u64, std::sync::atomic::Ordering::Relaxed);
                     wordlist.inject_into(
                         &pool.global_queue,
                         &response.url,
@@ -38,9 +33,8 @@ impl ResponseHandler for RecursiveHandler {
                     )
                 })?;
 
-                pool.pb.set_length(
-                    pool.pb.length().unwrap() + total.load(std::sync::atomic::Ordering::Relaxed),
-                );
+                pool.pb
+                    .set_length(pool.pb.length().unwrap() + total_entries);
             } else {
                 pool.pb.println(format::skip(
                     &response,
