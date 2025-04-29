@@ -27,6 +27,7 @@ pub struct Opts {
         env,
         hide_env=true
     )]
+    #[merge(strategy = overwrite_option)]
     #[serde(default)]
     pub url: Option<String>,
 
@@ -50,6 +51,7 @@ pub struct Opts {
         hide_env = true,
         help_heading = Some("Mode")
     )]
+    #[merge(strategy = overwrite_option)]
     #[serde(default = "default_mode")]
     pub mode: Option<String>,
 
@@ -62,6 +64,7 @@ pub struct Opts {
         hide_env = true,
         help_heading = Some("Mode")
     )]
+    #[merge(strategy = overwrite_option)]
     #[serde(default = "default_depth")]
     pub depth: Option<usize>,
 
@@ -79,6 +82,7 @@ pub struct Opts {
 
     /// Number of threads to use
     #[clap(short, long, env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub threads: Option<usize>,
 
     /// Follow redirects
@@ -89,11 +93,13 @@ pub struct Opts {
         env,
         hide_env = true,
     )]
+    #[merge(strategy = overwrite_option)]
     #[serde(default = "default_follow_redirects")]
     pub follow_redirects: Option<usize>,
 
     /// Output file
     #[clap(short, long, value_name = "FILE", env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub output: Option<String>,
 
     /// Pretty format the output (only JSON)
@@ -104,20 +110,24 @@ pub struct Opts {
 
     /// Request timeout in seconds
     #[clap(long, env, hide_env = true, visible_alias = "to", help_heading = Some("Requests"))]
+    #[merge(strategy = overwrite_option)]
     #[serde(default = "default_timeout")]
     pub timeout: Option<usize>,
 
     /// User agent
     #[clap(short, long, env, hide_env = true, help_heading = Some("Requests"))]
+    #[merge(strategy = overwrite_option)]
     pub user_agent: Option<String>,
 
     /// HTTP method
     #[clap(short = 'X', long, value_parser = parse_method, env, hide_env=true, help_heading = Some("Requests"))]
+    #[merge(strategy = overwrite_option)]
     #[serde(default = "default_method")]
     pub method: Option<String>,
 
     /// Data to send with the request
     #[clap(short = 'D', long, env, hide_env = true, help_heading = Some("Requests"),)]
+    #[merge(strategy = overwrite_option)]
     pub data: Option<String>,
 
     /// Headers to send
@@ -134,6 +144,7 @@ pub struct Opts {
 
     /// Save file
     #[clap(short = 's', long, env, hide_env = true, help_heading = Some("Save"))]
+    #[merge(strategy = overwrite_option)]
     #[serde(default = "default_save_file")]
     pub save_file: Option<String>,
 
@@ -157,14 +168,17 @@ pub struct Opts {
 
     /// Configuration file
     #[clap(short, long, env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub config: Option<String>,
 
     /// Request throttling (requests per second) per thread
     #[clap(long, env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub throttle: Option<usize>,
 
     /// Max time to run (will abort after given time) in seconds
     #[clap(short = 'M', long, env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub max_time: Option<usize>,
 
     /// Don't use colors
@@ -258,18 +272,22 @@ pub struct Opts {
 
     /// Override the default directory detection method with your own rhai script
     #[clap(long, help_heading = Some("Responses"), env, hide_env=true, visible_alias = "ds", visible_alias = "dir-script")]
+    #[merge(strategy = overwrite_option)]
     pub directory_script: Option<String>,
 
     /// Request file (.http, .rest)
     #[clap(long, value_name = "FILE", env, hide_env = true, visible_alias = "rf", help_heading = Some("Requests"),)]
+    #[merge(strategy = overwrite_option)]
     pub request_file: Option<String>,
 
     /// Proxy URL
     #[clap(short='P', long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
+    #[merge(strategy = overwrite_option)]
     pub proxy: Option<String>,
 
     /// Proxy username and password
     #[clap(long, help_heading = Some("Proxy"), value_name = "USER:PASS", env, hide_env=true)]
+    #[merge(strategy = overwrite_option)]
     pub proxy_auth: Option<String>,
 
     /// Allow subdomains to be scanned in spider mode
@@ -310,6 +328,7 @@ pub struct Opts {
 
     /// Generate completions for the specified shell
     #[clap(long, value_name = "SHELL", env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     #[serde(default)]
     pub completions: Option<String>,
 
@@ -339,7 +358,15 @@ pub struct Opts {
 
     /// Random wait time range in seconds between requests, e.g. 0.5-1.5
     #[clap(long, help_heading = Some("Requests"), env, hide_env=true)]
+    #[merge(strategy = overwrite_option)]
     pub wait: Option<String>,
+}
+
+// Updates with the latest value, replacing the current one if provided.
+fn overwrite_option<T>(a: &mut Option<T>, b: Option<T>) {
+    if b.is_some() {
+        *a = b;
+    }
 }
 
 // Updates with the latest value, replacing the current one if provided.
