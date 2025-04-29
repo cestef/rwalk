@@ -21,10 +21,10 @@ async fn main() -> Result<()> {
     utils::logger::init_logger();
     utils::init_panic()?;
 
-    // Start with default options
-    let mut opts = Opts::default();
+    // Step 1: Start with default values
+    let mut opts = Opts::default();  
 
-    // Load the configuration file first
+    // Step 2: Load configuration from file (overrides defaults)
     if let Some(home) = dirs::home_dir() {
         let p = home.join(Path::new(DEFAULT_CONFIG_PATH));
         if p.exists() {
@@ -32,19 +32,16 @@ async fn main() -> Result<()> {
             opts.merge(config_opts);
             log::debug!("Loaded config file: {}", p.display());
         } else {
-            log::debug!("Default config file not found: {}", p.display());
+            log::debug!("Config file not found: {}", p.display());
         }
     } else {
-        log::debug!("No home directory found, using default options");
+        log::debug!("No home directory found; skipping config file");
     }
 
-    // Parse the CLI options
+    // Step 3: Merge command-line arguments (override config and defaults)
     let cli_opts = Opts::parse();
-
-    // Merge the CLI options into the loaded configuration
     opts.merge(cli_opts);
-
-    log::debug!("Parsed options: {:#?}", opts);
+    log::debug!("Parsed CLI options: {:#?}", opts);
 
     if opts.open_config {
         // Open the config file in the default editor

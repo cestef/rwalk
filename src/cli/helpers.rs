@@ -175,7 +175,7 @@ pub fn parse_method(s: &str) -> Result<String, String> {
     ];
     let s = s.to_uppercase();
     if methods.contains(&s.as_str()) {
-        Ok(s.to_string())
+        Ok(String::from_utf8_lossy(s.as_bytes()).to_string())
     } else {
         Err("Invalid HTTP method".to_string())
     }
