@@ -335,8 +335,10 @@ pub struct Opts {
     pub wait: Option<String>,
 }
 
-fn merge_overwrite<T>(a: &mut T, b: T) {
-    *a = b;
+fn merge_overwrite<T>(a: &mut Option<T>, b: Option<T>) {
+    if b.is_some() {
+        *a = b;
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
