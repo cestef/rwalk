@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::utils::{
-    constants::{DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT},
+    constants::{DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT, DEFAULT_DEPTH, DEFAULT_MODE},
     version,
 };
 use serde::{Deserialize, Serialize};
@@ -27,6 +27,7 @@ pub struct Opts {
         env,
         hide_env=true
     )]
+    #[merge(strategy = overwrite_option)]
     #[serde(default)]
     pub url: Option<String>,
 
@@ -37,7 +38,7 @@ pub struct Opts {
         hide_env = true,
         value_parser = parse_wordlist,
     )]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub wordlists: Vec<Wordlist>,
 
@@ -46,12 +47,26 @@ pub struct Opts {
         short,
         long,
         value_name = "MODE",
-        value_parser = clap::builder::PossibleValuesParser::new(["recursive", "recursion", "r", "classic", "c", "spider", "s"]),
         env,
-        hide_env = true
+        hide_env = true,
+        help_heading = Some("Mode")
     )]
-    #[serde(default)]
+    #[merge(strategy = overwrite_option)]
+    #[serde(default = "default_mode")]
     pub mode: Option<String>,
+
+    /// Depth to crawl
+    #[clap(
+        short,
+        long,
+        value_name = "DEPTH",
+        env,
+        hide_env = true,
+        help_heading = Some("Mode")
+    )]
+    #[merge(strategy = overwrite_option)]
+    #[serde(default = "default_depth")]
+    pub depth: Option<usize>,
 
     /// Force scan even if the target is not responding
     #[clap(long, env, hide_env = true)]
@@ -67,14 +82,24 @@ pub struct Opts {
 
     /// Number of threads to use
     #[clap(short, long, env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub threads: Option<usize>,
 
-    /// Crawl recursively until given depth
-    #[clap(short, long, env, hide_env = true)]
-    pub depth: Option<usize>,
+    /// Follow redirects
+    #[clap(
+        short = 'R',
+        long,
+        value_name = "COUNT",
+        env,
+        hide_env = true,
+    )]
+    #[merge(strategy = overwrite_option)]
+    #[serde(default = "default_follow_redirects")]
+    pub follow_redirects: Option<usize>,
 
     /// Output file
     #[clap(short, long, value_name = "FILE", env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub output: Option<String>,
 
     /// Pretty format the output (only JSON)
@@ -84,57 +109,76 @@ pub struct Opts {
     pub pretty: bool,
 
     /// Request timeout in seconds
-    #[clap(long, default_value = DEFAULT_TIMEOUT.to_string(), env, hide_env = true, visible_alias = "to", help_heading = Some("Requests"))]
-    #[merge(strategy = merge_overwrite)]
+    #[clap(long, env, hide_env = true, visible_alias = "to", help_heading = Some("Requests"))]
+    #[merge(strategy = overwrite_option)]
+    #[serde(default = "default_timeout")]
     pub timeout: Option<usize>,
 
     /// User agent
     #[clap(short, long, env, hide_env = true, help_heading = Some("Requests"))]
+    #[merge(strategy = overwrite_option)]
     pub user_agent: Option<String>,
 
     /// HTTP method
-    #[clap(short = 'X', long, default_value = DEFAULT_METHOD, value_parser = parse_method, env, hide_env=true, help_heading = Some("Requests"))]
-    #[merge(strategy = merge_overwrite)]
+    #[clap(short = 'X', long, value_parser = parse_method, env, hide_env=true, help_heading = Some("Requests"))]
+    #[merge(strategy = overwrite_option)]
+    #[serde(default = "default_method")]
     pub method: Option<String>,
 
     /// Data to send with the request
     #[clap(short = 'D', long, env, hide_env = true, help_heading = Some("Requests"),)]
+    #[merge(strategy = overwrite_option)]
     pub data: Option<String>,
 
     /// Headers to send
     #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true, help_heading = Some("Requests"),value_delimiter = ',')]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub headers: Vec<String>,
 
     /// Cookies to send
     #[clap(short = 'C', long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true, help_heading = Some("Requests"),value_delimiter = ',')]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub cookies: Vec<String>,
 
-    /// Follow redirects
-    #[clap(
-        short = 'R',
-        long,
-        default_value = DEFAULT_FOLLOW_REDIRECTS.to_string(),
-        value_name = "COUNT",
-        env,
-        hide_env = true
-    )]
-    #[merge(strategy = merge_overwrite)]
-    pub follow_redirects: Option<usize>,
+    /// Save file
+    #[clap(short = 's', long, env, hide_env = true, help_heading = Some("Save"))]
+    #[merge(strategy = overwrite_option)]
+    #[serde(default = "default_save_file")]
+    pub save_file: Option<String>,
+
+    /// Don't save results
+    #[clap(short = 'n', long, env, hide_env = true, help_heading = Some("Save"))]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub no_save: bool,
+
+    /// Keep save file after completion
+    #[clap(long, env, hide_env = true, help_heading = Some("Save"))]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub keep_save: bool,
+
+    /// Resume from a saved file
+    #[clap(short='r', long, help_heading = Some("Resume"), env, hide_env=true)]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub resume: bool,
 
     /// Configuration file
     #[clap(short, long, env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub config: Option<String>,
 
     /// Request throttling (requests per second) per thread
     #[clap(long, env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub throttle: Option<usize>,
 
     /// Max time to run (will abort after given time) in seconds
     #[clap(short = 'M', long, env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     pub max_time: Option<usize>,
 
     /// Don't use colors
@@ -171,7 +215,7 @@ pub struct Opts {
         visible_alias = "distribute",
         value_parser = parse_host
     )]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub distributed: Vec<String>,
 
@@ -183,42 +227,19 @@ pub struct Opts {
         help_heading = Some("Responses"),
         value_delimiter = ','
     )]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub show: Vec<String>,
 
-    /// Resume from a saved file
-    #[clap(short='r', long, help_heading = Some("Resume"), env, hide_env=true)]
-    #[merge(strategy = merge::bool::overwrite_false)]
-    #[serde(default)]
-    pub resume: bool,
-
-    /// Custom save file
-    #[clap(long, default_value = Some(DEFAULT_SAVE_FILE), help_heading = Some("Resume"), value_name = "FILE", env, hide_env=true)]
-    #[merge(strategy = merge_overwrite)]
-    pub save_file: Option<String>,
-
-    /// Don't save the state in case you abort
-    #[clap(long, help_heading = Some("Resume"), env, hide_env=true)]
-    #[merge(strategy = merge::bool::overwrite_false)]
-    #[serde(default)]
-    pub no_save: bool,
-
-    /// Keep the save file after finishing when using --resume
-    #[clap(long, help_heading = Some("Resume"), env, hide_env=true, visible_alias = "keep")]
-    #[merge(strategy = merge::bool::overwrite_false)]
-    #[serde(default)]
-    pub keep_save: bool,
-
     /// Wordlist transformations: "lower", "upper", "prefix", "suffix", "capitalize", "reverse", "remove", "replace", "encode"
     #[clap(short='T', long, help_heading = Some("Wordlists"), env, hide_env=true, value_parser(KeyOrKeyValParser), value_delimiter = ',')]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub transform: Vec<KeyOrKeyVal<String, String>>,
 
     /// Wordlist filtering: "contains", "starts", "ends", "regex", "length"
     #[clap(short='w', long, help_heading = Some("Wordlists"), value_name = "KEY:FILTER", env, hide_env=true, value_parser(KeyValParser), visible_alias = "wf", value_delimiter = ',')]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub wordlist_filter: Vec<KeyVal<String, String>>,
 
@@ -233,7 +254,7 @@ pub struct Opts {
         value_parser(KeyValParser),
         value_delimiter = ';'
     )]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub filter: Vec<KeyVal<String, String>>,
 
@@ -251,18 +272,22 @@ pub struct Opts {
 
     /// Override the default directory detection method with your own rhai script
     #[clap(long, help_heading = Some("Responses"), env, hide_env=true, visible_alias = "ds", visible_alias = "dir-script")]
+    #[merge(strategy = overwrite_option)]
     pub directory_script: Option<String>,
 
     /// Request file (.http, .rest)
     #[clap(long, value_name = "FILE", env, hide_env = true, visible_alias = "rf", help_heading = Some("Requests"),)]
+    #[merge(strategy = overwrite_option)]
     pub request_file: Option<String>,
 
     /// Proxy URL
     #[clap(short='P', long, help_heading = Some("Proxy"), value_name = "URL", env, hide_env=true)]
+    #[merge(strategy = overwrite_option)]
     pub proxy: Option<String>,
 
     /// Proxy username and password
     #[clap(long, help_heading = Some("Proxy"), value_name = "USER:PASS", env, hide_env=true)]
+    #[merge(strategy = overwrite_option)]
     pub proxy_auth: Option<String>,
 
     /// Allow subdomains to be scanned in spider mode
@@ -279,13 +304,13 @@ pub struct Opts {
 
     /// Attributes to be crawled in spider mode
     #[clap(short, long, help_heading = Some("Spider"), env, hide_env=true, value_delimiter = ',')]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub attributes: Vec<String>,
 
     /// Scripts to run after each request
     #[clap(long, help_heading = Some("Scripts"), env, hide_env=true, visible_alias = "sc", value_delimiter = ',')]
-    #[merge(strategy = merge::vec::overwrite_empty)]
+    #[merge(strategy = overwrite_vec)]
     #[serde(default)]
     pub scripts: Vec<String>,
 
@@ -303,6 +328,7 @@ pub struct Opts {
 
     /// Generate completions for the specified shell
     #[clap(long, value_name = "SHELL", env, hide_env = true)]
+    #[merge(strategy = overwrite_option)]
     #[serde(default)]
     pub completions: Option<String>,
 
@@ -332,11 +358,46 @@ pub struct Opts {
 
     /// Random wait time range in seconds between requests, e.g. 0.5-1.5
     #[clap(long, help_heading = Some("Requests"), env, hide_env=true)]
+    #[merge(strategy = overwrite_option)]
     pub wait: Option<String>,
 }
 
-fn merge_overwrite<T>(a: &mut T, b: T) {
-    *a = b;
+// Updates with the latest value, replacing the current one if provided.
+fn overwrite_option<T>(a: &mut Option<T>, b: Option<T>) {
+    if b.is_some() {
+        *a = b;
+    }
+}
+
+// Updates with the latest value, replacing the current one if provided.
+fn overwrite_vec<T>(a: &mut Vec<T>, b: Vec<T>) {
+    if !b.is_empty() {
+        *a = b;
+    }
+}
+
+fn default_mode() -> Option<String> {
+    Some(DEFAULT_MODE.to_string())
+}
+
+fn default_depth() -> Option<usize> {
+    Some(DEFAULT_DEPTH)
+}
+
+fn default_follow_redirects() -> Option<usize> {
+    Some(DEFAULT_FOLLOW_REDIRECTS)
+}
+
+fn default_timeout() -> Option<usize> {
+    Some(DEFAULT_TIMEOUT)
+}
+
+fn default_method() -> Option<String> {
+    Some(DEFAULT_METHOD.to_string())
+}
+
+fn default_save_file() -> Option<String> {
+    Some(DEFAULT_SAVE_FILE.to_string())
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
