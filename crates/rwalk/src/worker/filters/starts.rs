@@ -6,5 +6,5 @@ response_filter!(
     needs_body = true,
     |res: &RwalkResponse, sub: &String| Ok(res.body.starts_with(sub)),
     "starts",
-    "begin"
+    "st"
 );

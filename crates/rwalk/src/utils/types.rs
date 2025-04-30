@@ -194,12 +194,42 @@ where
     type Err = RwalkError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_str_with_mapper::<fn(&str) -> Result<T, RwalkError>>(s, None)
+    }
+}
+
+impl<T> IntRange<T>
+where
+    T: PrimInt + FromStr + Display,
+{
+    /// Parse a string into an IntRange with an optional mapper function
+    /// The mapper function can transform the string before parsing it into a numeric type
+    pub fn from_str_with_mapper<F>(s: &str, mapper: Option<F>) -> Result<Self, RwalkError>
+    where
+        F: Fn(&str) -> Result<T, RwalkError>,
+    {
         // Handle empty string
         if s.is_empty() {
             return Err(syntax_error!((0, 0), s, "Empty range expression"));
         }
 
         let parts: Vec<&str> = s.split('-').collect();
+
+        // Function to parse a value using mapper or direct parsing
+        let parse_value = |value_str: &str, pos: (usize, usize)| -> Result<T, RwalkError> {
+            match &mapper {
+                Some(map_fn) => map_fn(value_str),
+                None => match value_str.parse::<T>() {
+                    Ok(v) => Ok(v),
+                    Err(_) => Err(syntax_error!(
+                        pos,
+                        s,
+                        "Invalid numeric value: '{}'",
+                        value_str
+                    )),
+                },
+            }
+        };
 
         // Handle single value cases (>, <, or exact)
         if parts.len() == 1 {
@@ -216,55 +246,22 @@ where
                         ));
                     }
 
-                    match value_str.parse::<T>() {
-                        Ok(value) => match first_char {
-                            '>' => Ok(IntRange::new(value + T::one(), T::max_value())),
-                            '<' => Ok(IntRange::new(T::min_value(), value - T::one())),
-                            _ => unreachable!(),
-                        },
-                        Err(_) => Err(syntax_error!(
-                            (1, value_str.len()),
-                            s,
-                            "Invalid numeric value: '{}'",
-                            value_str
-                        )),
+                    let value = parse_value(value_str, (1, value_str.len()))?;
+                    match first_char {
+                        '>' => Ok(IntRange::new(value + T::one(), T::max_value())),
+                        '<' => Ok(IntRange::new(T::min_value(), value - T::one())),
+                        _ => unreachable!(),
                     }
                 }
-                _ => match parts[0].parse() {
-                    Ok(value) => Ok(IntRange::new(value, value)),
-                    Err(_) => Err(syntax_error!(
-                        (0, parts[0].len()),
-                        s,
-                        "Invalid numeric value: '{}'",
-                        parts[0]
-                    )),
-                },
+                _ => {
+                    let value = parse_value(parts[0], (0, parts[0].len()))?;
+                    Ok(IntRange::new(value, value))
+                }
             }
         } else if parts.len() == 2 {
             // Handle range with start and end values
-            let start = match parts[0].parse() {
-                Ok(v) => v,
-                Err(_) => {
-                    return Err(syntax_error!(
-                        (0, parts[0].len()),
-                        s,
-                        "Invalid start value: '{}'",
-                        parts[0]
-                    ));
-                }
-            };
-
-            let end = match parts[1].parse() {
-                Ok(v) => v,
-                Err(_) => {
-                    return Err(syntax_error!(
-                        (parts[0].len() + 1, parts[1].len()),
-                        s,
-                        "Invalid end value: '{}'",
-                        parts[1]
-                    ));
-                }
-            };
+            let start = parse_value(parts[0], (0, parts[0].len()))?;
+            let end = parse_value(parts[1], (parts[0].len() + 1, parts[1].len()))?;
 
             if start > end {
                 return Err(syntax_error!(

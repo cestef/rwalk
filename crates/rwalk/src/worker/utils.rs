@@ -1,6 +1,6 @@
 use crate::{
-    utils::{constants::STEAL_BATCH_LIMIT, directory},
     Result, RwalkError,
+    utils::{constants::STEAL_BATCH_LIMIT, directory},
 };
 use crossbeam::deque::{Injector, Stealer, Worker};
 use rhai::{CustomType, TypeBuilder};
@@ -38,7 +38,7 @@ pub struct RwalkResponse {
     pub headers: rhai::Map, // reqwest::header::HeaderMap
     pub body: String,
     pub url: url::Url,
-    pub time: i64,  // std::time::Duration
+    pub time: i64,  // std::time::Duration, in microseconds
     pub depth: i64, // usize
     pub r#type: ResponseType,
 }
@@ -89,7 +89,8 @@ impl RwalkResponse {
 
         let file_type = headers.get("content-type").map(|s| {
             s.as_immutable_string_ref()
-                .unwrap().split(';')
+                .unwrap()
+                .split(';')
                 .next()
                 .unwrap()
                 .to_string()
