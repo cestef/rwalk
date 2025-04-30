@@ -93,7 +93,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
     }
 
     // Parse wordlists into a HashMap associating each wordlist key to its contents
-    let mut words = runner::wordlists::parse(&opts.wordlists).await?;
+    let mut words = runner::wordlists::parse(&opts.wordlists, opts.include_comments).await?;
 
     let mut url = opts.url.clone().unwrap();
 
