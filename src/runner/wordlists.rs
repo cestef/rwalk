@@ -29,61 +29,62 @@ impl ParsedWordlist {
 /// # Arguments
 ///
 /// * `wordlists` - The paths to wordlists to parse
+/// * `include_comments` - Whether to include comment lines (starting with '#')
 ///
 /// # Returns
 ///
 /// A hashmap of parsed wordlists (key = path, value = ParsedWordlist)
 /// Where ParsedWordlist contains the path to the wordlist and the words in the wordlist
-pub async fn parse(wordlists: &Vec<Wordlist>) -> Result<HashMap<String, ParsedWordlist>> {
+pub async fn parse(
+    wordlists: &[Wordlist],
+    include_comments: bool,
+) -> Result<HashMap<String, ParsedWordlist>> {
     let mut out: HashMap<String, ParsedWordlist> = HashMap::new();
+
     for Wordlist(path, keys) in wordlists {
-        let words: String = match path.as_str() {
+        let bytes = match path.as_str() {
             "-" => {
                 let mut stdin = tokio::io::stdin();
-
-                let mut buf = String::new();
-                stdin.read_to_string(&mut buf).await?;
-                buf
+                let mut buffer = Vec::new();
+                stdin.read_to_end(&mut buffer).await?;
+                buffer
             }
             _ => {
-                let mut file = tokio::fs::File::open(
-                    expand_tilde(Path::new(&path.clone()))?
-                        .canonicalize()
-                        .with_context(|| {
-                            format!("Failed to canonicalize path: {}", path.clone().bold().red())
-                        })?,
-                )
-                .await
-                .with_context(|| {
-                    format!(
-                        "Failed to open wordlist file: {}",
-                        path.to_string().bold().red()
-                    )
+                let expanded_path = expand_tilde(Path::new(path))?;
+                let canonical_path = expanded_path.canonicalize().with_context(|| {
+                    format!("Failed to canonicalize path: {}", path.bold().red())
                 })?;
 
-                let mut bytes = Vec::new();
-                file.read_to_end(&mut bytes).await?;
-
-                unsafe { String::from_utf8_unchecked(bytes) }
+                tokio::fs::read(&canonical_path).await.with_context(|| {
+                    format!("Failed to open wordlist file: {}", path.bold().red())
+                })?
             }
         };
-        for key in {
-            if keys.is_empty() {
-                vec![DEFAULT_FUZZ_KEY.to_string()]
-            } else {
-                keys.clone()
-            }
-        } {
-            let entry = out.entry(key.clone()).or_insert(ParsedWordlist {
-                path: path.clone(),
-                words: Vec::new(),
-            });
-            entry.words.extend(
-                words
-                    .split('\n')
-                    .map(|x| x.to_string())
-                    .filter(|x| !x.is_empty()),
-            );
+
+        let content = String::from_utf8_lossy(&bytes);
+
+        let keys_to_use = if keys.is_empty() {
+            vec![DEFAULT_FUZZ_KEY.to_string()]
+        } else {
+            keys.iter().map(ToString::to_string).collect()
+        };
+
+        // filter lines before processing them for each key to avoid redundant filtering
+        let filtered_lines: Vec<String> = content
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty() && (include_comments || !line.starts_with('#')))
+            .map(ToString::to_string)
+            .collect();
+
+        for key in keys_to_use {
+            out.entry(key)
+                .or_insert(ParsedWordlist {
+                    path: path.clone(),
+                    words: Vec::new(),
+                })
+                .words
+                .extend(filtered_lines.iter().cloned());
         }
     }
 
@@ -490,11 +491,16 @@ mod tests {
                 "tests/wordlists/micro3.txt".to_string(),
                 vec!["W2".to_string()],
             ),
+            Wordlist(
+                "tests/wordlists/micro4comments.txt".to_string(),
+                vec!["W4".to_string()],
+            ),
         ];
-        let parsed = parse(&wordlists).await.unwrap();
-        assert_eq!(parsed.len(), 2);
+        let parsed = parse(&wordlists, false).await.unwrap();
+        assert_eq!(parsed.len(), 3);
         assert_eq!(parsed.get("W1").unwrap().words.len(), 7);
         assert_eq!(parsed.get("W2").unwrap().words.len(), 2);
+        assert_eq!(parsed.get("W4").unwrap().words.len(), 3);
     }
 
     #[test]

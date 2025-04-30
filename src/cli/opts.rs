@@ -357,6 +357,12 @@ pub struct Opts {
     #[clap(long, help_heading = Some("Requests"), env, hide_env=true)]
     #[merge(strategy = overwrite_option)]
     pub wait: Option<String>,
+
+    /// Do not filter out lines starting with '#'
+    #[clap(long, help_heading = Some("Wordlists"), env, hide_env=true, visible_alias = "ic")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    #[serde(default)]
+    pub include_comments: bool,
 }
 
 // Updates with the latest value, replacing the current one if provided.

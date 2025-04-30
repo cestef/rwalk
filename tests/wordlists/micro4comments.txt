@@ -1,0 +1,5 @@
+h
+i
+# this should be ignored
+# too
+hello
