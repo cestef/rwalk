@@ -73,8 +73,10 @@ pub async fn parse(
         let filtered_lines: Vec<String> = content
             .lines()
             .map(str::trim)
-            .filter(|line| !line.is_empty())
             .filter_map(|line| {
+                if line.is_empty() {
+                    return None;
+                }
                 if include_comments {
                     Some(line.to_string())
                 } else {
