@@ -10,7 +10,7 @@ response_filter!(
         .iter()
         .any(|r| r.contains((res.time / 1_000_000) as u64))),
     "time",
-    ["elapsed", "t"],
+    ["elapsed", "duration", "d"],
     transform = |raw: String| raw
         .split(',')
         .map(|s| s.trim().to_string())

@@ -1,12 +1,13 @@
 pub mod contains;
 pub mod ends;
 pub mod length;
+pub mod regex;
 pub mod starts;
 
 use crate::{
-    filters::{expression::FilterExpr, Filter},
-    utils::registry::create_registry,
     Result,
+    filters::{Filter, expression::FilterExpr},
+    utils::registry::create_registry,
 };
 
 use cowstr::CowStr;
@@ -21,7 +22,8 @@ create_registry!(
         length::LengthFilter,
         contains::ContainsFilter,
         starts::StartsFilter,
-        ends::EndsFilter
+        ends::EndsFilter,
+        regex::RegexFilter
     ]
 );
 

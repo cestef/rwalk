@@ -56,8 +56,8 @@ impl FromStr for ResponseType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "directory" | "dir" | "d" => Ok(ResponseType::Directory),
-            "error" | "e" => Ok(ResponseType::Error),
-            e => Ok(ResponseType::File(Some(e.to_string()))),
+            "error" | "e" | "err" => Ok(ResponseType::Error),
+            s => Ok(ResponseType::File(Some(s.to_string()))),
         }
     }
 }
