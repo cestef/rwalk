@@ -7,6 +7,7 @@ authors = ["cstef <hi@cstef.dev>"]
 license = "MIT"
 repository = "https://github.com/cestef/rwalk"
 documentation = "https://rwalk.cstef.dev"
+homepage = "https://rwalk.cstef.dev"
 keywords = ["web", "directory", "fuzz", "bruteforce"]
 
 [dependencies]

@@ -4,6 +4,11 @@ resolver = "3"
 
 [profile.dev]
 debug = false
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
 # strip = true
 # lto = true
 # codegen-units = 1
