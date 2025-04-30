@@ -73,8 +73,14 @@ pub async fn parse(
         let filtered_lines: Vec<String> = content
             .lines()
             .map(str::trim)
-            .filter(|line| !line.is_empty() && (include_comments || !line.starts_with('#')))
-            .map(ToString::to_string)
+            .filter(|line| !line.is_empty())
+            .filter_map(|line| {
+                if include_comments {
+                    Some(line.to_string())
+                } else {
+                    strip_comments(line)
+                }
+            })
             .collect();
 
         for key in keys_to_use {
@@ -468,6 +474,21 @@ fn expand_tilde<P: AsRef<Path>>(path_user_input: P) -> Result<PathBuf> {
             }
         })
         .ok_or_else(|| color_eyre::eyre::eyre!("Failed to expand tilde in path: {}", p.display()))
+}
+
+// Ref: https://github.com/ffuf/ffuf/blob/57da720af7d1b66066cbbde685b49948f886b29c/pkg/input/wordlist.go#L173
+fn strip_comments(text: &str) -> Option<String> {
+    // If the line starts with # (ignoring leading whitespace), return None
+    if text.trim_start().starts_with('#') {
+        return None;
+    }
+
+    // Find the position of "#" after a space
+    if let Some(index) = text.find(" #") {
+        Some(text[..index].to_string())
+    } else {
+        Some(text.to_string())
+    }
 }
 
 #[cfg(test)]
