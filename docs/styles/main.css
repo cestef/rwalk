@@ -140,3 +140,26 @@ input {
 article {
 	@apply prose dark:prose-invert max-w-[74ch] mx-auto px-4;
 }
+
+table {
+    @apply w-full border-collapse;
+}
+
+thead {
+    @apply bg-muted text-muted-foreground;
+}
+tbody {
+    @apply bg-background text-foreground;
+}
+th {
+    @apply px-4 py-2 text-left border-b border-border;
+}
+td {
+    @apply px-4 py-2 border-b border-border;
+}
+tr:nth-child(odd) {
+    @apply bg-muted/10;
+}
+tr:nth-child(even) {
+    @apply bg-muted/5;
+}
