@@ -1,7 +1,10 @@
 use std::path::Path;
 
 use crate::utils::{
-    constants::{DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_SAVE_FILE, DEFAULT_TIMEOUT, DEFAULT_DEPTH, DEFAULT_MODE},
+    constants::{
+        DEFAULT_DEPTH, DEFAULT_FOLLOW_REDIRECTS, DEFAULT_METHOD, DEFAULT_MODE, DEFAULT_SAVE_FILE,
+        DEFAULT_TIMEOUT,
+    },
     version,
 };
 use serde::{Deserialize, Serialize};
@@ -86,13 +89,7 @@ pub struct Opts {
     pub threads: Option<usize>,
 
     /// Follow redirects
-    #[clap(
-        short = 'R',
-        long,
-        value_name = "COUNT",
-        env,
-        hide_env = true,
-    )]
+    #[clap(short = 'R', long, value_name = "COUNT", env, hide_env = true)]
     #[merge(strategy = overwrite_option)]
     #[serde(default = "default_follow_redirects")]
     pub follow_redirects: Option<usize>,

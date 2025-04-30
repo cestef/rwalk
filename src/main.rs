@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
     utils::init_panic()?;
 
     // Step 1: Start with default values
-    let mut opts = Opts::default();  
+    let mut opts = Opts::default();
 
     // Step 2: Load configuration from file (overrides defaults)
     if let Some(home) = dirs::home_dir() {
