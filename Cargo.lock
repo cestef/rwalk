@@ -2408,7 +2408,7 @@ dependencies = [
 
 [[package]]
 name = "rwalk"
-version = "0.10.0"
+version = "0.10.0-dev"
 dependencies = [
  "async-recursion",
  "async-trait",
