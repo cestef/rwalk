@@ -8,12 +8,12 @@ use crate::{
 use clap::Parser;
 use clap::builder::EnumValueParser;
 use dashmap::DashSet as HashSet;
+use dyn_fields::DynamicFields;
 use merge::Merge;
 use parse::{
     parse_filter, parse_keyed_key_or_keyval, parse_keyed_keyval, parse_url, parse_wordlist,
 };
 use serde::{Deserialize, Serialize};
-use set_field::DynamicFields;
 use url::Url;
 
 pub mod help;
@@ -63,6 +63,7 @@ pub struct Opts {
     /// Wordlist file(s) to use, `path[:key]`
     #[clap(value_parser = parse_wordlist, required_unless_present_any(SUBCOMMANDS_FLAGS))]
     #[merge(strategy = merge::vec::append)]
+    #[dyn_fields(set = "transformers::set_wordlist", alias = "wordlist")]
     pub wordlists: Vec<(String, String)>,
 
     /// Number of threads to use, defaults to `num_cores * 5`
@@ -222,4 +223,63 @@ pub struct Opts {
 
 fn merge_overwrite<T>(a: &mut T, b: T) {
     *a = b;
+}
+
+mod transformers {
+    use crate::utils::constants::DEFAULT_WORDLIST_KEY;
+    use serde_json::Value;
+
+    /// Parses a wordlist string into a Value::Array with path and key pairs
+    pub fn set_wordlist(value: Value) -> Value {
+        match value {
+            Value::String(s) => parse_wordlist_string(&s),
+            Value::Array(arr) => process_array(arr),
+            _ => value,
+        }
+    }
+
+    /// Processes an array of values, parsing any string values
+    fn process_array(arr: Vec<Value>) -> Value {
+        let mut result = Vec::new();
+
+        for item in arr {
+            match item {
+                Value::String(s) => {
+                    let parsed_items = parse_wordlist_string(&s);
+                    if let Value::Array(items) = parsed_items {
+                        result.extend(items);
+                    }
+                }
+                _ => result.push(item),
+            }
+        }
+
+        Value::Array(result)
+    }
+
+    /// Parses a comma-separated list of wordlists into an array of [path, key] pairs
+    fn parse_wordlist_string(s: &str) -> Value {
+        let wordlists = s.split(',').map(|s| s.trim());
+        let result: Vec<Value> = wordlists
+            .map(|wordlist| parse_single_wordlist(wordlist))
+            .collect();
+
+        Value::Array(result)
+    }
+
+    /// Parses a single wordlist entry (either "path:key" or just "path")
+    fn parse_single_wordlist(wordlist: &str) -> Value {
+        let parts: Vec<&str> = wordlist.split(':').collect();
+
+        let (path, key) = if parts.len() == 2 {
+            (parts[0], parts[1])
+        } else {
+            (wordlist, DEFAULT_WORDLIST_KEY)
+        };
+
+        Value::Array(vec![
+            Value::String(path.to_string()),
+            Value::String(key.to_string()),
+        ])
+    }
 }

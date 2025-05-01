@@ -1,5 +1,5 @@
 [package]
-name = "set-field"
+name = "dyn-fields"
 edition = "2024"
 
 [lib]

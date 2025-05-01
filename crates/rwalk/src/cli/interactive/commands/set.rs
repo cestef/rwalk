@@ -20,14 +20,13 @@ impl Command<CommandContext> for SetCommand {
             }
             (args[0].to_string(), args[1..].join(" "))
         };
+        let parsed_value = match serde_json::from_str::<serde_json::Value>(&value) {
+            Ok(json_value) => json_value,
+            Err(_) => serde_json::Value::String(value.to_string()),
+        };
 
         ctx.opts
-            .set_path(
-                &field,
-                serde_json::from_str(&value).map_err(|e| {
-                    RwalkError::InvalidValue(format!("Failed to parse value: {}", e))
-                })?,
-            )
+            .set_path(&field, parsed_value)
             .map_err(|e| RwalkError::InvalidValue(e.to_string()))?;
 
         Ok(())
@@ -39,6 +38,10 @@ impl Command<CommandContext> for SetCommand {
 
     fn aliases() -> &'static [&'static str] {
         &["s"]
+    }
+
+    fn args(&self) -> Option<&'static [super::ArgType]> {
+        Some(&[super::ArgType::OptionField, super::ArgType::Any])
     }
 
     fn help(&self) -> &'static str {

@@ -5,7 +5,7 @@ use rustyline::{
 use termimad::crossterm::style::Stylize;
 use tracing::debug;
 
-use crate::cli::interactive::commands::ArgType;
+use crate::cli::{Opts, interactive::commands::ArgType};
 
 use super::commands::CommandRegistry;
 
@@ -111,6 +111,7 @@ impl Completer for RwalkHelper {
 
                     match arg_type {
                         ArgType::Path => complete_path(arg, arg_start),
+                        ArgType::OptionField => complete_option_field(arg, arg_start),
                         _ => Ok((pos, vec![])),
                     }
                 } else {
@@ -190,6 +191,21 @@ fn complete_path(arg: &str, arg_start: usize) -> rustyline::Result<(usize, Vec<S
     }
 
     // Sort completions for better user experience
+    completions.sort();
+
+    Ok((arg_start + 1, completions))
+}
+
+fn complete_option_field(arg: &str, arg_start: usize) -> rustyline::Result<(usize, Vec<String>)> {
+    let mut completions = Vec::new();
+    let available_options = Opts::fields();
+
+    for option in available_options {
+        if option.starts_with(arg) {
+            completions.push(option.to_string());
+        }
+    }
+
     completions.sort();
 
     Ok((arg_start + 1, completions))

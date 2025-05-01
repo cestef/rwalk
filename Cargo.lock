@@ -739,6 +739,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "dyn-fields"
+version = "0.0.0"
+dependencies = [
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 2.0.100",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2420,10 +2430,12 @@ dependencies = [
  "criterion",
  "crossbeam",
  "dashmap",
+ "dyn-fields",
  "futures",
  "hex",
  "indicatif",
  "itertools 0.14.0",
+ "lazy_static 1.5.0",
  "logos",
  "merge",
  "miette",
@@ -2439,7 +2451,6 @@ dependencies = [
  "rustyline",
  "serde",
  "serde_json",
- "set-field",
  "smartstring",
  "tabled",
  "termimad",
@@ -2575,16 +2586,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "set-field"
-version = "0.0.0"
-dependencies = [
- "quote",
- "serde",
- "serde_json",
- "syn 2.0.100",
 ]
 
 [[package]]
