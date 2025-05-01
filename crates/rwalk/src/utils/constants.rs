@@ -12,3 +12,5 @@ pub const PROGRESS_CHARS: &str = "█▉▊▋▌▍▎▏·";
 pub const STEAL_BATCH_LIMIT: usize = 8;
 
 pub const PROGRESS_UPDATE_INTERVAL: Duration = Duration::from_millis(100);
+
+pub const HISTORY_FILE: &str = ".rwalk_history";

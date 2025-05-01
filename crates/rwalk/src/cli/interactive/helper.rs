@@ -15,7 +15,6 @@ impl Validator for RwalkHelper {}
 
 impl Highlighter for RwalkHelper {
     fn highlight<'l>(&self, line: &'l str, _pos: usize) -> std::borrow::Cow<'l, str> {
-        debug!("Highlighting line: {}", line);
         let command_end = line.find(' ').unwrap_or(line.len());
         let cmd = &line[..command_end];
         let arg = &line[command_end..];
@@ -55,9 +54,25 @@ impl Highlighter for RwalkHelper {
     ) -> std::borrow::Cow<'b, str> {
         prompt.blue().to_string().into()
     }
+
+    fn highlight_hint<'h>(&self, hint: &'h str) -> std::borrow::Cow<'h, str> {
+        hint.dimmed().to_string().into()
+    }
 }
 impl Hinter for RwalkHelper {
     type Hint = String;
+
+    fn hint(&self, line: &str, pos: usize, ctx: &rustyline::Context<'_>) -> Option<Self::Hint> {
+        let history = ctx.history();
+
+        let res = history
+            .starts_with(line, 0, rustyline::history::SearchDirection::Forward)
+            .ok()
+            .flatten()
+            .map(|e| e.entry[pos..].to_string());
+
+        return res;
+    }
 }
 
 impl Completer for RwalkHelper {

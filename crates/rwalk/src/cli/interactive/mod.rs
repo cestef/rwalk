@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use super::Opts;
-use crate::{Result, print_error};
+use crate::{Result, print_error, utils::config_dir};
 use commands::{CommandContext, CommandRegistry};
 use helper::RwalkHelper;
 use owo_colors::OwoColorize;
@@ -14,6 +14,12 @@ pub async fn run(opts: Opts) -> Result<()> {
     let mut editor = Editor::new()?;
     editor.set_helper(Some(RwalkHelper));
     editor.set_auto_add_history(true);
+    editor.set_max_history_size(1000)?;
+    let history_file = config_dir().join("history");
+    if history_file.exists() {
+        editor.load_history(&history_file)?;
+    }
+
     let editor = Arc::new(Mutex::new(editor));
     let mut ctx = CommandContext {
         exit: false,
@@ -59,5 +65,6 @@ pub async fn run(opts: Opts) -> Result<()> {
             }
         }
     }
+    editor.lock().await.save_history(&history_file)?;
     Ok(())
 }
