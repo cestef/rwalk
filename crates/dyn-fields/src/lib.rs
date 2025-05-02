@@ -22,7 +22,7 @@ pub fn dynamic_fields_derive(input: TokenStream) -> TokenStream {
     // Collect field information including transformers and aliases
     let mut field_infos = Vec::new();
     
-    for field in fields.iter() {
+    'field: for field in fields.iter() {
         let field_name = field.ident.as_ref().unwrap();
         let field_name_str = field_name.to_string();
         let field_type = &field.ty;
@@ -37,8 +37,12 @@ pub fn dynamic_fields_derive(input: TokenStream) -> TokenStream {
             if attr.path().is_ident("dyn_fields") {
                 match attr.meta {
                     Meta::List(ref meta_list) => {
-                        meta_list.parse_nested_meta(|meta| -> Result<(), syn::Error> {
+                        let res = meta_list.parse_nested_meta(|meta| -> Result<(), syn::Error> {
                             let path = meta.path.clone();
+                            if path.is_ident("skip"){
+                                // TODO: fix this hacky way to skip the field
+                                return Err(syn::Error::new(proc_macro::Span::mixed_site().into(), "skipped"));
+                            }
                             if path.is_ident("alias") {
                                 let value = meta.value()?.parse::<Expr>()?;
                                 if let Expr::Lit(expr_lit) = value {
@@ -62,7 +66,13 @@ pub fn dynamic_fields_derive(input: TokenStream) -> TokenStream {
                             }
                             
                             Ok(())
-                        }).unwrap();
+                        });
+                        if let Err(e) = res {
+                            if e.to_string() != "skipped" {
+                                panic!("Error parsing dyn_fields attribute: {}", e);
+                            }
+                            continue 'field; // Skip this field
+                        }
                     },
                     _ => {
                         // Invalid attribute format, ignore

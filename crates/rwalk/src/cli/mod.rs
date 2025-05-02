@@ -40,15 +40,18 @@ pub struct Opts {
     //
     #[clap(short, hide = true)]
     #[merge(skip)]
+    #[dyn_fields(skip = true)]
     pub help: bool,
 
     #[clap(long = "help", hide = true)]
     #[merge(skip)]
+    #[dyn_fields(skip = true)]
     pub help_long: bool,
 
     /// Generate markdown help
     #[merge(skip)]
     #[clap(long, hide = true)]
+    #[dyn_fields(skip = true)]
     pub generate_markdown: bool,
 
     //
@@ -231,6 +234,7 @@ pub struct Opts {
     /// Interactive mode
     #[clap(short, long, help_heading = "Advanced")]
     #[merge(strategy = merge::bool::overwrite_false)]
+    #[dyn_fields(skip = true)]
     pub interactive: bool,
 }
 
