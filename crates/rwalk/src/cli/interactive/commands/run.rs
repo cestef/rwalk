@@ -25,8 +25,8 @@ impl<'a> Command<CommandContext<'a>> for RunCommand {
                 .chain(args.split_whitespace().map(|s| s.to_string()));
             opts.try_update_from(args)?;
         }
-
-        run(opts).await?;
+        let mut scope = ctx.scope.lock().await;
+        run(opts, Some(&mut scope)).await?;
         Ok(())
     }
 

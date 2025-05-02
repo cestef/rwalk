@@ -3,15 +3,15 @@ use clap::Parser;
 use clap_markdown::MarkdownOptions;
 use merge::Merge;
 use rwalk::{
-    cli::{help, interactive, utils, Opts},
+    RwalkError,
+    cli::{Opts, help, interactive, utils},
     run,
     utils::types::ListType,
-    RwalkError,
 };
 
 use tracing::debug;
 use tracing_indicatif::IndicatifLayer;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> miette::Result<()> {
@@ -89,7 +89,7 @@ async fn main() -> miette::Result<()> {
         opts.interactive = false;
         interactive::run(opts).await?
     } else {
-        run(opts).await?
+        run(opts, None).await?
     };
     Ok(())
 }

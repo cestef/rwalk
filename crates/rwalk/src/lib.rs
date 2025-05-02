@@ -5,6 +5,7 @@ use engine::WorkerPool;
 use cli::Opts;
 use indicatif::HumanDuration;
 use owo_colors::OwoColorize;
+use rhai::{Dynamic, Scope};
 use tracing::debug;
 use utils::{constants, error, tree, types};
 
@@ -20,7 +21,7 @@ pub mod worker;
 pub(crate) use error::error;
 pub use error::*;
 
-pub async fn run(opts: Opts) -> Result<()> {
+pub async fn run(opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     let start = std::time::Instant::now();
 
     // Check if the website is reachable
@@ -94,6 +95,14 @@ pub async fn run(opts: Opts) -> Result<()> {
         _ => {
             tree::display_url_tree(&url, &results);
         }
+    }
+
+    if let Some(scope) = scope {
+        let results: rhai::Map = results
+            .iter()
+            .map(|e| (e.key().clone().into(), Dynamic::from(e.value().clone())))
+            .collect();
+        scope.set_or_push(constants::RESULTS_VAR_RHAI, results);
     }
 
     success!(
