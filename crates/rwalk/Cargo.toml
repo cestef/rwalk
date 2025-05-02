@@ -58,5 +58,6 @@ rustyline = "15"
 async-trait = "0.1"
 lazy_static = "1"
 dirs = "6"
+strum = { version = "0.27", features = ["derive"] }
 
 dyn-fields = { path = "../dyn-fields" }

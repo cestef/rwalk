@@ -44,8 +44,8 @@ impl Command<CommandContext> for SetCommand {
         Some(&[super::ArgType::OptionField, super::ArgType::Any])
     }
 
-    fn help(&self) -> &'static str {
-        "Set a field in the current context. Usage: set <field> <value>"
+    fn description(&self) -> &'static str {
+        "Set a field in the current context"
     }
 
     fn construct() -> Box<dyn Command<CommandContext>>

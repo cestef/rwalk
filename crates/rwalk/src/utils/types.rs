@@ -34,6 +34,7 @@ impl ValueEnum for ListType {
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum EngineMode {
     Recursive,
     Template,

@@ -11,6 +11,7 @@ use crate::cli::Opts;
 use crate::utils::registry::create_registry;
 use crate::{Result, RwalkError};
 use once_cell::sync::Lazy;
+use owo_colors::OwoColorize;
 use rustyline::history::FileHistory;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -25,7 +26,7 @@ pub struct CommandContext {
     pub editor: Arc<Mutex<rustyline::Editor<RwalkHelper, FileHistory>>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, strum::Display)]
 pub enum ArgType {
     Path,
     OptionField,
@@ -50,8 +51,16 @@ pub trait Command<T>: Debug {
         &[]
     }
 
-    fn help(&self) -> &'static str;
-
+    fn description(&self) -> &'static str;
+    fn usage(&self) -> String {
+        let mut usage = String::new();
+        if let Some(args) = self.args() {
+            for arg in args {
+                usage.push_str(&format!("<{}> ", arg.blue()));
+            }
+        }
+        usage
+    }
     fn construct() -> Box<dyn Command<T>>
     where
         Self: Sized + 'static;

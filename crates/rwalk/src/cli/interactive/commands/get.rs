@@ -42,8 +42,8 @@ impl Command<CommandContext> for GetCommand {
         &["s"]
     }
 
-    fn help(&self) -> &'static str {
-        "Get a field in the current context. Usage: get <field>"
+    fn description(&self) -> &'static str {
+        "Get a field in the current context"
     }
 
     fn construct() -> Box<dyn Command<CommandContext>>
@@ -51,5 +51,9 @@ impl Command<CommandContext> for GetCommand {
         Self: Sized + 'static,
     {
         Box::new(GetCommand)
+    }
+
+    fn args(&self) -> Option<&'static [super::ArgType]> {
+        Some(&[super::ArgType::OptionField])
     }
 }

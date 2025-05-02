@@ -20,7 +20,7 @@ impl Command<CommandContext> for ExitCommand {
         &["quit", "q"]
     }
 
-    fn help(&self) -> &'static str {
+    fn description(&self) -> &'static str {
         "Exit the interactive shell"
     }
 

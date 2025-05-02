@@ -19,7 +19,7 @@ impl Command<CommandContext> for ClearCommand {
         &["c", "cls"]
     }
 
-    fn help(&self) -> &'static str {
+    fn description(&self) -> &'static str {
         "Clear the screen"
     }
 

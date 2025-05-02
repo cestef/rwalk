@@ -28,8 +28,8 @@ impl Command<CommandContext> for RunCommand {
         &["r", "start"]
     }
 
-    fn help(&self) -> &'static str {
-        "Run rwalk with current options (optionally specify a path)"
+    fn description(&self) -> &'static str {
+        "Run rwalk with current options"
     }
 
     fn construct() -> Box<dyn Command<CommandContext>>

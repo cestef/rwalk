@@ -52,8 +52,8 @@ impl Command<CommandContext> for AppendCommand {
         Some(&[super::ArgType::OptionField, super::ArgType::Any])
     }
 
-    fn help(&self) -> &'static str {
-        "Append a value to an array field in the current context. Usage: append <field> <value>"
+    fn description(&self) -> &'static str {
+        "Append a value to an array field in the current context"
     }
 
     fn construct() -> Box<dyn Command<CommandContext>>

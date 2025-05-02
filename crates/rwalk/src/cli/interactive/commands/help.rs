@@ -9,22 +9,26 @@ pub struct HelpCommand;
 impl Command<CommandContext> for HelpCommand {
     async fn execute(&self, _ctx: &mut CommandContext, _args: &str) -> Result<()> {
         println!("{}", "Available commands:".bold());
-        for (name, aliases) in CommandRegistry::list() {
+        let list = CommandRegistry::list();
+
+        for (name, aliases) in list {
             let cmd = CommandRegistry::construct(name)?;
+            let name_with_usage = format!("{} {}", name.green().bold(), cmd.usage());
+            let aliases_str = if !aliases.is_empty() {
+                format!("({})", aliases.join(", ")).dimmed().to_string()
+            } else {
+                String::new()
+            };
+
             println!(
-                "  {} {}: {}",
-                name.green().bold(),
-                if !aliases.is_empty() {
-                    format!("({})", aliases.join(", ")).dimmed().to_string()
-                } else {
-                    String::new()
-                },
-                cmd.help()
+                "  {}{}\n    {}",
+                name_with_usage,
+                aliases_str,
+                cmd.description(),
             );
         }
         Ok(())
     }
-
     fn name() -> &'static str {
         "help"
     }
@@ -33,7 +37,7 @@ impl Command<CommandContext> for HelpCommand {
         &["h", "?"]
     }
 
-    fn help(&self) -> &'static str {
+    fn description(&self) -> &'static str {
         "Display this help message"
     }
 
