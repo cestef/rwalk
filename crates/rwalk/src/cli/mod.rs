@@ -19,6 +19,7 @@ use url::Url;
 pub mod help;
 pub mod interactive;
 pub mod parse;
+pub mod serialize;
 pub mod utils;
 
 const SUBCOMMANDS_FLAGS: [&str; 5] = [
@@ -65,9 +66,13 @@ pub struct Opts {
     #[clap(value_parser = parse_wordlist, required_unless_present_any(SUBCOMMANDS_FLAGS))]
     #[merge(strategy = merge::vec::append)]
     #[dyn_fields(
+        alias = "wordlist",
         set = "transformers::wordlist::set",
-        get = "transformers::wordlist::get",
-        alias = "wordlist"
+        get = "transformers::wordlist::get"
+    )]
+    #[serde(
+        serialize_with = "serialize::wordlist::ser",
+        deserialize_with = "serialize::wordlist::de"
     )]
     pub wordlists: Vec<(String, String)>,
 

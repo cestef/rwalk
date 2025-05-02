@@ -3,13 +3,14 @@ use crate::{
     error::{Result, RwalkError},
     filters::Filterer,
     wordlist::{
+        Wordlist,
         filters::WordlistFilterRegistry,
         transformation::{Transformer, WordlistTransformerRegistry},
-        Wordlist,
     },
 };
 use cowstr::CowStr;
 use dashmap::{DashMap, DashSet};
+use owo_colors::OwoColorize;
 use tracing::debug;
 
 use std::{path::PathBuf, sync::Arc};
@@ -73,7 +74,9 @@ impl<'a> WordlistProcessor<'a> {
         shared_words: &DashMap<CowStr, DashSet<CowStr>>,
     ) -> Result<Wordlist> {
         debug!("Processing wordlist: {}", path);
-        let path = PathBuf::from(&*path).canonicalize()?;
+        let path = PathBuf::from(&*path)
+            .canonicalize()
+            .map_err(|e| crate::error!("Failed to open wordlist file {}: {}", path.bold(), e))?;
         debug!("Canonicalized path: {}", path.display());
         let file = File::open(&*path).await?;
         let reader = BufReader::new(file);
