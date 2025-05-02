@@ -43,7 +43,7 @@ impl<'a> Command<CommandContext<'a>> for GetCommand {
     }
 
     fn description(&self) -> &'static str {
-        "Get a field in the current context"
+        "Get a field's value"
     }
 
     fn construct() -> Box<dyn Command<CommandContext<'a>>>

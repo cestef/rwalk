@@ -45,7 +45,7 @@ impl<'a> Command<CommandContext<'a>> for SetCommand {
     }
 
     fn description(&self) -> &'static str {
-        "Set a field in the current context"
+        "Set a field's value"
     }
 
     fn construct() -> Box<dyn Command<CommandContext<'a>>>

@@ -39,7 +39,7 @@ impl<'a> Command<CommandContext<'a>> for RunCommand {
     }
 
     fn description(&self) -> &'static str {
-        "Run rwalk with current options"
+        "Run rwalk with the current options"
     }
 
     fn construct() -> Box<dyn Command<CommandContext<'a>>>

@@ -53,7 +53,7 @@ impl<'a> Command<CommandContext<'a>> for AppendCommand {
     }
 
     fn description(&self) -> &'static str {
-        "Append a value to an array field in the current context"
+        "Append a value to an array field"
     }
 
     fn construct() -> Box<dyn Command<CommandContext<'a>>>
