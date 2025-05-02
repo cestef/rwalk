@@ -82,6 +82,10 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::invalid_value))]
     #[error("Invalid value: {0}")]
     InvalidValue(String),
+
+    #[diagnostic(code(rwalk::eval_error))]
+    #[error(transparent)]
+    EvalError(#[from] Box<rhai::EvalAltResult>),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]

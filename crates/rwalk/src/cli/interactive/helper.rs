@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use owo_colors::OwoColorize;
 use rustyline::{
     Helper, completion::Completer, highlight::Highlighter, hint::Hinter, validate::Validator,
@@ -9,12 +11,17 @@ use crate::cli::{Opts, interactive::commands::ArgType};
 
 use super::commands::CommandRegistry;
 
-pub struct RwalkHelper;
+pub struct RwalkHelper {
+    pub in_eval: AtomicBool,
+}
 
 impl Validator for RwalkHelper {}
 
 impl Highlighter for RwalkHelper {
     fn highlight<'l>(&self, line: &'l str, _pos: usize) -> std::borrow::Cow<'l, str> {
+        if self.in_eval.load(Ordering::Relaxed) {
+            return line.to_string().into();
+        }
         let command_end = line.find(' ').unwrap_or(line.len());
         let cmd = &line[..command_end];
         let arg = &line[command_end..];
@@ -52,7 +59,16 @@ impl Highlighter for RwalkHelper {
         prompt: &'p str,
         _default: bool,
     ) -> std::borrow::Cow<'b, str> {
-        prompt.blue().to_string().into()
+        // rwalk> or rwalk (eval)>
+        if prompt.contains("(eval)>") {
+            self.in_eval.store(true, Ordering::Relaxed);
+            let name = prompt.split_whitespace().next().unwrap_or("rwalk");
+
+            let prompt = format!("{} (eval){} ", name.blue(), ">".blue());
+            return prompt.into();
+        }
+        self.in_eval.store(false, Ordering::Relaxed);
+        return prompt.blue().to_string().into();
     }
 
     fn highlight_hint<'h>(&self, hint: &'h str) -> std::borrow::Cow<'h, str> {
@@ -63,6 +79,9 @@ impl Hinter for RwalkHelper {
     type Hint = String;
 
     fn hint(&self, line: &str, pos: usize, ctx: &rustyline::Context<'_>) -> Option<Self::Hint> {
+        if self.in_eval.load(Ordering::Relaxed) {
+            return None;
+        }
         let history = ctx.history();
 
         let res = history
@@ -84,6 +103,9 @@ impl Completer for RwalkHelper {
         pos: usize,
         _ctx: &rustyline::Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
+        if self.in_eval.load(Ordering::Relaxed) {
+            return Ok((pos, vec![]));
+        }
         let available_commands = CommandRegistry::list();
         // Check if pos is at the command or the argument part
         let command_end = line.find(' ').unwrap_or(line.len());

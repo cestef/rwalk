@@ -1,10 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, atomic::AtomicBool};
 
 use super::Opts;
 use crate::{Result, print_error, utils::config_dir};
 use commands::{CommandContext, CommandRegistry};
 use helper::RwalkHelper;
 use owo_colors::OwoColorize;
+use rhai::Engine;
 use rustyline::{Editor, config::Configurer};
 use tokio::sync::Mutex;
 mod commands;
@@ -12,7 +13,9 @@ mod helper;
 
 pub async fn run(opts: Opts) -> Result<()> {
     let mut editor = Editor::new()?;
-    editor.set_helper(Some(RwalkHelper));
+    editor.set_helper(Some(RwalkHelper {
+        in_eval: AtomicBool::new(false),
+    }));
     editor.set_auto_add_history(true);
     editor.set_max_history_size(1000)?;
     let history_file = config_dir().join("history");
@@ -25,6 +28,7 @@ pub async fn run(opts: Opts) -> Result<()> {
         exit: false,
         opts,
         editor: editor.clone(),
+        engine: Arc::new(Engine::new()),
     };
 
     println!("Welcome to rwalk interactive mode! Type 'help' for available commands.");

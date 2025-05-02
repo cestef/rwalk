@@ -1,5 +1,6 @@
 mod append;
 mod clear;
+mod eval;
 mod exit;
 mod get;
 mod help;
@@ -24,6 +25,7 @@ pub struct CommandContext {
     pub exit: bool,
     pub opts: Opts,
     pub editor: Arc<Mutex<rustyline::Editor<RwalkHelper, FileHistory>>>,
+    pub engine: Arc<rhai::Engine>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, strum::Display)]
@@ -83,5 +85,6 @@ create_registry!(
         get::GetCommand,
         clear::ClearCommand,
         append::AppendCommand,
+        eval::EvalCommand,
     ]
 );
