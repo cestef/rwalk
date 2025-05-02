@@ -1,6 +1,6 @@
 [package]
 name = "rwalk"
-version = "0.10.0-dev"
+version = "0.10.1-dev"
 edition = "2024"
 description = "A blazingly fast web directory scanner"
 authors = ["cstef <hi@cstef.dev>"]
