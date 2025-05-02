@@ -163,3 +163,13 @@ tr:nth-child(odd) {
 tr:nth-child(even) {
     @apply bg-muted/5;
 }
+
+code:not(pre code) {
+    @apply bg-muted/80 text-foreground/80 rounded-md px-2 py-[0.25em];
+}
+
+code:not(pre code)::before,
+code:not(pre code)::after {
+    content: none;
+}
+

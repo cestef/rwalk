@@ -10,3 +10,4 @@
 - [ ] Benchmarks
 - [ ] AUR / Nix package again?
 - [ ] Shell completions
+- [ ] Switch to [`facet`](https://github.com/facet-rs/facet)?

@@ -1,8 +1,7 @@
 +++
 title = "Options"
-weight = 20
+weight = 1000
 +++
-
 **Usage:** `rwalk [OPTIONS] [URL] [WORDLISTS]...`
 
 ###### **Arguments:**
@@ -56,7 +55,3 @@ weight = 20
 * `--list <LIST>` — List both available filters and wordlist transforms
 
   Possible values: `filters`, `transforms`, `all`
-
-
-
-

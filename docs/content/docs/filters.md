@@ -9,8 +9,8 @@ Composing filters may seem a bit overwhelming, but once you get the hang of it, 
 
 The basic syntax for a single filter is:
 
-```
-name:argument
+```ansi
+[032mname[0m:[033margument
 ```
 
 You can obviously use multiple filters together, by using boolean operators:
@@ -21,8 +21,8 @@ You can obviously use multiple filters together, by using boolean operators:
 |   `\|`   | `OR`  |
 |   `!`    | `NOT` |
 
-```
-(filter1:arg1 & filter2:arg2) | filter3:arg3
+```ansi
+([032mfilter1[0m:[033marg1[0m & [032mfilter2[0m:[033marg2[0m) | [032mfilter3[0m:[033marg3[0m
 ```
 
 ## Response filters

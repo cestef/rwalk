@@ -58,7 +58,7 @@ async fn main() -> miette::Result<()> {
             .split_at(markdown.find("**Usage:**").unwrap_or(0))
             .1
             .to_string();
-        const FRONTMATTER: &str = "+++\ntitle = \"Options\"\nweight = 20\n+++\n";
+        const FRONTMATTER: &str = "+++\ntitle = \"Options\"\nweight = 1000\n+++\n";
         print!("{FRONTMATTER}\n{markdown}");
         return Ok(());
     }
