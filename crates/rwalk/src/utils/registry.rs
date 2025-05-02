@@ -130,7 +130,7 @@ macro_rules! create_registry {
         $ctx_type:ty,
         [$($implementor:ty),* $(,)?]
     ) => {
-        type CommandConstructor = fn() -> Box<dyn Command<$ctx_type>>;
+        type CommandConstructor<'a> = fn() -> Box<dyn Command<$ctx_type>>;
 
         create_registry!(@base
             $static_name,
@@ -138,8 +138,12 @@ macro_rules! create_registry {
             [$($implementor),*]
         );
 
-        impl $static_name {
-            pub fn construct(name: &str) -> Result<Box<dyn Command<$ctx_type>>> {
+        impl<'a> $static_name {
+            pub fn construct(name: &str) -> Result<
+                Box<
+                    dyn Command<$ctx_type>
+                >
+            > {
                 let name = ALIASES.get(name).copied().unwrap_or(name);
                 match REGISTRY.get(name) {
                     Some(constructor) => Ok(constructor()),

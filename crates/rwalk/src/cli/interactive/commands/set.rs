@@ -5,7 +5,7 @@ use crate::{Result, RwalkError};
 pub struct SetCommand;
 
 #[async_trait::async_trait]
-impl Command<CommandContext> for SetCommand {
+impl<'a> Command<CommandContext<'a>> for SetCommand {
     async fn execute(&self, ctx: &mut CommandContext, args: &str) -> Result<()> {
         let (field, value) = if args.is_empty() {
             return Err(RwalkError::InvalidCommand(
@@ -48,7 +48,7 @@ impl Command<CommandContext> for SetCommand {
         "Set a field in the current context"
     }
 
-    fn construct() -> Box<dyn Command<CommandContext>>
+    fn construct() -> Box<dyn Command<CommandContext<'a>>>
     where
         Self: Sized + 'static,
     {

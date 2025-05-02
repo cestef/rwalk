@@ -7,7 +7,7 @@ use crate::{Result, run};
 pub struct RunCommand;
 
 #[async_trait::async_trait]
-impl Command<CommandContext> for RunCommand {
+impl<'a> Command<CommandContext<'a>> for RunCommand {
     async fn execute(&self, ctx: &mut CommandContext, args: &str) -> Result<()> {
         let mut opts = ctx.opts.clone();
         if !args.is_empty() {
@@ -42,7 +42,7 @@ impl Command<CommandContext> for RunCommand {
         "Run rwalk with current options"
     }
 
-    fn construct() -> Box<dyn Command<CommandContext>>
+    fn construct() -> Box<dyn Command<CommandContext<'a>>>
     where
         Self: Sized + 'static,
     {

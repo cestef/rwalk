@@ -5,7 +5,7 @@ use crate::Result;
 pub struct ExitCommand;
 
 #[async_trait::async_trait]
-impl Command<CommandContext> for ExitCommand {
+impl<'a> Command<CommandContext<'a>> for ExitCommand {
     async fn execute(&self, ctx: &mut CommandContext, _args: &str) -> Result<()> {
         ctx.exit = true;
         println!("Goodbye \\o");
@@ -24,7 +24,7 @@ impl Command<CommandContext> for ExitCommand {
         "Exit the interactive shell"
     }
 
-    fn construct() -> Box<dyn Command<CommandContext>>
+    fn construct() -> Box<dyn Command<CommandContext<'a>>>
     where
         Self: Sized + 'static,
     {

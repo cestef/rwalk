@@ -29,6 +29,7 @@ pub async fn run(opts: Opts) -> Result<()> {
         opts,
         editor: editor.clone(),
         engine: Arc::new(Engine::new()),
+        scope: Arc::new(Mutex::new(rhai::Scope::new())),
     };
 
     println!("Welcome to rwalk interactive mode! Type 'help' for available commands.");

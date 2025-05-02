@@ -6,7 +6,7 @@ use owo_colors::OwoColorize;
 pub struct HelpCommand;
 
 #[async_trait::async_trait]
-impl Command<CommandContext> for HelpCommand {
+impl<'a> Command<CommandContext<'a>> for HelpCommand {
     async fn execute(&self, _ctx: &mut CommandContext, _args: &str) -> Result<()> {
         println!("{}", "Available commands:".bold());
         let list = CommandRegistry::list();
@@ -41,7 +41,7 @@ impl Command<CommandContext> for HelpCommand {
         "Display this help message"
     }
 
-    fn construct() -> Box<dyn Command<CommandContext>>
+    fn construct() -> Box<dyn Command<CommandContext<'a>>>
     where
         Self: Sized + 'static,
     {

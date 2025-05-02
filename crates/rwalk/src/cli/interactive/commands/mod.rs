@@ -21,11 +21,12 @@ use tokio::sync::Mutex;
 
 use super::helper::RwalkHelper;
 
-pub struct CommandContext {
+pub struct CommandContext<'a> {
     pub exit: bool,
     pub opts: Opts,
     pub editor: Arc<Mutex<rustyline::Editor<RwalkHelper, FileHistory>>>,
     pub engine: Arc<rhai::Engine>,
+    pub scope: Arc<Mutex<rhai::Scope<'a>>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, strum::Display)]
@@ -75,7 +76,7 @@ pub trait Command<T>: Debug {
 create_registry!(
     command,
     CommandRegistry,
-    CommandContext,
+    CommandContext<'static>,
     [
         exit::ExitCommand,
         help::HelpCommand,

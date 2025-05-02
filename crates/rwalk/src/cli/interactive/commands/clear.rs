@@ -5,7 +5,7 @@ use crate::Result;
 pub struct ClearCommand;
 
 #[async_trait::async_trait]
-impl Command<CommandContext> for ClearCommand {
+impl<'a> Command<CommandContext<'a>> for ClearCommand {
     async fn execute(&self, ctx: &mut CommandContext, _args: &str) -> Result<()> {
         ctx.editor.lock().await.clear_screen()?;
         Ok(())
@@ -23,7 +23,7 @@ impl Command<CommandContext> for ClearCommand {
         "Clear the screen"
     }
 
-    fn construct() -> Box<dyn Command<CommandContext>>
+    fn construct() -> Box<dyn Command<CommandContext<'a>>>
     where
         Self: Sized + 'static,
     {

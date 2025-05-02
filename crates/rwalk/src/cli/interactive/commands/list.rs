@@ -8,7 +8,7 @@ use crate::Result;
 #[derive(Debug)]
 pub struct ListCommand;
 #[async_trait::async_trait]
-impl Command<CommandContext> for ListCommand {
+impl<'a> Command<CommandContext<'a>> for ListCommand {
     async fn execute(&self, ctx: &mut CommandContext, _args: &str) -> Result<()> {
         let fields = ctx.opts.as_nested_map();
         let max_key_len = fields.iter().map(|(k, _)| k.len()).max().unwrap_or(0);
@@ -36,7 +36,7 @@ impl Command<CommandContext> for ListCommand {
         "List current options"
     }
 
-    fn construct() -> Box<dyn Command<CommandContext>>
+    fn construct() -> Box<dyn Command<CommandContext<'a>>>
     where
         Self: Sized + 'static,
     {

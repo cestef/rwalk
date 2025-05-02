@@ -7,7 +7,7 @@ use rhai::Dynamic;
 pub struct EvalCommand;
 
 #[async_trait::async_trait]
-impl Command<CommandContext> for EvalCommand {
+impl<'a> Command<CommandContext<'a>> for EvalCommand {
     async fn execute(&self, ctx: &mut CommandContext, args: &str) -> Result<()> {
         let args = args.trim();
 
@@ -31,14 +31,17 @@ impl Command<CommandContext> for EvalCommand {
                     continue;
                 }
 
-                let maybe_res = ctx.engine.eval::<Dynamic>(line);
+                let mut scope = ctx.scope.lock().await;
+                let maybe_res = ctx.engine.eval_with_scope::<Dynamic>(&mut scope, line);
+
                 match maybe_res {
                     Ok(res) => println!("{}", res),
                     Err(e) => print_error!("Error: {}", e),
                 }
             }
         } else {
-            let maybe_res = ctx.engine.eval::<Dynamic>(args);
+            let mut scope = ctx.scope.lock().await;
+            let maybe_res = ctx.engine.eval_with_scope::<Dynamic>(&mut scope, args);
             match maybe_res {
                 Ok(res) => println!("{}", res),
                 Err(e) => {
@@ -65,7 +68,7 @@ impl Command<CommandContext> for EvalCommand {
         "Evaluate an expression in the current context"
     }
 
-    fn construct() -> Box<dyn Command<CommandContext>>
+    fn construct() -> Box<dyn Command<CommandContext<'a>>>
     where
         Self: Sized + 'static,
     {

@@ -7,7 +7,7 @@ use crate::{Result, RwalkError};
 pub struct GetCommand;
 
 #[async_trait::async_trait]
-impl Command<CommandContext> for GetCommand {
+impl<'a> Command<CommandContext<'a>> for GetCommand {
     async fn execute(&self, ctx: &mut CommandContext, args: &str) -> Result<()> {
         let field = args.trim();
         if field.is_empty() {
@@ -46,7 +46,7 @@ impl Command<CommandContext> for GetCommand {
         "Get a field in the current context"
     }
 
-    fn construct() -> Box<dyn Command<CommandContext>>
+    fn construct() -> Box<dyn Command<CommandContext<'a>>>
     where
         Self: Sized + 'static,
     {
