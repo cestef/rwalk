@@ -78,6 +78,7 @@ pub struct Opts {
 
     /// Request rate limit in requests per second
     #[clap(long, visible_alias = "rate", help_heading = "Core")]
+    #[merge(strategy = merge::option::overwrite_none)]
     pub throttle: Option<u64>,
 
     /// Fuzzing mode
@@ -144,6 +145,7 @@ pub struct Opts {
         value_name = "EXPR",
         help_heading = "Scan Configuration"
     )]
+    #[merge(strategy = merge::option::overwrite_none)]
     pub wordlist_filter: Option<String>,
 
     //
@@ -183,6 +185,7 @@ pub struct Opts {
 
     /// Save responses to a file, supported: `json`, `csv`, `txt`, `md`
     #[clap(short, long, help_heading = "Output")]
+    #[merge(strategy = merge::option::overwrite_none)]
     pub output: Option<PathBuf>,
 
     /// Ring the terminal bell on hits
