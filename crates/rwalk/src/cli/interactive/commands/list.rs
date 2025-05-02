@@ -14,7 +14,7 @@ impl Command<CommandContext> for ListCommand {
             println!(
                 "{} {dots} = {}",
                 key.bold(),
-                serde_json::to_string_pretty(&value)?.green(),
+                serde_json::to_string(&value)?.green(),
                 dots = "·".repeat(max_key_len - key.len()).dimmed(),
             );
         }

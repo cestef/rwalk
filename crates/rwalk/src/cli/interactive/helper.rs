@@ -66,7 +66,7 @@ impl Hinter for RwalkHelper {
         let history = ctx.history();
 
         let res = history
-            .starts_with(line, 0, rustyline::history::SearchDirection::Forward)
+            .starts_with(line, 0, rustyline::history::SearchDirection::Reverse)
             .ok()
             .flatten()
             .map(|e| e.entry[pos..].to_string());

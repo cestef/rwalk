@@ -1,3 +1,4 @@
+mod append;
 mod clear;
 mod exit;
 mod get;
@@ -71,6 +72,7 @@ create_registry!(
         list::ListCommand,
         set::SetCommand,
         get::GetCommand,
-        clear::ClearCommand
+        clear::ClearCommand,
+        append::AppendCommand,
     ]
 );

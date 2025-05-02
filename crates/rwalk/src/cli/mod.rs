@@ -58,12 +58,17 @@ pub struct Opts {
     /// URL to scan
     #[clap(value_parser = parse_url, required_unless_present_any(SUBCOMMANDS_FLAGS))]
     #[merge(strategy = merge_overwrite)]
+    #[dyn_fields(set = "transformers::set_url")]
     pub url: Option<Url>,
 
     /// Wordlist file(s) to use, `path[:key]`
     #[clap(value_parser = parse_wordlist, required_unless_present_any(SUBCOMMANDS_FLAGS))]
     #[merge(strategy = merge::vec::append)]
-    #[dyn_fields(set = "transformers::set_wordlist", alias = "wordlist")]
+    #[dyn_fields(
+        set = "transformers::set_wordlist",
+        get = "transformers::get_wordlist",
+        alias = "wordlist"
+    )]
     pub wordlists: Vec<(String, String)>,
 
     /// Number of threads to use, defaults to `num_cores * 5`
@@ -234,6 +239,39 @@ mod transformers {
         match value {
             Value::String(s) => parse_wordlist_string(&s),
             Value::Array(arr) => process_array(arr),
+            _ => value,
+        }
+    }
+
+    pub fn get_wordlist(value: Value) -> Value {
+        match value {
+            Value::Array(arr) => {
+                let mut result = Vec::new();
+                for item in arr {
+                    if let Value::Array(pair) = item {
+                        if pair.len() == 2 {
+                            let path = pair[0].as_str().unwrap_or_default();
+                            let key = pair[1].as_str().unwrap_or(DEFAULT_WORDLIST_KEY);
+                            result.push(Value::String(format!("{}:{}", path, key)));
+                        }
+                    }
+                }
+                Value::Array(result)
+            }
+            _ => value,
+        }
+    }
+
+    pub fn set_url(value: Value) -> Value {
+        match value {
+            Value::String(ref s) => {
+                // add http:// if not present
+                if !s.starts_with("http://") && !s.starts_with("https://") {
+                    Value::String(format!("http://{}", s))
+                } else {
+                    value
+                }
+            }
             _ => value,
         }
     }
