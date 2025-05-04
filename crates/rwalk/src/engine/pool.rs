@@ -461,12 +461,3 @@ impl WorkerPool {
         }
     }
 }
-
-struct WorkerTask {
-    worker: Worker<String>,
-    global_queue: Arc<Injector<String>>,
-    stealers: Vec<Stealer<String>>,
-    config: WorkerConfig,
-    results: HashMap<String, RwalkResponse>,
-    pool: WorkerPool,
-}
