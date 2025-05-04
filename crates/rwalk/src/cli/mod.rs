@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     constants::THREADS_PER_CORE,
     types::EngineMode,
-    utils::types::{HTTPMethod, IntRange, ListType},
+    utils::types::{HTTPMethod, IntRange, ListType, ThrottleMode},
 };
 use clap::Parser;
 use clap::builder::EnumValueParser;
@@ -11,7 +11,8 @@ use dashmap::DashSet as HashSet;
 use dyn_fields::DynamicFields;
 use merge::Merge;
 use parse::{
-    parse_filter, parse_keyed_key_or_keyval, parse_keyed_keyval, parse_url, parse_wordlist,
+    parse_filter, parse_keyed_key_or_keyval, parse_keyed_keyval, parse_throttle, parse_url,
+    parse_wordlist,
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -85,9 +86,9 @@ pub struct Opts {
     pub threads: usize,
 
     /// Request rate limit in requests per second
-    #[clap(long, visible_alias = "rate", help_heading = "Core")]
+    #[clap(long, visible_alias = "rate", help_heading = "Core", value_parser = parse_throttle)]
     #[merge(strategy = merge::option::overwrite_none)]
-    pub throttle: Option<u64>,
+    pub throttle: Option<(u64, ThrottleMode)>,
 
     /// Fuzzing mode
     #[clap(short, long, default_value = "recursive", value_parser = EnumValueParser::<EngineMode>::new(), help_heading = "Core")]

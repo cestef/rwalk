@@ -61,6 +61,33 @@ impl ValueEnum for EngineMode {
     }
 }
 
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ThrottleMode {
+    #[default]
+    None,
+    Simple,
+    Dynamic,
+}
+
+impl ValueEnum for ThrottleMode {
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        match self {
+            ThrottleMode::None => Some(clap::builder::PossibleValue::new("none")),
+            ThrottleMode::Simple => Some(clap::builder::PossibleValue::new("simple")),
+            ThrottleMode::Dynamic => Some(clap::builder::PossibleValue::new("dynamic")),
+        }
+    }
+
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            ThrottleMode::None,
+            ThrottleMode::Simple,
+            ThrottleMode::Dynamic,
+        ]
+    }
+}
+
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum HTTPMethod {
     GET,
@@ -313,12 +340,12 @@ mod tests {
 
     #[test]
     fn test_parse_invalid_start() {
-        assert_syntax_error("abc-10", (0, 3), "Invalid start value: 'abc'");
+        assert_syntax_error("abc-10", (0, 3), "Invalid numeric value: 'abc'");
     }
 
     #[test]
     fn test_parse_invalid_end() {
-        assert_syntax_error("10-abc", (3, 3), "Invalid end value: 'abc'");
+        assert_syntax_error("10-abc", (3, 3), "Invalid numeric value: 'abc'");
     }
 
     #[test]

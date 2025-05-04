@@ -10,20 +10,24 @@ pub struct RunCommand;
 impl<'a> Command<CommandContext<'a>> for RunCommand {
     async fn execute(&self, ctx: &mut CommandContext, args: &str) -> Result<()> {
         let mut opts = ctx.opts.clone();
+
         if !args.is_empty() {
-            let args = std::iter::once("rwalk".to_string())
-                .chain(std::iter::once(
-                    opts.url.as_ref().map(|u| u.to_string()).unwrap_or_default(),
-                ))
-                .chain(
+            let mut args_vec = vec!["rwalk".to_string()];
+            if let Some(ref url) = opts.url {
+                args_vec.push(url.to_string());
+            }
+            if !opts.wordlists.is_empty() {
+                args_vec.push(
                     opts.wordlists
                         .iter()
                         .map(|w| format!("{}:{}", w.0, w.1))
                         .collect::<Vec<_>>()
-                        .into_iter(),
-                )
-                .chain(args.split_whitespace().map(|s| s.to_string()));
-            opts.try_update_from(args)?;
+                        .join(" "),
+                );
+            }
+
+            args_vec.extend(args.split_whitespace().map(|s| s.to_string()));
+            opts.try_update_from(args_vec.into_iter())?;
         }
         let mut scope = ctx.scope.lock().await;
         run(opts, Some(&mut scope)).await?;

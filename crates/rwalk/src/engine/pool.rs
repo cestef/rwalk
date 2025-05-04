@@ -10,9 +10,9 @@ use crate::{
             DEFAULT_RESPONSE_FILTER, PROGRESS_CHARS, PROGRESS_TEMPLATE, PROGRESS_UPDATE_INTERVAL,
         },
         format::WARNING,
-        throttle::SimpleThrottler,
+        throttle::{MetricsThrottler, SimpleThrottler, Throttler, create_dynamic_throttler},
         ticker::RequestTickerNoReset,
-        types::IntRange,
+        types::{IntRange, ThrottleMode},
     },
     wordlist::Wordlist,
     worker::{
@@ -61,6 +61,7 @@ pub struct PoolConfig {
     pub bell: bool,
     pub method: reqwest::Method,
     pub headers: Option<HashMap<usize, HeaderMap>>,
+    pub throttle_mode: ThrottleMode,
 }
 
 // Worker configuration
@@ -69,7 +70,7 @@ pub struct WorkerConfig {
     pub client: Client,
     pub filterer: Filterer<RwalkResponse>,
     pub handler: Arc<Box<dyn ResponseHandler>>,
-    pub throttler: Option<Arc<SimpleThrottler>>,
+    pub throttler: Option<Arc<MetricsThrottler>>,
     pub needs_body: bool,
 }
 
@@ -162,12 +163,20 @@ impl WorkerPool {
                 EngineMode::Template => Box::new(TemplateHandler::construct(filterer.clone()))
                     as Box<dyn ResponseHandler>,
             };
-
+        let throttler = match config.throttle_mode {
+            ThrottleMode::Dynamic => Some(Arc::new(MetricsThrottler::new(
+                create_dynamic_throttler(config.rps.unwrap_or(0) as f64),
+            ))),
+            ThrottleMode::Simple => Some(Arc::new(MetricsThrottler::new(SimpleThrottler::new(
+                config.rps.unwrap_or(0),
+            )))),
+            ThrottleMode::None => None,
+        };
         let worker_config = WorkerConfig {
             client,
             filterer: filterer.clone(),
             handler: Arc::new(handler),
-            throttler: config.rps.map(|max| Arc::new(SimpleThrottler::new(max))),
+            throttler,
             needs_body: filterer.needs_body()?, // Precompute if any filter needs body
         };
 
@@ -221,7 +230,7 @@ impl WorkerPool {
                 .clone()
                 .ok_or_else(|| crate::error!("No URL provided (This should never happen)"))?,
             mode: opts.mode,
-            rps: opts.throttle,
+            rps: opts.throttle.map(|e| e.0),
             force_recursion: opts.force_recursion,
             retries: opts.retries,
             retry_codes: opts.retry_codes.clone(),
@@ -230,6 +239,7 @@ impl WorkerPool {
             bell: opts.bell,
             method: opts.method.into(),
             headers,
+            throttle_mode: opts.throttle.map(|e| e.1).unwrap_or(ThrottleMode::None),
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -279,6 +289,17 @@ impl WorkerPool {
 
         let worker_rx = shutdown_rx.resubscribe();
         let results = self.results.clone();
+        let throttler = self.worker_config.throttler.clone();
+        if let Some(throttler) = throttler {
+            let pb = pb.clone();
+            tokio::spawn(async move {
+                loop {
+                    let metrics = throttler.get_metrics().await;
+
+                    pb.set_message(format!("avg. {:.2}", metrics.average_rps));
+                }
+            });
+        }
         let handles = self.spawn_workers(workers, stealers.clone(), worker_rx)?;
 
         // Wait for either completion or shutdown signal
@@ -349,6 +370,9 @@ impl WorkerPool {
                     }
 
                     let response = self.process_request(&task).await?;
+                    if let Some(ref throttler) = self.worker_config.throttler {
+                        throttler.record_response(&response).await?;
+                    }
                     self.ticker.tick();
                     self.pb.inc(1);
                     if self.config.retry_codes.iter().any(|e| e.contains(response.status as u16)) {

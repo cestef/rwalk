@@ -1,8 +1,9 @@
 use crate::{
-    error::{syntax_error, SyntaxError},
-    utils::constants::DEFAULT_WORDLIST_KEY,
     Result,
+    error::{SyntaxError, syntax_error},
+    utils::{constants::DEFAULT_WORDLIST_KEY, types::ThrottleMode},
 };
+use clap::ValueEnum;
 use dashmap::DashSet as HashSet;
 
 pub fn parse_url(s: &str) -> Result<url::Url> {
@@ -77,8 +78,7 @@ pub fn parse_wordlist(s: &str) -> Result<(String, String)> {
     let res = parse_key_or_keyval(s)?;
     let res = (
         res.0,
-        res.1
-            .unwrap_or_else(|| DEFAULT_WORDLIST_KEY.to_string()),
+        res.1.unwrap_or_else(|| DEFAULT_WORDLIST_KEY.to_string()),
     );
     Ok(res)
 }
@@ -88,15 +88,22 @@ enum Throttle {
     Auto,
 }
 
-// auto or <min>:<max> -> (min, max) or <max> -> (0, max)
-pub fn parse_throttle(s: &str) -> Result<(u64, u64)> {
-    match s {
-        "auto" => Ok((1, 3000)),
-        _ => {
-            let (min, max) = parse_throttle_range(s)?;
-            Ok((min, max))
-        }
+// auto or max[:mode]
+// mode simple or dynamic
+// default is simple
+pub fn parse_throttle(s: &str) -> Result<(u64, ThrottleMode)> {
+    let parts: Vec<&str> = s.split(':').collect();
+    if parts.len() > 2 {
+        return Err(syntax_error!((0, s.len()), s, "Expected at most one ':'"));
     }
+    let max = parts[0].parse::<u64>()?;
+    let mode = if parts.len() == 2 {
+        ThrottleMode::from_str(parts[1], true)
+            .map_err::<crate::RwalkError, _>(|e| syntax_error!((0, s.len()), s, "{e}"))?
+    } else {
+        ThrottleMode::Simple
+    };
+    Ok((max, mode))
 }
 
 fn parse_throttle_range(s: &str) -> Result<(u64, u64)> {
