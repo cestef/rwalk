@@ -64,7 +64,7 @@ impl Highlighter for RwalkHelper {
             self.in_eval.store(true, Ordering::Relaxed);
             let name = prompt.split_whitespace().next().unwrap_or("rwalk");
 
-            let prompt = format!("{} (eval){} ", name.blue(), ">".blue());
+            let prompt = format!("{} {}{} ", name.blue(), "(eval)".dimmed(), ">".blue());
             return prompt.into();
         }
         self.in_eval.store(false, Ordering::Relaxed);
