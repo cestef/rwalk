@@ -2,6 +2,8 @@ use super::{Command, CommandContext};
 use crate::{Result, print_error};
 use owo_colors::OwoColorize;
 use rhai::Dynamic;
+use std::path::Path;
+use tokio::fs;
 
 #[derive(Debug)]
 pub struct EvalCommand;
@@ -11,44 +13,62 @@ impl<'a> Command<CommandContext<'a>> for EvalCommand {
     async fn execute(&self, ctx: &mut CommandContext, args: &str) -> Result<()> {
         let args = args.trim();
 
-        if args.is_empty() {
-            loop {
-                let maybe_line;
-                {
-                    maybe_line = ctx.editor.lock().await.readline("rwalk (eval)> ");
-                }
+        // Check if we're evaluating a file
+        if let Some(file_path) = args.strip_prefix('@') {
+            let path = Path::new(file_path);
+            if !path.exists() {
+                print_error!("File not found: {}", file_path);
+                return Ok(());
+            }
 
-                if matches!(
-                    maybe_line,
-                    Err(rustyline::error::ReadlineError::Interrupted
-                        | rustyline::error::ReadlineError::Eof)
-                ) {
-                    break;
+            let script = fs::read_to_string(path).await?;
+            let mut scope = ctx.scope.lock().await;
+            return match ctx.engine.eval_with_scope::<Dynamic>(&mut scope, &script) {
+                Ok(res) => {
+                    println!("{}", res);
+                    Ok(())
                 }
-                let line = maybe_line?;
+                Err(e) => {
+                    print_error!("Error: {}", e);
+                    Ok(())
+                }
+            };
+        }
+
+        if args.is_empty() {
+            // Interactive eval mode
+            let mut editor = ctx.editor.lock().await;
+
+            loop {
+                let line = match editor.readline("rwalk (eval)> ") {
+                    Ok(line) => line,
+                    Err(
+                        rustyline::error::ReadlineError::Interrupted
+                        | rustyline::error::ReadlineError::Eof,
+                    ) => break,
+                    Err(e) => return Err(e.into()),
+                };
+
                 let line = line.trim();
                 if line.is_empty() {
                     continue;
                 }
 
                 let mut scope = ctx.scope.lock().await;
-                let maybe_res = ctx.engine.eval_with_scope::<Dynamic>(&mut scope, line);
-
-                match maybe_res {
+                match ctx.engine.eval_with_scope::<Dynamic>(&mut scope, line) {
                     Ok(res) => println!("{}", res),
                     Err(e) => print_error!("Error: {}", e),
                 }
             }
         } else {
+            // Single expression evaluation
             let mut scope = ctx.scope.lock().await;
-            let maybe_res = ctx.engine.eval_with_scope::<Dynamic>(&mut scope, args);
-            match maybe_res {
+            match ctx.engine.eval_with_scope::<Dynamic>(&mut scope, args) {
                 Ok(res) => println!("{}", res),
-                Err(e) => {
-                    print_error!("Error: {}", e);
-                }
+                Err(e) => print_error!("Error: {}", e),
             }
         }
+
         Ok(())
     }
 
