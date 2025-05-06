@@ -37,7 +37,14 @@ pub fn parse_optional_keys(s: &str) -> Result<(HashSet<String>, &str)> {
         if let Some(end_bracket) = s.find(']') {
             let keys: HashSet<String> = s[1..end_bracket]
                 .split(',')
-                .map(|k| k.trim().to_string())
+                .filter_map(|k| {
+                    let k = k.trim();
+                    if k.is_empty() {
+                        None
+                    } else {
+                        Some(k.to_string())
+                    }
+                })
                 .collect();
             if keys.is_empty() {
                 return Err(syntax_error!((0, end_bracket + 1), s, "Empty key list"));
@@ -129,5 +136,200 @@ pub fn parse_filter(s: &str) -> Result<String> {
         Ok(content)
     } else {
         Ok(s.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::RwalkError;
+
+    #[test]
+    fn test_parse_url() {
+        // Valid URLs
+        let url = parse_url("google.com").unwrap();
+        assert_eq!(url.as_str(), "http://google.com/");
+
+        let url = parse_url("http://google.com").unwrap();
+        assert_eq!(url.as_str(), "http://google.com/");
+
+        let url = parse_url("https://google.com").unwrap();
+        assert_eq!(url.as_str(), "https://google.com/");
+
+        // Invalid URL
+        let err = parse_url("http://[").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+    }
+
+    #[test]
+    fn test_parse_optional_keys() {
+        // No keys
+        let (keys, rest) = parse_optional_keys("name:value").unwrap();
+        assert_eq!(keys.len(), 0);
+        assert_eq!(rest, "name:value");
+
+        // With keys
+        let (keys, rest) = parse_optional_keys("[key1,key2]name:value").unwrap();
+        assert_eq!(keys.len(), 2);
+        assert!(keys.contains("key1"));
+        assert!(keys.contains("key2"));
+        assert_eq!(rest, "name:value");
+
+        // Empty keys
+        let err = parse_optional_keys("[]name:value").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+
+        // Unclosed bracket
+        let err = parse_optional_keys("[key1,key2name:value").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+    }
+
+    #[test]
+    fn test_parse_keyval() {
+        // Valid key-value pair
+        let (key, val) = parse_keyval("name:value").unwrap();
+        assert_eq!(key, "name");
+        assert_eq!(val, "value");
+
+        // Missing colon
+        let err = parse_keyval("namevalue").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+
+        // Multiple colons
+        let err = parse_keyval("name:val:ue").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+    }
+
+    #[test]
+    fn test_parse_key_or_keyval() {
+        // Key only
+        let (key, val) = parse_key_or_keyval("name").unwrap();
+        assert_eq!(key, "name");
+        assert_eq!(val, None);
+
+        // Key-value pair
+        let (key, val) = parse_key_or_keyval("name:value").unwrap();
+        assert_eq!(key, "name");
+        assert_eq!(val, Some("value".to_string()));
+
+        // Multiple colons
+        let err = parse_key_or_keyval("name:val:ue").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+    }
+
+    #[test]
+    fn test_parse_keyed_keyval() {
+        // No keys
+        let (keys, name, value) = parse_keyed_keyval("name:value").unwrap();
+        assert_eq!(keys.len(), 0);
+        assert_eq!(name, "name");
+        assert_eq!(value, "value");
+
+        // With keys
+        let (keys, name, value) = parse_keyed_keyval("[key1,key2]name:value").unwrap();
+        assert_eq!(keys.len(), 2);
+        assert!(keys.contains("key1"));
+        assert!(keys.contains("key2"));
+        assert_eq!(name, "name");
+        assert_eq!(value, "value");
+
+        // Invalid format
+        let err = parse_keyed_keyval("namevalue").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+    }
+
+    #[test]
+    fn test_parse_keyed_key_or_keyval() {
+        // No keys, key only
+        let (keys, name, value) = parse_keyed_key_or_keyval("name").unwrap();
+        assert_eq!(keys.len(), 0);
+        assert_eq!(name, "name");
+        assert_eq!(value, None);
+
+        // No keys, key-value pair
+        let (keys, name, value) = parse_keyed_key_or_keyval("name:value").unwrap();
+        assert_eq!(keys.len(), 0);
+        assert_eq!(name, "name");
+        assert_eq!(value, Some("value".to_string()));
+
+        // With keys, key only
+        let (keys, name, value) = parse_keyed_key_or_keyval("[key1,key2]name").unwrap();
+        assert_eq!(keys.len(), 2);
+        assert_eq!(name, "name");
+        assert_eq!(value, None);
+
+        // With keys, key-value pair
+        let (keys, name, value) = parse_keyed_key_or_keyval("[key1,key2]name:value").unwrap();
+        assert_eq!(keys.len(), 2);
+        assert_eq!(name, "name");
+        assert_eq!(value, Some("value".to_string()));
+    }
+
+    #[test]
+    fn test_parse_wordlist() {
+        // With explicit key
+        let (name, key) = parse_wordlist("wordlist:common").unwrap();
+        assert_eq!(name, "wordlist");
+        assert_eq!(key, "common");
+
+        // Default key
+        let (name, key) = parse_wordlist("wordlist").unwrap();
+        assert_eq!(name, "wordlist");
+        assert_eq!(key, DEFAULT_WORDLIST_KEY);
+    }
+
+    #[test]
+    fn test_parse_throttle() {
+        // Default mode
+        let (max, mode) = parse_throttle("100").unwrap();
+        assert_eq!(max, 100);
+        assert_eq!(mode, ThrottleMode::Simple);
+
+        // Explicit mode
+        let (max, mode) = parse_throttle("100:dynamic").unwrap();
+        assert_eq!(max, 100);
+        assert_eq!(mode, ThrottleMode::Dynamic);
+
+        // Invalid mode
+        let err = parse_throttle("100:invalid").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+
+        // Invalid number
+        let err = parse_throttle("abc").unwrap_err();
+        assert!(matches!(err, RwalkError::ParseError(_)));
+    }
+
+    #[test]
+    fn test_parse_throttle_range() {
+        // Single value (min=1)
+        let (min, max) = parse_throttle_range("100").unwrap();
+        assert_eq!(min, 1);
+        assert_eq!(max, 100);
+
+        // Min and max
+        let (min, max) = parse_throttle_range("50:100").unwrap();
+        assert_eq!(min, 50);
+        assert_eq!(max, 100);
+
+        // Multiple colons
+        let err = parse_throttle_range("10:20:30").unwrap_err();
+        assert!(matches!(err, RwalkError::SyntaxError(_)));
+
+        // Invalid number
+        let err = parse_throttle_range("abc").unwrap_err();
+        assert!(matches!(err, RwalkError::ParseError(_)));
+    }
+
+    #[test]
+    fn test_parse_filter() {
+        // Raw string
+        let filter = parse_filter("some filter content").unwrap();
+        assert_eq!(filter, "some filter content");
+
+        let filter = parse_filter("@tests/assets/dummy.txt").unwrap();
+        assert_eq!(
+            filter,
+            include_str!("../../tests/assets/dummy.txt").to_string()
+        );
     }
 }
