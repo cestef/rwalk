@@ -54,4 +54,4 @@ Grab them from the [latest release](https://github.com/cestef/rwalk/releases/lat
 rwalk [OPTIONS] <URL> <WORDLISTS>...
 ```
 
-See `rwalk --help` for more information.
+See `rwalk --help` or [Options](@/docs/options.md) for more information.

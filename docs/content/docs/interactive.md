@@ -78,3 +78,30 @@ Let's start out by listing the current options:
 (B[0;1mwordlist_filter(B[0m[0;2m · (B[0m= (B[0;2mnull
 (B[0;1mwordlists(B[0m (B[0;2m·······(B[0m = [34m[]
 ```
+
+We can `set` the target URL for our fuzz:
+
+```ansi
+[034mrwalk>[0m set url ffuf.me/cd/basic
+```
+
+And `append` a wordlist:
+
+```ansi
+[034mrwalk>[0m append wordlists common.txt
+```
+
+Run it!
+
+```ansi
+[94mrwalk> (B[0;1m[92mrun
+(B[0m[34mℹ[39m Press (B[0;1mCtrl+C(B[0m to save and exit the scan
+[34m↷[39m (B[0;2m200(B[0m http://ffuf.me/cd/basic/development.log (B[0;2m29.99ms(B[0m (B[0;2m(not a directory)
+(B[0m[34m↷[39m (B[0;2m200(B[0m http://ffuf.me/cd/basic/class (B[0;2m32.85ms(B[0m (B[0;2m(not a directory)
+
+(B[0mhttp://ffuf.me
+(B[0;2m└─ (B[0m[32m✓[39m (B[0;2m200(B[0m /cd/basic
+(B[0;2m   ├─ (B[0m[32m✓[39m (B[0;2m200(B[0m /class
+(B[0;2m   └─ (B[0m[32m✓[39m (B[0;2m200(B[0m /development.log
+[32m✓[39m Done in (B[0;1m3s(B[0m with an average of (B[0;1m1516(B[0m req/s
+```
