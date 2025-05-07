@@ -177,7 +177,7 @@ impl WorkerPool {
             filterer: filterer.clone(),
             handler: Arc::new(handler),
             throttler,
-            needs_body: filterer.needs_body()?, // Precompute if any filter needs body
+            needs_body: filterer.needs_body()? || config.show.contains(&"body".to_string()), // Precompute if any filter needs body
         };
 
         let (shutdown_tx, _) = broadcast::channel(1);

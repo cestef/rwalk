@@ -3,6 +3,7 @@ use crate::{
     utils::{constants::STEAL_BATCH_LIMIT, directory},
 };
 use crossbeam::deque::{Injector, Stealer, Worker};
+use owo_colors::OwoColorize;
 use rhai::{CustomType, TypeBuilder};
 
 use serde::{Deserialize, Serialize};
@@ -12,6 +13,8 @@ use std::{
     iter,
     str::FromStr,
 };
+
+use super::show::SHOW_REGISTRY;
 
 pub fn find_task<T>(local: &Worker<T>, global: &Injector<T>, stealers: &[Stealer<T>]) -> Option<T> {
     // Pop a task from the local queue, if not empty.
@@ -133,5 +136,16 @@ impl RwalkResponse {
             depth: depth as i64,
             r#type: ResponseType::Error,
         }
+    }
+
+    pub fn display_show(&self, show: &[String]) -> String {
+        show.iter()
+            .filter_map(|s| {
+                SHOW_REGISTRY
+                    .get(s)
+                    .map(|f| format!("{}: {}", s.bold().dimmed(), f(self).dimmed()))
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
     }
 }

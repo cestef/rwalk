@@ -1,6 +1,5 @@
 use std::{borrow::Cow, fmt::Display};
 
-use indicatif::HumanBytes;
 use owo_colors::OwoColorize;
 
 use crate::worker::utils::RwalkResponse;
@@ -11,30 +10,15 @@ pub fn response(response: &RwalkResponse, show: &[String]) -> String {
         display_status_code(response.status as u16),
         display_url(response.url.as_str()),
         display_time(response.time),
-        display_show(response, show)
+        {
+            let showed = response.display_show(show);
+            if !showed.is_empty() {
+                format!("| {}", showed)
+            } else {
+                showed
+            }
+        }
     )
-}
-
-fn display_show(response: &RwalkResponse, show: &[String]) -> String {
-    let out = show
-        .iter()
-        .filter_map(|e| {
-            let key = e.to_lowercase();
-            let value = match key.as_str() {
-                "size" => HumanBytes(response.body.len() as u64).to_string(),
-                "type" => response.r#type.to_string(),
-                _ => return None,
-            };
-
-            Some(format!("{}: {}", key, value.bold()).dimmed().to_string())
-        })
-        .collect::<Vec<String>>();
-
-    if out.is_empty() {
-        return "".to_string();
-    }
-
-    format!("| {}", out.join(", "))
 }
 
 fn display_url(url: &str) -> Cow<'_, str> {
@@ -162,6 +146,13 @@ pub fn skip(response: &RwalkResponse, reason: SkipReason, show: &[String]) -> St
         display_url(response.url.as_str()),
         display_time(response.time),
         format!("({})", reason).dimmed(),
-        display_show(response, show)
+        {
+            let showed = response.display_show(show);
+            if !showed.is_empty() {
+                format!("| {}", showed)
+            } else {
+                showed
+            }
+        }
     )
 }
