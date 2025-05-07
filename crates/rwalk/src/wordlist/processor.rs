@@ -31,37 +31,48 @@ impl<'a> WordlistProcessor<'a> {
 
     pub async fn process_wordlists(&self) -> Result<Vec<Wordlist>> {
         let mut set = JoinSet::new();
-        let mut merged = Vec::with_capacity(self.opts.wordlists.len());
         let shared_words = Arc::new(DashMap::new());
         let filterer = Arc::new(self.create_filterer()?);
 
-        // Process wordlists concurrently
+        // Process wordlists concurrently - just populate shared_words
         for (path, key) in &self.opts.wordlists {
             let path = path.clone();
             let key = key.clone();
             let transformer = Arc::new(self.create_transformer(&key)?);
             let shared_words = Arc::clone(&shared_words);
             let filterer = Arc::clone(&filterer);
+            let include_comments = self.opts.include_comments;
             set.spawn(async move {
-                let wordlist = Self::process_single_wordlist(
+                Self::process_single_wordlist(
                     path.into(),
                     key.into(),
                     &transformer,
                     &filterer,
                     &shared_words,
+                    include_comments,
                 )
-                .await?;
-                Ok::<Wordlist, RwalkError>(wordlist)
+                .await
             });
         }
 
-        // Collect results
+        // Wait for all processing to complete
         while let Some(result) = set.join_next().await {
-            let wordlist = result??;
-            if !wordlist.is_empty() {
-                merged.push(wordlist);
-            }
+            result??;
         }
+
+        let merged = shared_words
+            .iter()
+            .filter(|entry| !entry.value().is_empty())
+            .map(|entry| {
+                let key = entry.key().clone();
+                let words = entry
+                    .value()
+                    .iter()
+                    .map(|word| word.clone())
+                    .collect::<Vec<CowStr>>();
+                Wordlist { words, key }
+            })
+            .collect::<Vec<Wordlist>>();
 
         Ok(merged)
     }
@@ -72,7 +83,9 @@ impl<'a> WordlistProcessor<'a> {
         transformer: &Transformer<String>,
         filterer: &Filterer<(CowStr, CowStr)>,
         shared_words: &DashMap<CowStr, DashSet<CowStr>>,
-    ) -> Result<Wordlist> {
+        include_comments: bool,
+    ) -> Result<()> {
+        // Note: now returns () instead of Wordlist
         debug!("Processing wordlist: {}", path);
         let path = PathBuf::from(&*path)
             .canonicalize()
@@ -82,26 +95,26 @@ impl<'a> WordlistProcessor<'a> {
         let reader = BufReader::new(file);
         let mut lines = reader.lines();
 
-        let mut words = Vec::new();
-
         while let Some(line) = lines.next_line().await? {
             if !line.trim().is_empty() {
-                let mut word = line;
-                transformer.apply(&mut word);
-                let word: CowStr = word.into();
-                // Only add if not seen before for this key
-                if shared_words
-                    .entry(key.clone())
-                    .or_default()
-                    .insert(word.clone())
-                    && filterer.filter(&(key.clone(), word.clone()))?
-                {
-                    words.push(word);
+                let processed_line = if include_comments {
+                    Some(line)
+                } else {
+                    Self::strip_comments(&line)
+                };
+
+                if let Some(mut word) = processed_line {
+                    transformer.apply(&mut word);
+                    let word: CowStr = word.into();
+                    // Add word to shared structure if it passes the filter
+                    if filterer.filter(&(key.clone(), word.clone()))? {
+                        shared_words.entry(key.clone()).or_default().insert(word);
+                    }
                 }
             }
         }
 
-        Ok(Wordlist { words, key })
+        Ok(())
     }
 
     fn create_transformer(&self, wordlist_key: &str) -> Result<Transformer<String>> {
@@ -127,5 +140,20 @@ impl<'a> WordlistProcessor<'a> {
         };
 
         Ok(Filterer::new(filter))
+    }
+
+    // Ref: https://github.com/ffuf/ffuf/blob/57da720af7d1b66066cbbde685b49948f886b29c/pkg/input/wordlist.go#L173
+    fn strip_comments(text: &str) -> Option<String> {
+        // If the line starts with # (ignoring leading whitespace), return None
+        if text.trim_start().starts_with('#') {
+            return None;
+        }
+
+        // Find the position of "#" after a space
+        if let Some(index) = text.find(" #") {
+            Some(text[..index].to_string())
+        } else {
+            Some(text.to_string())
+        }
     }
 }

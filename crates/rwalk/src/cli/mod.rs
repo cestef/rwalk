@@ -237,6 +237,11 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     #[dyn_fields(skip = true)]
     pub interactive: bool,
+
+    /// Include comment lines from the wordlists
+    #[clap(long, help_heading = "Advanced")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    pub include_comments: bool,
 }
 
 fn merge_overwrite<T>(a: &mut T, b: T) {
