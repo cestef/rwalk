@@ -86,6 +86,13 @@ pub enum RwalkError {
     #[diagnostic(code(rwalk::eval_error))]
     #[error(transparent)]
     EvalError(#[from] Box<rhai::EvalAltResult>),
+
+    #[diagnostic(code(rwalk::rmp_decode_error))]
+    #[error(transparent)]
+    RmpDecodeError(#[from] rmp_serde::decode::Error),
+    #[diagnostic(code(rwalk::rmp_encode_error))]
+    #[error(transparent)]
+    RmpEncodeError(#[from] rmp_serde::encode::Error),
 }
 
 #[derive(Error, Diagnostic, Debug, Clone)]

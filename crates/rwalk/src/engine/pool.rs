@@ -33,12 +33,12 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs::File,
-    io::{BufReader, BufWriter},
+    io::{BufReader, Write},
     path::Path,
     sync::Arc,
 };
-use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
+use tokio::{io::AsyncWriteExt, sync::broadcast};
 use url::Url;
 
 use super::{
@@ -117,8 +117,8 @@ impl WorkerPool {
             base_url,
         };
 
-        let writer = BufWriter::new(File::create(path)?);
-        serde_json::to_writer(writer, &state)?;
+        let mut writer = std::io::BufWriter::new(std::fs::File::create(path)?);
+        writer.write(&rmp_serde::to_vec(&state)?)?;
         Ok(())
     }
 
@@ -126,7 +126,8 @@ impl WorkerPool {
         let file =
             File::open(path).map_err(|e| crate::error!(source = e, "Failed to open state file"))?;
         let reader = BufReader::new(file);
-        let state: WorkerState = serde_json::from_reader(reader)?;
+        let state: WorkerState = rmp_serde::from_read(reader)
+            .map_err(|e| crate::error!(source = e, "Failed to deserialize state file"))?;
 
         if state.base_url != self.config.base_url {
             return Err(crate::error!(

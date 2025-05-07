@@ -1,4 +1,4 @@
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressIterator};
 use itertools::Itertools;
 use owo_colors::OwoColorize;
 use rayon::prelude::*;
@@ -107,6 +107,7 @@ impl TemplateHandler {
 
         let combinations = word_iters.multi_cartesian_product();
         let urls: Vec<String> = combinations
+            .progress_with(pb.clone())
             .map(|words| {
                 let mut url_segments = segments.clone();
 
@@ -118,7 +119,6 @@ impl TemplateHandler {
                 }
 
                 let url = url_segments.concat();
-                pb.inc(1);
                 url
             })
             .collect();
