@@ -74,8 +74,12 @@ impl ValueEnum for ThrottleMode {
     fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
         match self {
             ThrottleMode::None => Some(clap::builder::PossibleValue::new("none")),
-            ThrottleMode::Simple => Some(clap::builder::PossibleValue::new("simple")),
-            ThrottleMode::Dynamic => Some(clap::builder::PossibleValue::new("dynamic")),
+            ThrottleMode::Simple => {
+                Some(clap::builder::PossibleValue::new("simple").aliases(["classic"]))
+            }
+            ThrottleMode::Dynamic => {
+                Some(clap::builder::PossibleValue::new("dynamic").aliases(["dyn", "auto"]))
+            }
         }
     }
 

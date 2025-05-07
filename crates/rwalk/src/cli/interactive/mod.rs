@@ -8,8 +8,8 @@ use owo_colors::OwoColorize;
 use rhai::Engine;
 use rustyline::{Editor, config::Configurer};
 use tokio::sync::Mutex;
-mod commands;
-mod helper;
+pub mod commands;
+pub mod helper;
 
 pub async fn run(opts: Opts) -> Result<()> {
     let mut editor = Editor::new()?;

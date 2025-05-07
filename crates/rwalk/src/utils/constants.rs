@@ -5,7 +5,8 @@ pub const DEFAULT_WORDLIST_KEY: &str = "$";
 
 pub const THREADS_PER_CORE: usize = 5;
 
-pub const PROGRESS_TEMPLATE: &str = "{spinner:.blue} (ETA. {eta}) {wide_bar:.blue/dim} {pos:>5}/{len} ({per_sec:>12} | {msg:>12}/s)";
+pub const PROGRESS_TEMPLATE: &str =
+    "{spinner:.blue} (ETA. {eta}) {wide_bar:.blue/dim} {pos:>5}/{len} ({per_sec:>12}) {msg:.bold}";
 pub const PROGRESS_CHARS: &str = "█▉▊▋▌▍▎▏·";
 
 pub const STEAL_BATCH_LIMIT: usize = 8;

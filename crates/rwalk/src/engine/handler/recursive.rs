@@ -1,5 +1,6 @@
 use rayon::prelude::*;
 use std::sync::Arc;
+use tracing::debug;
 
 use crate::{
     Result,
@@ -17,6 +18,7 @@ pub struct RecursiveHandler {
 
 impl ResponseHandler for RecursiveHandler {
     fn handle(&self, response: RwalkResponse, pool: &WorkerPool) -> Result<()> {
+        debug!("recursive handler: {:?}", response);
         // If it's a directory and passes filters, we should recursively scan it
         if (response.depth as usize) < pool.config.max_depth {
             if pool.config.force_recursion || directory::check(&response) {
@@ -32,6 +34,7 @@ impl ResponseHandler for RecursiveHandler {
                         response.depth as usize + 1,
                     )
                 })?;
+                debug!("total_entries: {}", total_entries);
 
                 pool.pb
                     .set_length(pool.pb.length().unwrap() + total_entries);

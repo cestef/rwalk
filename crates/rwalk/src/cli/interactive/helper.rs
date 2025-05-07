@@ -134,6 +134,10 @@ impl Completer for RwalkHelper {
             let arg = &line[arg_start + 1..pos];
             // e.g. run localhost common.txt: localhost=0, common.txt=1
             let arg_index = line[..arg_start].split_whitespace().count() - 1;
+            debug!(
+                "arg_start: {}, arg: {}, arg_index: {}",
+                arg_start, arg, arg_index
+            );
             if let Ok(cmd) = CommandRegistry::construct(cmd) {
                 if let Some(args) = cmd.args() {
                     if args.is_empty() {
@@ -164,7 +168,7 @@ impl Completer for RwalkHelper {
 
 impl Helper for RwalkHelper {}
 
-fn complete_path(arg: &str, arg_start: usize) -> rustyline::Result<(usize, Vec<String>)> {
+pub fn complete_path(arg: &str, arg_start: usize) -> rustyline::Result<(usize, Vec<String>)> {
     let mut completions = Vec::new();
     let path = std::path::Path::new(arg);
     let (dir_to_search, file_prefix) =
@@ -233,7 +237,10 @@ fn complete_path(arg: &str, arg_start: usize) -> rustyline::Result<(usize, Vec<S
     Ok((arg_start + 1, completions))
 }
 
-fn complete_option_field(arg: &str, arg_start: usize) -> rustyline::Result<(usize, Vec<String>)> {
+pub fn complete_option_field(
+    arg: &str,
+    arg_start: usize,
+) -> rustyline::Result<(usize, Vec<String>)> {
     let mut completions = Vec::new();
     let available_options = Opts::fields();
 

@@ -30,9 +30,11 @@ pub async fn run(opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
         .clone()
         .ok_or_else(|| error!("The URL is missing"))?;
     if !opts.force {
-        let host = url.host_str().ok_or_else(|| error!("Invalid URL"))?;
-        let scheme = url.scheme();
-        reqwest::get(&format!("{scheme}://{host}"))
+        let url_without_path = url
+            .join("/")
+            .map_err(|_| error!("Invalid URL"))?
+            .to_string();
+        reqwest::get(&url_without_path)
             .await
             .map_err(|e| RwalkError::UnreachableHost { source: e })?;
     }

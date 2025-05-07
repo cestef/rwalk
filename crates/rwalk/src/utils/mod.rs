@@ -2,6 +2,8 @@ pub mod constants;
 pub mod directory;
 pub mod error;
 pub mod format;
+pub mod logging;
+pub mod markdown;
 pub mod output;
 pub mod progress;
 pub mod registry;
