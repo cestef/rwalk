@@ -4,10 +4,15 @@ use engine::WorkerPool;
 
 use cli::Opts;
 use indicatif::HumanDuration;
+use itertools::Itertools;
 use owo_colors::OwoColorize;
 use rhai::{Dynamic, Scope};
 use tracing::debug;
-use utils::{constants, error, tree, types};
+use utils::{
+    constants::{self, DEFAULT_WORDLIST_KEY},
+    error, tree,
+    types::{self, EngineMode},
+};
 
 use wordlist::processor::WordlistProcessor;
 
@@ -21,7 +26,7 @@ pub mod worker;
 pub(crate) use error::error;
 pub use error::*;
 
-pub async fn run(opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
+pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     let start = std::time::Instant::now();
 
     // Check if the website is reachable
@@ -42,7 +47,71 @@ pub async fn run(opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     // Process wordlists
     let processor = WordlistProcessor::new(&opts);
     debug!("Processing wordlists: {:#?}", opts.wordlists);
-    let wordlists = processor.process_wordlists().await?;
+    let mut wordlists = processor.process_wordlists().await?;
+
+    let mut url_string = url.to_string();
+    let url_string_clone = url_string.clone();
+    let mut fuzz_template_keys_matches = wordlists
+        .iter()
+        .flat_map(|x| url_string_clone.match_indices(x.key.as_str()))
+        .collect::<Vec<_>>();
+    match opts.mode {
+        EngineMode::Recursive => {
+            if !fuzz_template_keys_matches.is_empty() {
+                warning!(
+                    "URL contains the replace keyword{}: {}, this is supported with {}",
+                    if fuzz_template_keys_matches.len() > 1 {
+                        "s"
+                    } else {
+                        ""
+                    },
+                    fuzz_template_keys_matches
+                        .iter()
+                        .map(|e| e.1)
+                        .join(", ")
+                        .bold()
+                        .blue(),
+                    format!("{} {}", "--mode".dimmed(), "template".bold())
+                );
+            }
+        }
+        EngineMode::Template => {
+            if fuzz_template_keys_matches.is_empty() {
+                url_string =
+                    url_string.trim_end_matches('/').to_string() + "/" + DEFAULT_WORDLIST_KEY;
+                fuzz_template_keys_matches.push((url_string.len() - 1, DEFAULT_WORDLIST_KEY));
+                warning!(
+                    "URL does not contain any template key {}, it will be treated as: {}",
+                    format!(
+                        "(available: {})",
+                        wordlists.iter().map(|e| e.key.clone()).join(", ")
+                    )
+                    .dimmed(),
+                    url_string.bold()
+                );
+            }
+            // Remove unused wordlists keys
+            wordlists.retain(|wordlist| {
+                let keep = fuzz_template_keys_matches
+                    .iter()
+                    .any(|e| e.1 == &wordlist.key);
+                if !keep {
+                    warning!(
+                        "Wordlist {} is not used in the URL, removing it",
+                        wordlist.key.bold().yellow()
+                    );
+                }
+                keep
+            });
+        }
+    }
+
+    // Check if the URL is valid
+    let url = url_string
+        .parse::<url::Url>()
+        .map_err(|_| error!("Invalid URL"))?;
+    debug!("Parsed URL: {}", url);
+    opts.url = Some(url.clone());
 
     let (pool, shutdown_tx) = WorkerPool::from_opts(&opts, wordlists)?;
 

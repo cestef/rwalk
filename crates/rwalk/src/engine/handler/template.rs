@@ -1,9 +1,8 @@
-use cowstr::CowStr;
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use owo_colors::OwoColorize;
 use rayon::prelude::*;
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 use crate::{
     Result,
@@ -53,45 +52,73 @@ impl TemplateHandler {
     fn generate_urls(&self, wordlists: &[Wordlist], base_url: &str) -> Result<Vec<String>> {
         let pb = ProgressBar::new(0).with_style(
             indicatif::ProgressStyle::default_bar()
-                .template("{spinner:.green} {msg} {elapsed_precise}")
+                .template("{spinner:.green} {msg} {elapsed_precise} ({human_pos:>7.dim}/{human_len:7.dim} | {per_sec:.dimmed})")
                 .unwrap(),
         );
         pb.enable_steady_tick(Duration::from_millis(100));
-
         pb.set_message("Generating URLs for");
 
-        let positions: HashMap<CowStr, Vec<_>> = wordlists
-            .iter()
-            .map(|w| {
-                let positions = base_url
-                    .match_indices(&*w.key)
-                    .map(|(pos, _)| pos)
-                    .collect::<Vec<_>>();
-                (w.key.clone(), positions)
-            })
-            .collect();
+        // Pre-compute all segments of the base URL between replacement points
+        let mut segments = Vec::new();
+        let mut last_end = 0;
+        let mut all_positions = Vec::new();
 
-        if positions.iter().all(|(_, v)| v.is_empty()) {
+        for (wl_idx, wordlist) in wordlists.iter().enumerate() {
+            let positions: Vec<_> = base_url
+                .match_indices(&*wordlist.key)
+                .map(|(pos, _)| (pos, wl_idx, wordlist.key.len()))
+                .collect();
+
+            if !positions.is_empty() {
+                all_positions.extend(positions);
+            }
+        }
+
+        if all_positions.is_empty() {
             return Err(error!("No template markers found in URL"));
         }
 
-        let word_iters: Vec<_> = wordlists.iter().map(|wl| wl.words.iter()).collect();
+        // Sort positions to process them in order
+        all_positions.sort_by_key(|&(pos, _, _)| pos);
 
-        let combinations = word_iters
-            .into_iter()
-            .multi_cartesian_product()
-            .par_bridge();
+        // Create URL segments
+        for &(pos, _, len) in &all_positions {
+            if pos > last_end {
+                segments.push(base_url[last_end..pos].to_string());
+            }
+            segments.push(String::new()); // Placeholder for word insertion
+            last_end = pos + len;
+        }
 
+        // Add the last segment if needed
+        if last_end < base_url.len() {
+            segments.push(base_url[last_end..].to_string());
+        }
+
+        let word_iters = wordlists.iter().map(|wl| wl.words.iter());
+        let total_length: usize = word_iters.clone().map(|iter| iter.len()).product();
+        pb.set_length(total_length as u64);
+
+        // Create a mapping from wordlist index to positions in segments vector
+        let mut wl_to_segment_positions: Vec<Vec<usize>> = vec![Vec::new(); wordlists.len()];
+        for (seg_idx, &(_, wl_idx, _)) in all_positions.iter().enumerate() {
+            wl_to_segment_positions[wl_idx].push(seg_idx * 2 + 1); // +1 because segments alternate between fixed text and placeholders
+        }
+
+        let combinations = word_iters.multi_cartesian_product();
         let urls: Vec<String> = combinations
             .map(|words| {
-                let mut url = base_url.to_string();
-                for (wordlist, word) in wordlists.iter().zip(words) {
-                    if let Some(positions) = positions.get(&wordlist.key) {
-                        for &pos in positions {
-                            url.replace_range(pos..pos + wordlist.key.len(), word);
-                        }
+                let mut url_segments = segments.clone();
+
+                // Fill in the placeholders
+                for (wl_idx, word) in words.iter().enumerate() {
+                    for &pos in &wl_to_segment_positions[wl_idx] {
+                        url_segments[pos] = word.to_string();
                     }
                 }
+
+                let url = url_segments.concat();
+                pb.inc(1);
                 url
             })
             .collect();
@@ -101,7 +128,7 @@ impl TemplateHandler {
         success!(
             "Generated {} URLs in {}",
             urls.len().to_string().bold(),
-            display_time(pb.elapsed().as_millis() as i64)
+            display_time(pb.elapsed().as_micros() as i64)
         );
 
         Ok(urls)
