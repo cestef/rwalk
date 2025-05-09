@@ -1,5 +1,6 @@
 #![allow(dead_code, unused_macros)]
 
+use cowstr::CowStr;
 use engine::WorkerPool;
 
 use cli::Opts;
@@ -10,7 +11,9 @@ use rhai::{Dynamic, Scope};
 use tracing::debug;
 use utils::{
     constants::{self, DEFAULT_WORDLIST_KEY, STATE_FILE},
-    error, tree,
+    error,
+    template::find_keys,
+    tree,
     types::{self, EngineMode},
 };
 
@@ -50,38 +53,49 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     let mut wordlists = processor.process_wordlists().await?;
 
     let mut url_string = url.to_string();
-    let url_string_clone = url_string.clone();
-    let mut fuzz_template_keys_matches = wordlists
+
+    // Find template keys in URL and data
+    let mut url_keys = find_keys(&url_string, &wordlists);
+    let mut data_keys = vec![];
+    if let Some(data) = &opts.data {
+        data_keys = find_keys(data, &wordlists);
+    }
+    let header_keys = opts
+        .headers
         .iter()
-        .flat_map(|x| url_string_clone.match_indices(x.key.as_str()))
+        .flat_map(|(_selectors, key, value)| {
+            find_keys(key, &wordlists)
+                .into_iter()
+                .chain(find_keys(value, &wordlists))
+        })
         .collect::<Vec<_>>();
+
     match opts.mode {
         EngineMode::Recursive => {
-            if !fuzz_template_keys_matches.is_empty() {
-                warning!(
-                    "URL contains the replace keyword{}: {}, this is supported with {}",
-                    if fuzz_template_keys_matches.len() > 1 {
-                        "s"
-                    } else {
-                        ""
-                    },
-                    fuzz_template_keys_matches
-                        .iter()
-                        .map(|e| e.1)
-                        .join(", ")
-                        .bold()
-                        .blue(),
-                    format!("{} {}", "--mode".dimmed(), "template".bold())
-                );
-            }
+            let print_warning = |keys: &[(usize, CowStr)], source: &str| {
+                if !keys.is_empty() {
+                    warning!(
+                        "{} contains the replace keyword{}: {}, this is supported with {}",
+                        source,
+                        if keys.len() > 1 { "s" } else { "" },
+                        keys.iter().map(|e| e.1.clone()).join(", ").bold().blue(),
+                        format!("{} {}", "--mode".dimmed(), "template".bold())
+                    );
+                }
+            };
+
+            print_warning(&url_keys, "URL");
+            print_warning(&data_keys, "Data");
+            print_warning(&header_keys, "Headers");
         }
         EngineMode::Template => {
-            if fuzz_template_keys_matches.is_empty() {
+            if url_keys.is_empty() && data_keys.is_empty() {
                 url_string =
                     url_string.trim_end_matches('/').to_string() + "/" + DEFAULT_WORDLIST_KEY;
-                fuzz_template_keys_matches.push((url_string.len() - 1, DEFAULT_WORDLIST_KEY));
+                url_keys.push((url_string.len() - 1, DEFAULT_WORDLIST_KEY.into()));
+
                 warning!(
-                    "URL does not contain any template key {}, it will be treated as: {}",
+                    "No template key was used {}, URL will be treated as: {}",
                     format!(
                         "(available: {})",
                         wordlists.iter().map(|e| e.key.clone()).join(", ")
@@ -90,14 +104,20 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
                     url_string.bold()
                 );
             }
+
+            let used_keys: std::collections::HashSet<&str> = url_keys
+                .iter()
+                .chain(data_keys.iter())
+                .chain(header_keys.iter())
+                .map(|(_, key)| key.as_str())
+                .collect();
+
             // Remove unused wordlists keys
             wordlists.retain(|wordlist| {
-                let keep = fuzz_template_keys_matches
-                    .iter()
-                    .any(|e| e.1 == &wordlist.key);
+                let keep = used_keys.contains(wordlist.key.as_str());
                 if !keep {
                     warning!(
-                        "Wordlist {} is not used in the URL, removing it",
+                        "Wordlist {} is not used in the URL or data, removing it",
                         wordlist.key.bold().yellow()
                     );
                 }

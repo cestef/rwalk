@@ -182,6 +182,16 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub http2: bool,
 
+    /// Data sent along with the request
+    #[clap(
+        short = 'D',
+        long,
+        value_name = "DATA",
+        help_heading = "Request Control"
+    )]
+    #[merge(strategy = merge::option::overwrite_none)]
+    pub data: Option<String>,
+
     //
     // ------------------------------------------------------------------------
     // Output

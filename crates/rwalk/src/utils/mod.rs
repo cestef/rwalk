@@ -8,11 +8,11 @@ pub mod output;
 pub mod progress;
 pub mod registry;
 pub mod table;
+pub mod template;
 pub mod throttle;
 pub mod ticker;
 pub mod tree;
 pub mod types;
-
 use std::io::Write;
 
 pub fn bell() {

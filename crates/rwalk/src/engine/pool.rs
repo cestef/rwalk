@@ -28,7 +28,7 @@ use indicatif::ProgressBar;
 use owo_colors::OwoColorize;
 use reqwest::{
     Client,
-    header::{HeaderMap, HeaderName, HeaderValue},
+    header::{HeaderName, HeaderValue},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -61,8 +61,9 @@ pub struct PoolConfig {
     pub max_depth: usize,
     pub bell: bool,
     pub method: reqwest::Method,
-    pub headers: Option<HashMap<usize, HeaderMap>>,
+    pub headers: Option<HashMap<usize, HashMap<String, String>>>,
     pub throttle_mode: ThrottleMode,
+    pub data: Option<String>,
 }
 
 // Worker configuration
@@ -151,6 +152,7 @@ impl WorkerPool {
 
         Ok(())
     }
+
     pub fn new(
         config: PoolConfig,
         global_queue: Arc<Injector<Task>>,
@@ -210,15 +212,26 @@ impl WorkerPool {
         let headers = if opts.headers.is_empty() {
             None
         } else {
-            let mut headers = HashMap::new();
-
+            let mut headers: HashMap<usize, HashMap<String, String>> =
+                HashMap::with_capacity(opts.depth + 1);
             for (depths, name, value) in opts.headers.iter() {
-                for depth in depths.iter() {
-                    let depth: usize = depth.parse()?;
-                    let map = headers.entry(depth).or_insert_with(HeaderMap::new);
-                    let name = HeaderName::from_bytes(name.as_bytes())?;
-                    let value = HeaderValue::from_str(value)?;
-                    map.insert(name, value);
+                if depths.is_empty() {
+                    // Apply to all depths (0 to max)
+                    for i in 0..=opts.depth {
+                        headers
+                            .entry(i)
+                            .or_default()
+                            .insert(name.clone(), value.clone());
+                    }
+                } else {
+                    // Apply only to specified depths
+                    for depth in depths.iter() {
+                        let depth: usize = depth.parse()?;
+                        headers
+                            .entry(depth)
+                            .or_default()
+                            .insert(name.clone(), value.clone());
+                    }
                 }
             }
 
@@ -242,6 +255,7 @@ impl WorkerPool {
             method: opts.method.into(),
             headers,
             throttle_mode: opts.throttle.map(|e| e.1).unwrap_or(ThrottleMode::None),
+            data: opts.data.clone(),
         };
 
         let global_queue = Arc::new(Injector::new());
@@ -424,14 +438,39 @@ impl WorkerPool {
             .worker_config
             .client
             .request(self.config.method.clone(), task.url.clone());
-
-        if let Some(headers) = self
+        if !task.headers.is_empty() {
+            req = req.headers(
+                task.headers
+                    .iter()
+                    .map(|(k, v)| {
+                        let name = HeaderName::from_bytes(k.as_bytes()).unwrap();
+                        let value = HeaderValue::from_str(v).unwrap();
+                        (name, value)
+                    })
+                    .collect(),
+            );
+        } else if let Some(headers) = self
             .config
             .headers
             .as_ref()
             .and_then(|h| h.get(&task.depth))
         {
-            req = req.headers(headers.clone());
+            req = req.headers(
+                headers
+                    .iter()
+                    .map(|(k, v)| {
+                        let name = HeaderName::from_bytes(k.as_bytes()).unwrap();
+                        let value = HeaderValue::from_str(v).unwrap();
+                        (name, value)
+                    })
+                    .collect(),
+            );
+        }
+
+        if let Some(ref data) = task.data {
+            req = req.body(data.clone());
+        } else if let Some(ref default_data) = self.config.data {
+            req = req.body(default_data.clone());
         }
 
         let res = req.send().await;

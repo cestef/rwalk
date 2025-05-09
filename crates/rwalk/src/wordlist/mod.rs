@@ -1,4 +1,4 @@
-use crate::{engine::Task, Result};
+use crate::{Result, engine::Task};
 use cowstr::CowStr;
 use crossbeam::deque::Injector;
 
@@ -38,7 +38,7 @@ impl Wordlist {
         self.words.par_iter().try_for_each(|word| {
             let mut url = base_url.clone();
             url.path_segments_mut().unwrap().pop_if_empty().push(word);
-            injector.push(Task::new(url.to_string(), depth));
+            injector.push(Task::new_recursive(url.to_string(), depth));
             Ok(())
         })
     }
