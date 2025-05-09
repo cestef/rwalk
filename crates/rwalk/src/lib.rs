@@ -9,7 +9,7 @@ use owo_colors::OwoColorize;
 use rhai::{Dynamic, Scope};
 use tracing::debug;
 use utils::{
-    constants::{self, DEFAULT_WORDLIST_KEY},
+    constants::{self, DEFAULT_WORDLIST_KEY, STATE_FILE},
     error, tree,
     types::{self, EngineMode},
 };
@@ -116,7 +116,7 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     let (pool, shutdown_tx) = WorkerPool::from_opts(&opts, wordlists)?;
 
     if opts.resume {
-        pool.load_state("rwalk.state")?;
+        pool.load_state(STATE_FILE)?;
     } else {
         pool.worker_config.handler.init(&pool)?;
     }

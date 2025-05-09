@@ -14,5 +14,6 @@ pub const STEAL_BATCH_LIMIT: usize = 8;
 pub const PROGRESS_UPDATE_INTERVAL: Duration = Duration::from_millis(100);
 
 pub const HISTORY_FILE: &str = ".rwalk_history";
+pub const STATE_FILE: &str = ".rwalk_state";
 
 pub const RESULTS_VAR_RHAI: &str = "res";

@@ -8,6 +8,7 @@ use crate::{
         bell,
         constants::{
             DEFAULT_RESPONSE_FILTER, PROGRESS_CHARS, PROGRESS_TEMPLATE, PROGRESS_UPDATE_INTERVAL,
+            STATE_FILE,
         },
         format::WARNING,
         throttle::{MetricsThrottler, SimpleThrottler, Throttler, create_dynamic_throttler},
@@ -37,8 +38,8 @@ use std::{
     path::Path,
     sync::Arc,
 };
+use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
-use tokio::{io::AsyncWriteExt, sync::broadcast};
 use url::Url;
 
 use super::{
@@ -318,7 +319,7 @@ impl WorkerPool {
             e = shutdown_rx.recv() => {
                 if matches!(e, Ok(true)) {
                     // Save state before returning
-                    Self::save_state("rwalk.state", global_.clone(), results.clone(), base_url)?;
+                    Self::save_state(STATE_FILE, global_.clone(), results.clone(), base_url)?;
                 }
                 pb.finish_and_clear();
                 Ok((results, ticker.get_rate()))
