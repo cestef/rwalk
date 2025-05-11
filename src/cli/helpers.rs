@@ -156,7 +156,10 @@ pub fn parse_header(s: &str) -> Result<KeyVal<String, String>, String> {
     if parts.len() != 2 {
         return Err("Invalid header".to_string());
     }
-    Ok(KeyVal(parts[0].trim().to_string(), parts[1].trim().to_string()))
+    Ok(KeyVal(
+        parts[0].trim().to_string(),
+        parts[1].trim().to_string(),
+    ))
 }
 
 pub fn parse_cookie(s: &str) -> Result<String, String> {
@@ -240,11 +243,20 @@ mod tests {
 
     #[test]
     fn test_parse_header() {
-        assert_eq!(parse_header("key:value").unwrap(), KeyVal("key".to_string(), "value".to_string()));
-        assert_eq!(parse_header("key:").unwrap(), KeyVal("key".to_string(), "".to_string()));
-        assert_eq!(parse_header(":value").unwrap(), KeyVal("".to_string(), "value".to_string()));
+        assert_eq!(
+            parse_header("key:value").unwrap(),
+            KeyVal("key".to_string(), "value".to_string())
+        );
+        assert_eq!(
+            parse_header("key:").unwrap(),
+            KeyVal("key".to_string(), "".to_string())
+        );
+        assert_eq!(
+            parse_header(":value").unwrap(),
+            KeyVal("".to_string(), "value".to_string())
+        );
         assert!(parse_header("key").is_err());
-    }    
+    }
 
     #[test]
     fn test_parse_cookie() {

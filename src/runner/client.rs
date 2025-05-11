@@ -16,7 +16,10 @@ use crate::{
 pub fn build(opts: &Opts) -> Result<reqwest::Client> {
     let mut headers = HeaderMap::new();
     opts.headers.clone().iter().for_each(|header| {
-        headers.insert(header.0.parse::<HeaderName>().unwrap(), header.1.parse().unwrap());
+        headers.insert(
+            header.0.parse::<HeaderName>().unwrap(),
+            header.1.parse().unwrap(),
+        );
     });
     opts.cookies.clone().iter().for_each(|cookie| {
         let mut cookie = cookie.splitn(2, '=');

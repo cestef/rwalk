@@ -579,7 +579,10 @@ mod tests {
         );
         assert_eq!(opts.method, Some("GET".to_string()));
         assert_eq!(opts.timeout, Some(10));
-        assert_eq!(opts.headers, vec![KeyVal("key".to_string(), "value".to_string())]);
+        assert_eq!(
+            opts.headers,
+            vec![KeyVal("key".to_string(), "value".to_string())]
+        );
         assert_eq!(opts.cookies, vec!["key=value".to_string()]);
         assert_eq!(opts.follow_redirects, Some(5));
         assert_eq!(opts.threads, Some(10));
