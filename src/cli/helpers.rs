@@ -151,13 +151,15 @@ pub fn parse_host(s: &str) -> Result<String, String> {
     }
 }
 
-pub fn parse_header(s: &str) -> Result<String, String> {
-    // key: value
-    let parts = s.split(':').collect::<Vec<_>>();
+pub fn parse_header(s: &str) -> Result<KeyVal<String, String>, String> {
+    let parts: Vec<&str> = s.splitn(2, ':').collect();
     if parts.len() != 2 {
         return Err("Invalid header".to_string());
     }
-    Ok(s.to_string())
+    Ok(KeyVal(
+        parts[0].trim().to_string(),
+        parts[1].trim().to_string(),
+    ))
 }
 
 pub fn parse_cookie(s: &str) -> Result<String, String> {
@@ -241,9 +243,18 @@ mod tests {
 
     #[test]
     fn test_parse_header() {
-        assert_eq!(parse_header("key:value").unwrap(), "key:value".to_string());
-        assert_eq!(parse_header("key:").unwrap(), "key:".to_string());
-        assert_eq!(parse_header(":value").unwrap(), ":value".to_string());
+        assert_eq!(
+            parse_header("key:value").unwrap(),
+            KeyVal("key".to_string(), "value".to_string())
+        );
+        assert_eq!(
+            parse_header("key:").unwrap(),
+            KeyVal("key".to_string(), "".to_string())
+        );
+        assert_eq!(
+            parse_header(":value").unwrap(),
+            KeyVal("".to_string(), "value".to_string())
+        );
         assert!(parse_header("key").is_err());
     }
 

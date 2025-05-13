@@ -129,9 +129,9 @@ pub struct Opts {
 
     /// Headers to send
     #[clap(short = 'H', long, value_name = "key:value", value_parser = parse_header, env, hide_env=true, help_heading = Some("Requests"),value_delimiter = ',')]
-    #[merge(strategy = overwrite_vec)]
+    #[merge(strategy = merge_vec_by_key)]
     #[serde(default)]
-    pub headers: Vec<String>,
+    pub headers: Vec<KeyVal<String, String>>,
 
     /// Cookies to send
     #[clap(short = 'C', long, value_name = "key=value", value_parser = parse_cookie, env, hide_env=true, help_heading = Some("Requests"),value_delimiter = ',')]
@@ -251,7 +251,7 @@ pub struct Opts {
         value_parser(KeyValParser),
         value_delimiter = ';'
     )]
-    #[merge(strategy = overwrite_vec)]
+    #[merge(strategy = merge_vec_by_key)]
     #[serde(default)]
     pub filter: Vec<KeyVal<String, String>>,
 
@@ -376,6 +376,16 @@ fn overwrite_option<T>(a: &mut Option<T>, b: Option<T>) {
 fn overwrite_vec<T>(a: &mut Vec<T>, b: Vec<T>) {
     if !b.is_empty() {
         *a = b;
+    }
+}
+
+fn merge_vec_by_key(a: &mut Vec<KeyVal<String, String>>, b: Vec<KeyVal<String, String>>) {
+    for new_kv in b {
+        if let Some(existing) = a.iter_mut().find(|kv| kv.0 == new_kv.0) {
+            *existing = new_kv;
+        } else {
+            a.push(new_kv);
+        }
     }
 }
 
@@ -569,7 +579,10 @@ mod tests {
         );
         assert_eq!(opts.method, Some("GET".to_string()));
         assert_eq!(opts.timeout, Some(10));
-        assert_eq!(opts.headers, vec!["key:value".to_string()]);
+        assert_eq!(
+            opts.headers,
+            vec![KeyVal("key".to_string(), "value".to_string())]
+        );
         assert_eq!(opts.cookies, vec!["key=value".to_string()]);
         assert_eq!(opts.follow_redirects, Some(5));
         assert_eq!(opts.threads, Some(10));
