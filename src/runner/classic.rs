@@ -28,6 +28,7 @@ pub struct Classic {
     url: String,
     opts: Opts,
     tree: Arc<Mutex<Tree<TreeData>>>,
+    current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
     words: HashMap<String, ParsedWordlist>,
     threads: usize,
 }
@@ -37,6 +38,7 @@ impl Classic {
         url: String,
         opts: Opts,
         tree: Arc<Mutex<Tree<TreeData>>>,
+        current_indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
         words: HashMap<String, ParsedWordlist>,
         threads: usize,
     ) -> Self {
@@ -44,6 +46,7 @@ impl Classic {
             url,
             opts,
             tree,
+            current_indexes,
             words,
             threads,
         }
@@ -71,21 +74,35 @@ impl Classic {
     }
 
     async fn process_chunk(
+        root_url: String,
         chunk: Vec<String>,
         client: Client,
         progress: ProgressBar,
+        indexes: Arc<Mutex<HashMap<String, Vec<usize>>>>,
         tree: Arc<Mutex<Tree<TreeData>>>,
         opts: Opts,
         engine: Arc<rhai::Engine>,
+        i: usize,
     ) -> Result<()> {
-        for (index, url) in chunk.iter().enumerate() {
+        // Extract the index safely
+        let index = {
+            let mut indexes = indexes.lock();
+            *indexes
+                .get_mut(&root_url)
+                .ok_or(eyre!("Couldn't find indexes for the root node"))?
+                .get(i)
+                .ok_or(eyre!("Invalid index"))?
+        };
+
+        // Now it's safe to await
+        for url in &chunk[index..] {
             let mut url = url.clone();
             let t1 = Instant::now();
+
             if !opts.distributed.is_empty() {
                 let current = index % (opts.distributed.len() + 1);
                 if current != 0 {
                     let host_for_this_request = &opts.distributed[current - 1];
-
                     let parsed_url = url::Url::parse(&url)?;
                     url = format!(
                         "{}://{}{}",
@@ -95,8 +112,8 @@ impl Classic {
                     );
                 }
             }
-            let request = super::client::build_request(&opts, &url, &client)?;
 
+            let request = super::client::build_request(&opts, &url, &client)?;
             let response = client.execute(request).await;
             if let Some(ref wait) = opts.wait {
                 let (min, max) = wait.split_once('-').unwrap_or_default();
@@ -279,6 +296,18 @@ impl Classic {
                     }
                 }
             }
+            let mut indexes = indexes.lock(); // Lock the mutex
+
+            // Locking and working with the entry
+            let entry = indexes
+                .get_mut(&root_url)
+                .ok_or(eyre!("Couldn't find indexes for the root node"))?
+                .get_mut(i)
+                .ok_or(eyre!("Invalid index"))?;
+
+            // Now you can modify the entry
+            *entry += 1;
+
             progress.inc(1);
         }
 
@@ -299,15 +328,27 @@ impl Runner for Classic {
         }
         debug!("URLs: {:?}", urls);
 
-        let progress = ProgressBar::new(urls.len() as u64).with_style(
-            indicatif::ProgressStyle::default_bar()
-                .template(PROGRESS_TEMPLATE)?
-                .progress_chars(PROGRESS_CHARS),
-        );
-
-        progress.enable_steady_tick(Duration::from_millis(100));
         let chunks = urls.chunks(urls.len() / self.threads).collect::<Vec<_>>();
         let mut handles = Vec::with_capacity(chunks.len());
+
+        // Extract index safely and drop the lock early
+        let index = {
+            let mut indexes = self.current_indexes.lock();
+            indexes
+                .entry(self.url.clone())
+                .or_insert_with(|| vec![0; chunks.len()])
+                .clone()
+        };
+
+        let progress = ProgressBar::new(urls.len() as u64)
+            .with_style(
+                indicatif::ProgressStyle::default_bar()
+                    .template(PROGRESS_TEMPLATE)?
+                    .progress_chars(PROGRESS_CHARS),
+            )
+            .with_position(index.iter().sum::<usize>() as u64);
+
+        progress.enable_steady_tick(Duration::from_millis(100));
 
         let client = super::client::build(&self.opts)?;
         let mut engine = rhai::Engine::new();
@@ -320,15 +361,28 @@ impl Runner for Classic {
             }
         });
         let engine = Arc::new(engine);
-        for chunk in &chunks {
+        for (i, chunk) in chunks.iter().enumerate() {
+            let root_url = self.url.clone();
             let chunk = chunk.to_vec();
             let client = client.clone();
             let progress = progress.clone();
+            let indexes = self.current_indexes.clone();
             let tree = self.tree.clone();
             let opts = self.opts.clone();
             let engine = engine.clone();
             let res = tokio::spawn(async move {
-                Self::process_chunk(chunk, client, progress, tree, opts, engine).await
+                Self::process_chunk(
+                    root_url.clone(),
+                    chunk,
+                    client,
+                    progress,
+                    indexes,
+                    tree,
+                    opts,
+                    engine,
+                    i,
+                )
+                .await
             });
             handles.push(res);
         }
