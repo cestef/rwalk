@@ -305,7 +305,7 @@ impl Classic {
                 .get_mut(i)
                 .ok_or(eyre!("Invalid index"))?;
 
-            // Now you can modify the entry
+            // Increment the value at the specified index
             *entry += 1;
 
             progress.inc(1);
