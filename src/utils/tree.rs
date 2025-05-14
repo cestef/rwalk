@@ -265,7 +265,7 @@ pub fn from_save(
     words: HashMap<String, ParsedWordlist>,
 ) -> Result<Arc<Mutex<Tree<TreeData>>>> {
     if let Some(root) = &save.tree.clone().lock().root {
-        if opts.url.is_some() && root.lock().data.url != opts.url.clone().unwrap() {
+        if save.opts.url != opts.url {
             Err(color_eyre::eyre::eyre!(
                 "The URL of the saved state does not match the URL provided"
             ))
