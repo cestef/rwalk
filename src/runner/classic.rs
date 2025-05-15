@@ -74,7 +74,7 @@ impl Classic {
     }
 
     async fn process_chunk(
-        base_url: String,
+        root_url: &str,
         chunk: Vec<String>,
         client: Client,
         progress: ProgressBar,
@@ -88,7 +88,7 @@ impl Classic {
         let index = {
             let mut indexes = indexes.lock();
             *indexes
-                .get_mut(&base_url)
+                .get_mut(root_url)
                 .ok_or(eyre!("Couldn't find indexes for the root node"))?
                 .get(i)
                 .ok_or(eyre!("Invalid index"))?
@@ -195,14 +195,7 @@ impl Classic {
 
                         let parsed = Url::parse(&url)?;
                         let mut tree = tree.lock().clone();
-                        let root_url = tree
-                            .root
-                            .clone()
-                            .ok_or(eyre!("Failed to get root URL from tree"))?
-                            .lock()
-                            .data
-                            .url
-                            .clone();
+
                         let maybe_content_type = response.headers().get("content-type").map(|x| {
                             x.to_str()
                                 .unwrap_or_default()
@@ -219,7 +212,7 @@ impl Classic {
                             depth: 0,
                             path: parsed
                                 .path()
-                                .strip_prefix(Url::parse(&root_url)?.path())
+                                .strip_prefix(Url::parse(root_url)?.path())
                                 .unwrap_or(parsed.path())
                                 .to_string(),
                             status_code,
@@ -257,20 +250,13 @@ impl Classic {
                         ));
                         let parsed = Url::parse(&url)?;
                         let mut tree = tree.lock().clone();
-                        let root_url = tree
-                            .root
-                            .clone()
-                            .ok_or(eyre!("Failed to get root URL from tree"))?
-                            .lock()
-                            .data
-                            .url
-                            .clone();
+
                         let data = TreeData {
                             url: url.clone(),
                             depth: 0,
                             path: parsed
                                 .path()
-                                .strip_prefix(Url::parse(&root_url)?.path())
+                                .strip_prefix(Url::parse(root_url)?.path())
                                 .unwrap_or(parsed.path())
                                 .to_string(),
                             status_code: 0,
@@ -302,15 +288,11 @@ impl Classic {
 
             // Locking and working with the entry
             let entry = indexes
-                .get_mut(&base_url)
+                .get_mut(root_url)
                 .ok_or(eyre!("Couldn't find indexes for the root node"))?
                 .get_mut(i)
                 .ok_or(eyre!("Invalid index"))?;
-
-            // Increment the value at the specified index
             *entry += 1;
-
-            progress.inc(1);
         }
 
         Ok(())
@@ -319,6 +301,14 @@ impl Classic {
 
 impl Runner for Classic {
     async fn run(self) -> Result<()> {
+        // Get root URL once from tree and use everywhere
+        let root_url = {
+            let tree = self.tree.lock();
+            // Fix lifetime by cloning into a temporary variable first
+            let url = tree.root.as_ref().unwrap().lock().data.url.clone();
+            url
+        };
+
         let spinner = ProgressBar::new_spinner();
         spinner.set_message("Generating URLs...".to_string());
         spinner.enable_steady_tick(Duration::from_millis(100));
@@ -337,7 +327,7 @@ impl Runner for Classic {
         let index = {
             let mut indexes = self.current_indexes.lock();
             indexes
-                .entry(self.url.clone())
+                .entry(root_url.clone())
                 .or_insert_with(|| vec![0; chunks.len()])
                 .clone()
         };
@@ -364,7 +354,7 @@ impl Runner for Classic {
         });
         let engine = Arc::new(engine);
         for (i, chunk) in chunks.iter().enumerate() {
-            let base_url = self.url.clone();
+            let root_url = root_url.clone();
             let chunk = chunk.to_vec();
             let client = client.clone();
             let progress = progress.clone();
@@ -374,15 +364,7 @@ impl Runner for Classic {
             let engine = engine.clone();
             let res = tokio::spawn(async move {
                 Self::process_chunk(
-                    base_url.clone(),
-                    chunk,
-                    client,
-                    progress,
-                    indexes,
-                    tree,
-                    opts,
-                    engine,
-                    i,
+                    &root_url, chunk, client, progress, indexes, tree, opts, engine, i,
                 )
                 .await
             });
