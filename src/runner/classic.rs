@@ -74,7 +74,7 @@ impl Classic {
     }
 
     async fn process_chunk(
-        root_url: String,
+        base_url: String,
         chunk: Vec<String>,
         client: Client,
         progress: ProgressBar,
@@ -88,7 +88,7 @@ impl Classic {
         let index = {
             let mut indexes = indexes.lock();
             *indexes
-                .get_mut(&root_url)
+                .get_mut(&base_url)
                 .ok_or(eyre!("Couldn't find indexes for the root node"))?
                 .get(i)
                 .ok_or(eyre!("Invalid index"))?
@@ -219,8 +219,9 @@ impl Classic {
                             depth: 0,
                             path: parsed
                                 .path()
-                                .to_string()
-                                .replace(Url::parse(&root_url)?.path().to_string().as_str(), ""),
+                                .strip_prefix(Url::parse(&root_url)?.path())
+                                .unwrap_or(parsed.path())
+                                .to_string(),
                             status_code,
                             extra: json!(additions),
                             url_type: if is_dir {
@@ -269,8 +270,9 @@ impl Classic {
                             depth: 0,
                             path: parsed
                                 .path()
-                                .to_string()
-                                .replace(Url::parse(&root_url)?.path().to_string().as_str(), ""),
+                                .strip_prefix(Url::parse(&root_url)?.path())
+                                .unwrap_or(parsed.path())
+                                .to_string(),
                             status_code: 0,
                             extra: json!([]),
                             url_type: UrlType::Unknown,
@@ -300,7 +302,7 @@ impl Classic {
 
             // Locking and working with the entry
             let entry = indexes
-                .get_mut(&root_url)
+                .get_mut(&base_url)
                 .ok_or(eyre!("Couldn't find indexes for the root node"))?
                 .get_mut(i)
                 .ok_or(eyre!("Invalid index"))?;
@@ -362,7 +364,7 @@ impl Runner for Classic {
         });
         let engine = Arc::new(engine);
         for (i, chunk) in chunks.iter().enumerate() {
-            let root_url = self.url.clone();
+            let base_url = self.url.clone();
             let chunk = chunk.to_vec();
             let client = client.clone();
             let progress = progress.clone();
@@ -372,7 +374,7 @@ impl Runner for Classic {
             let engine = engine.clone();
             let res = tokio::spawn(async move {
                 Self::process_chunk(
-                    root_url.clone(),
+                    base_url.clone(),
                     chunk,
                     client,
                     progress,
