@@ -293,6 +293,8 @@ impl Classic {
                 .get_mut(i)
                 .ok_or(eyre!("Invalid index"))?;
             *entry += 1;
+
+            progress.inc(1);
         }
 
         Ok(())
