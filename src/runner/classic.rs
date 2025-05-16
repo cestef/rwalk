@@ -72,7 +72,8 @@ impl Classic {
         }
         urls
     }
-
+    
+    #[allow(clippy::too_many_arguments)]
     async fn process_chunk(
         root_url: &str,
         chunk: Vec<String>,
