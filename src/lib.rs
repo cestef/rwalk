@@ -336,6 +336,7 @@ pub async fn _main(opts: Opts) -> Result<Tree<TreeData>> {
             url.clone(),
             opts.clone(),
             tree.clone(),
+            current_indexes.clone(),
             // We do not need to chunk the words here as it is chunked in the Classic struct
             words.clone(),
             threads,

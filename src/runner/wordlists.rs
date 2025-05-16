@@ -446,8 +446,11 @@ pub fn transformations(opts: &Opts, wordlists: &mut HashMap<String, ParsedWordli
 }
 
 pub fn compute_checksum(wordlists: &HashMap<String, ParsedWordlist>) -> String {
-    let to_compute = wordlists
-        .iter()
+    let mut entries: Vec<_> = wordlists.iter().collect();
+    entries.sort_by_key(|(key, _)| *key);
+
+    let to_compute = entries
+        .into_iter()
         .map(|(key, ParsedWordlist { words, .. })| format!("{}:{:?}", key, words.join(",")))
         .collect::<Vec<String>>()
         .join("|");

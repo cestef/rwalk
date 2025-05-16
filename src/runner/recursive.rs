@@ -195,10 +195,10 @@ impl Recursive {
                     );
                 }
             }
-            match url.ends_with('/') {
-                true => url.push_str(&word),
-                false => url.push_str(&format!("/{}", word)),
+            if !url.ends_with('/') && !word.starts_with('/') {
+                url.push('/');
             }
+            url.push_str(&word);
 
             let request = super::client::build_request(&opts, &url, &client)?;
 
