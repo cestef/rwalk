@@ -25,6 +25,28 @@ You can obviously use multiple filters together, by using boolean operators:
 ([032mfilter1[0m:[033marg1[0m & [032mfilter2[0m:[033marg2[0m) | [032mfilter3[0m:[033marg3[0m
 ```
 
+## Applying filters granularly
+
+### Recursive mode
+
+When using `rwalk` in recursive mode (`--mode recursive`), you can apply filters at specific depths by prefixing the filter with a depth indicator. 
+
+For instance, to apply a filter exclusively at depth 2, use the following syntax:
+
+```ansi
+[[034m2[0m][032mfilter[0m:[033marg[0m
+```
+
+### Wordlists
+
+When filtering wordlists (`--wf`), it's possible to apply filters for certain wordlist keys. Just as with recursive mode, you can prefix the filter with a key indicator.
+
+For example, to apply a filter exclusively for the `@` key, use the following syntax:
+
+```ansi
+[[034m@[0m][032mfilter[0m:[033marg[0m
+```
+
 ## Response filters
 
 <table>

@@ -1,6 +1,6 @@
 +++
 title = "Interactive"
-weight = 20
+weight = 30
 +++
 
 The interactive mode allows you to edit options on the fly and manipulate the results with the [`rhai`](https://rhai.rs) scripting language.
