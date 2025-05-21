@@ -117,7 +117,7 @@ impl<'a> WordlistProcessor<'a> {
         let path = PathBuf::from(&*path)
             .canonicalize()
             .map_err(|e| crate::error!("Failed to open wordlist file {}: {}", path.bold(), e))?;
-        debug!("Canonicalized path: {}", path.display());
+
         let file = File::open(&*path).await?;
         let reader = BufReader::new(file);
         let mut lines = reader.lines();
@@ -133,7 +133,7 @@ impl<'a> WordlistProcessor<'a> {
                 if let Some(mut word) = processed_line {
                     transformer.apply(&mut word);
                     let word: CowStr = word.into();
-                    // Add word to shared structure if it passes the filter
+
                     if filterer.filter(&(key.clone(), word.clone()))? {
                         shared_words.entry(key.clone()).or_default().insert(word);
                     }

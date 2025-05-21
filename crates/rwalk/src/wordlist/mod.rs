@@ -1,4 +1,4 @@
-use crate::{Result, engine::Task};
+use crate::{Result, engine::Task, utils::constants::DEFAULT_WORDLIST_KEY};
 use cowstr::CowStr;
 use crossbeam::deque::Injector;
 
@@ -15,6 +15,16 @@ pub struct Wordlist {
     pub words: Vec<CowStr>,
     pub key: CowStr,
 }
+
+impl Default for Wordlist {
+    fn default() -> Self {
+        Self {
+            words: Vec::new(),
+            key: DEFAULT_WORDLIST_KEY.into(),
+        }
+    }
+}
+
 impl Wordlist {
     pub fn new(key: CowStr) -> Self {
         Self {
@@ -49,5 +59,14 @@ impl Wordlist {
 
     pub fn is_empty(&self) -> bool {
         self.words.is_empty()
+    }
+
+    pub fn extend(&mut self, other: Self) {
+        self.words.extend(other.words);
+    }
+
+    pub fn dedup(&mut self) {
+        self.words.sort();
+        self.words.dedup();
     }
 }

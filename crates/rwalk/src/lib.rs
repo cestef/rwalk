@@ -87,6 +87,26 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
             print_warning(&url_keys, "URL");
             print_warning(&data_keys, "Data");
             print_warning(&header_keys, "Headers");
+
+            if wordlists.len() > 1 {
+                warning!(
+                    "Multiple wordlists will be merged into a single one when using {}",
+                    format!("{} {}", "--mode".dimmed(), "recursive".bold()),
+                );
+
+                let mut merged_wordlist = wordlists
+                    .iter()
+                    .map(|wordlist| wordlist.clone())
+                    .reduce(|mut acc, wordlist| {
+                        acc.extend(wordlist);
+                        acc
+                    })
+                    .unwrap_or_default();
+
+                merged_wordlist.dedup();
+
+                wordlists = vec![merged_wordlist];
+            }
         }
         EngineMode::Template => {
             if url_keys.is_empty() && data_keys.is_empty() {
