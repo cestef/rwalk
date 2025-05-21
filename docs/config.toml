@@ -1,4 +1,4 @@
-base_url = "https://rwalk.cstef.dev"
+base_url = "https://dev.rwalk.cstef.dev"
 minify_html = true
 compile_sass = false
 
