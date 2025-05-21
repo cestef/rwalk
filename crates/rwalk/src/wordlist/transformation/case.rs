@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use super::Transform;
 use crate::{
-    error::{error, RwalkError},
     Result,
+    error::{RwalkError, error},
 };
 
 #[derive(Debug, Clone)]
@@ -20,7 +20,7 @@ impl FromStr for Case {
         match s.to_lowercase().as_str() {
             "upper" | "up" | "u" => Ok(Case::Upper),
             "lower" | "low" | "l" => Ok(Case::Lower),
-            "capitalize" | "cap" | "c" => Ok(Case::Capitalize),
+            "title" | "capitalize" | "cap" | "c" => Ok(Case::Capitalize),
             _ => Err(error!("Invalid case: {}", s)),
         }
     }
