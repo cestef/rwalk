@@ -3,7 +3,7 @@ name: Build and Deploy to Cloudflare Pages
 on:
     push:
         branches:
-            - main
+            - dev
 jobs:
     build:
         runs-on: ubuntu-latest
@@ -50,9 +50,6 @@ jobs:
             - name: Build Zola site
               run: zola build
 
-            - name: Display structure of built files
-              run: ls -R public
-
             - name: Upload artifact
               uses: actions/upload-artifact@v4
               with:
@@ -69,8 +66,6 @@ jobs:
               with:
                   name: site
                   path: public
-            - name: Display structure of downloaded files
-              run: ls -R public
 
             - name: Deploy
               uses: cloudflare/wrangler-action@v3
