@@ -6,7 +6,10 @@
     "scripts": {
         "dev:css": "tailwindcss -i styles/main.css -o static/css/main.css -w",
         "dev:zola": "zola serve --drafts",
-        "dev": "npm-run-all -p dev:*"
+        "dev": "npm-run-all -p dev:*",
+        "build:css": "tailwindcss -i styles/main.css -o static/css/main.css",
+        "build:zola": "zola build",
+        "build": "npm-run-all build:*"
     },
     "keywords": [],
     "author": "",
