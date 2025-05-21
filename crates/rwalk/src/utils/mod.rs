@@ -13,6 +13,7 @@ pub mod throttle;
 pub mod ticker;
 pub mod tree;
 pub mod types;
+
 use std::io::Write;
 
 pub fn bell() {

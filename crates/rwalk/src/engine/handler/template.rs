@@ -65,13 +65,11 @@ impl ResponseHandler for TemplateHandler {
 }
 
 impl TemplateHandler {
-    // Generic function to process a template string and find positions
     fn process_template_string(
         &self,
         template: &str,
         wordlists: &[Wordlist],
     ) -> (Vec<String>, Vec<Vec<usize>>) {
-        // Find all positions of template keys
         let mut template_positions = Vec::new();
 
         for (wl_idx, wordlist) in wordlists.iter().enumerate() {
@@ -85,10 +83,8 @@ impl TemplateHandler {
             }
         }
 
-        // Sort positions by their location in the template
         template_positions.sort_by_key(|&(pos, _, _)| pos);
 
-        // Create segments
         let mut segments = Vec::new();
         let mut last_end = 0;
 
@@ -96,16 +92,15 @@ impl TemplateHandler {
             if pos > last_end {
                 segments.push(template[last_end..pos].to_string());
             }
-            segments.push(String::new()); // Placeholder for word insertion
+            segments.push(String::new()); // placeholder 
             last_end = pos + len;
         }
 
-        // Add the last segment if needed
         if last_end < template.len() {
             segments.push(template[last_end..].to_string());
         }
 
-        // Create mapping from wordlist index to segment positions
+        // mapping from wordlist index to segment positions
         let mut wl_to_positions: Vec<Vec<usize>> = vec![Vec::new(); wordlists.len()];
 
         for (seg_idx, &(_, wl_idx, _)) in template_positions.iter().enumerate() {
@@ -126,7 +121,6 @@ impl TemplateHandler {
         //     "fill_template: segments: {:?}, wl_to_positions: {:?}",
         //     segments, wl_to_positions
         // );
-        // Fill in the placeholders
         for (wl_idx, word) in words.iter().enumerate() {
             if wl_idx < wl_to_positions.len() {
                 for &pos in &wl_to_positions[wl_idx] {
@@ -157,17 +151,14 @@ impl TemplateHandler {
         pb.enable_steady_tick(Duration::from_millis(100));
         pb.set_message("Generating templates for");
 
-        // Process the URL template
         let (url_segments, url_wl_positions) = self.process_template_string(base_url, wordlists);
 
-        // Process the data template if it exists
         let (data_segments, data_wl_positions) = if let Some(data) = base_data {
             self.process_template_string(data, wordlists)
         } else {
             (Vec::new(), Vec::new())
         };
 
-        // Process header templates if they exist
         let mut header_templates = Vec::new();
         let mut has_header_templates = false;
 
@@ -183,7 +174,6 @@ impl TemplateHandler {
             debug!("No headers provided");
         }
 
-        // Check if we found any template markers
         let has_url_templates = !url_wl_positions.iter().all(|v| v.is_empty());
         let has_data_templates = !data_wl_positions.iter().all(|v| v.is_empty());
 
@@ -191,21 +181,17 @@ impl TemplateHandler {
             return Err(error!("No template markers found in URL, data, or headers"));
         }
 
-        // Calculate total combinations
         let word_iters = wordlists.iter().map(|wl| wl.words.iter());
         let total_length: usize = word_iters.clone().map(|iter| iter.len()).product();
         pb.set_length(total_length as u64);
 
-        // Generate all combinations
         let combinations = word_iters.multi_cartesian_product();
 
         let results: Vec<(String, Option<String>, HeaderMap)> = combinations
             .progress_with(pb.clone())
             .map(|words| {
-                // Generate URL from template
                 let url = self.fill_template(&url_segments, &url_wl_positions, &words);
 
-                // Generate data from template if it exists
                 let data = if !data_segments.is_empty() {
                     Some(self.fill_template(&data_segments, &data_wl_positions, &words))
                 } else if base_data.is_some() {
@@ -214,17 +200,14 @@ impl TemplateHandler {
                     None
                 };
 
-                // Generate headers from templates
                 let mut headers = HeaderMap::new();
                 if let Some(ref base_headers) = base_headers {
-                    // First copy any non-templated headers
                     for (key, value) in base_headers {
                         if !header_templates.iter().any(|(name, _, _)| name == key) {
                             headers.insert(key.clone(), value.clone());
                         }
                     }
 
-                    // Then process templated headers
                     for (header_name, segments, positions) in &header_templates {
                         let value = self.fill_template(segments, positions, &words);
                         headers.insert(header_name.clone(), value);

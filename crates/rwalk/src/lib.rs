@@ -169,13 +169,13 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     let rx = shutdown_tx.subscribe();
 
     let (results, rate) = pool.run(rx).await?;
-
     match opts.output.as_deref() {
         Some(e) => {
             let out = match e.extension().and_then(|e| e.to_str()) {
                 Some("json") => serde_json::to_string_pretty(&*results)?,
                 Some("csv") => utils::output::csv(&results),
                 Some("md") => utils::output::md(&results),
+                Some("html") => utils::output::html(&results, &url)?,
                 _ => utils::output::txt(&results),
             };
 
