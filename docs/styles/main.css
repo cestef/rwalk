@@ -48,10 +48,6 @@ main {
 	overflow-y: auto;
 }
 
-.prose {
-	@apply xl:max-w-[72ch];
-}
-
 details {
 	@apply border border-border rounded-lg px-4 py-2 my-4;
 }
@@ -138,7 +134,7 @@ input {
 }
 
 article {
-	@apply prose dark:prose-invert max-w-[74ch] mx-auto px-4;
+	@apply prose dark:prose-invert max-w-[74ch] xl:max-w-[80ch] mx-auto px-4;
 }
 
 table {
@@ -164,12 +160,12 @@ tr:nth-child(even) {
     @apply bg-muted/5;
 }
 
-code:not(pre code) {
-    @apply bg-muted/80 text-foreground/80 rounded-md px-2 py-[0.25em];
-}
 
-code:not(pre code)::before,
-code:not(pre code)::after {
+:not(pre) > code::before,
+:not(pre) > code::after {
     content: none;
 }
 
+:not(pre) > code {
+    @apply bg-muted/80 text-foreground/80 rounded-md px-2 py-[0.25em] whitespace-nowrap;
+}

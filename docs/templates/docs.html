@@ -14,7 +14,7 @@
 {% block main %}
 {%- set section = get_section(path="docs/_index.md") -%}
 
-<div class="relative flex flex-col md:flex-row min-h-screen">
+<div class="relative min-h-screen flex-row md:flex w-full">
     <aside id="docs-sidebar"
         class="fixed md:sticky bg-background top-0 left-0 w-64 h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto z-40">
         <div class="flex justify-between items-center p-4">
@@ -42,7 +42,7 @@
         </nav>
     </aside>
 
-    <article class="flex-1 p-4 md:ml-64 bg-background wrap-break-word">
+    <article class="p-4 bg-background">
         {% if page %}
         <h1 class="text-3xl font-bold mb-6">{{ page.title }}</h1>
         {{ page.content | safe }}
