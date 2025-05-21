@@ -101,7 +101,6 @@ impl WorkerPool {
         results: Arc<DashMap<String, RwalkResponse>>,
         base_url: Url,
     ) -> Result<()> {
-        // Collect pending tasks from the global queue
         let mut pending_tasks = Vec::new();
         while let Steal::Success(task) = global_queue.steal() {
             pending_tasks.push(task);
@@ -137,17 +136,14 @@ impl WorkerPool {
             ));
         }
 
-        // Restore pending tasks to global queue
         for task in state.pending_tasks {
             self.global_queue.push(task);
         }
 
-        // Restore completed results
         for (url, response) in state.completed_results {
             self.results.insert(url, response);
         }
 
-        // Update progress bar
         self.pb.set_length(self.global_queue.len() as u64);
 
         Ok(())

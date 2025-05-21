@@ -72,6 +72,29 @@ pub fn parse_keyval(s: &str) -> Result<(String, String)> {
     parse_keyval_with_sep(s, ':')
 }
 
+// key1,key2:val
+pub fn parse_multikey_val(s: &str) -> Result<(HashSet<String>, String)> {
+    let parts: Vec<&str> = s.split(':').collect();
+    if parts.len() != 2 {
+        return Err(syntax_error!((0, s.len()), s, "Expected exactly one ':'"));
+    }
+    let keys: HashSet<String> = parts[0]
+        .split(',')
+        .filter_map(|k| {
+            let k = k.trim();
+            if k.is_empty() {
+                None
+            } else {
+                Some(k.to_string())
+            }
+        })
+        .collect();
+    if keys.is_empty() {
+        return Err(syntax_error!((0, s.len()), s, "Empty key list"));
+    }
+    Ok((keys, parts[1].to_string()))
+}
+
 // key[:value]
 pub fn parse_key_or_keyval(s: &str) -> Result<(String, Option<String>)> {
     let parts: Vec<&str> = s.split(':').collect();

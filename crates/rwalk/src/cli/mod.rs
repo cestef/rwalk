@@ -11,8 +11,8 @@ use dashmap::DashSet as HashSet;
 use dyn_fields::DynamicFields;
 use merge::Merge;
 use parse::{
-    parse_filter, parse_keyed_key_or_keyval, parse_keyed_keyval, parse_throttle, parse_url,
-    parse_wordlist,
+    parse_filter, parse_keyed_key_or_keyval, parse_keyed_keyval, parse_multikey_val,
+    parse_throttle, parse_url, parse_wordlist,
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -148,7 +148,6 @@ pub struct Opts {
 
     /// Wordlist filters, see `--list-filters`
     #[clap(
-        short,
         long,
         visible_alias = "wf",
         value_name = "EXPR",
@@ -156,6 +155,11 @@ pub struct Opts {
     )]
     #[merge(strategy = merge::option::overwrite_none)]
     pub wordlist_filter: Option<String>,
+
+    /// Merge two or more wordlists into one
+    #[clap(long, visible_alias = "mw", help_heading = "Scan Configuration", value_parser = parse_multikey_val, value_name = "SRC:DEST")]
+    #[merge(strategy = merge::vec::append)]
+    pub merge: Vec<(HashSet<String>, String)>,
 
     //
     // ------------------------------------------------------------------------

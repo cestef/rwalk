@@ -1,5 +1,6 @@
 use crate::{
     cli::Opts,
+    error,
     error::{Result, RwalkError},
     filters::Filterer,
     wordlist::{
@@ -60,6 +61,33 @@ impl<'a> WordlistProcessor<'a> {
             result??;
         }
 
+        for (srcs, dest) in &self.opts.merge {
+            let mut to_remove = Vec::new();
+
+            for src in srcs.iter() {
+                let src = shared_words
+                    .get::<CowStr>(&src.key().into())
+                    .ok_or_else(|| {
+                        error!(
+                            "Wordlist {} not found in shared words",
+                            src.to_string().bold()
+                        )
+                    })?;
+                debug!("Merging {} into {}", src.key(), dest);
+
+                shared_words
+                    .entry(dest.into())
+                    .or_default()
+                    .extend(src.value().iter().map(|word| word.clone()));
+
+                to_remove.push(src.key().clone());
+            }
+
+            for key in to_remove {
+                shared_words.remove(&key);
+            }
+        }
+
         let merged = shared_words
             .iter()
             .filter(|entry| !entry.value().is_empty())
@@ -85,7 +113,6 @@ impl<'a> WordlistProcessor<'a> {
         shared_words: &DashMap<CowStr, DashSet<CowStr>>,
         include_comments: bool,
     ) -> Result<()> {
-        // Note: now returns () instead of Wordlist
         debug!("Processing wordlist: {}", path);
         let path = PathBuf::from(&*path)
             .canonicalize()
