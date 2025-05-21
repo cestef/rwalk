@@ -13,7 +13,7 @@
     },
     "keywords": [],
     "author": "",
-    "license": "ISC",
+    "license": "MIT",
     "packageManager": "pnpm@10.7.1",
     "devDependencies": {
         "@tailwindcss/typography": "^0.5.16",

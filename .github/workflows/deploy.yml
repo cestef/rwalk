@@ -4,6 +4,8 @@ on:
     push:
         branches:
             - dev
+        paths:
+          - "docs/**"
 jobs:
     build:
         runs-on: ubuntu-latest
@@ -47,11 +49,8 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-zola-
 
-            - name: Build Tailwind CSS
-              run: pnpm run css:build
-
-            - name: Build Zola site
-              run: zola build
+            - name: Build
+              run: pnpm build
 
             - name: Upload artifact
               uses: actions/upload-artifact@v4
