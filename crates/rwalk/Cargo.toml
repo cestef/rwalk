@@ -48,12 +48,11 @@ tabled = { version = "0.19", features = ["ansi"] }
 ptree = "0.5"
 merge = "0.2"
 toml = "0.8"
-termimad = "0.31"
+termimad = "0.32"
 terminal-light = "1"
 terminal_size = "0.4"
 rhai = { version = "1", features = ["sync", "serde"] }
 smartstring = "1"
-criterion = { version = "0.5", features = ["async", "async_tokio"] }
 clap-markdown = "0.1"
 rustyline = "15"
 async-trait = "0.1"
