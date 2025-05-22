@@ -9,9 +9,8 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
-
             - uses: taiki-e/install-action@nextest
-
+            - uses: Swatinem/rust-cache@v2
             - run: cargo nextest run
               env:
                   CARGO_TERM_COLOR: always
