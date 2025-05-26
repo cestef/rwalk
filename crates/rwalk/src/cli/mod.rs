@@ -186,6 +186,11 @@ pub struct Opts {
     #[merge(strategy = merge::bool::overwrite_false)]
     pub http2: bool,
 
+    /// Only use HTTP/3
+    #[clap(long, help_heading = "Request Control")]
+    #[merge(strategy = merge::bool::overwrite_false)]
+    pub http3: bool,
+
     /// Data sent along with the request
     #[clap(
         short = 'D',

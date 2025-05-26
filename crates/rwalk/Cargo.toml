@@ -18,6 +18,7 @@ num_cpus = "1"
 reqwest = { version = "0.12", default-features = false, features = [
     "native-tls-vendored",
     "http2",
+    "http3",
 ] }
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }

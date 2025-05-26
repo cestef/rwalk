@@ -40,6 +40,7 @@ use std::{
 };
 use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
+use tracing::debug;
 use url::Url;
 
 use super::{
@@ -265,9 +266,15 @@ impl WorkerPool {
         let mut builder = Client::builder();
         if opts.http1 {
             builder = builder.http1_only();
+            debug!("Using HTTP/1.1");
         }
         if opts.http2 {
             builder = builder.http2_prior_knowledge();
+            debug!("Using HTTP/2");
+        }
+        if opts.http3 {
+            builder = builder.http3_prior_knowledge();
+            debug!("Using HTTP/3");
         }
         Ok(builder.build()?)
     }
