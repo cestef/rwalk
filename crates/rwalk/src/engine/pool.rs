@@ -276,6 +276,12 @@ impl WorkerPool {
             builder = builder.http3_prior_knowledge();
             debug!("Using HTTP/3");
         }
+
+        builder = builder.user_agent(
+            opts.user_agent
+                .as_ref()
+                .unwrap_or(&format!("rwalk/{}", env!("CARGO_PKG_VERSION"))),
+        );
         Ok(builder.build()?)
     }
 

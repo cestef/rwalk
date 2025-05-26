@@ -201,6 +201,11 @@ pub struct Opts {
     #[merge(strategy = merge::option::overwrite_none)]
     pub data: Option<String>,
 
+    /// User agent to use, defaults to `rwalk/<version>`
+    #[clap(short = 'U', long, help_heading = "Request Control")]
+    #[merge(strategy = merge::option::overwrite_none)]
+    pub user_agent: Option<String>,
+
     //
     // ------------------------------------------------------------------------
     // Output
