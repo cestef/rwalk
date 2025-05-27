@@ -407,12 +407,19 @@ impl WorkerPool {
                             self.global_queue.push(retry_task);
                             // Do NOT increase progress bar length here, retry means task still pending
                         } else {
+                            let fail_msg = if response.status == 0 {
+                                // When status is 0 (network error), the body contains the actual error message
+                                response.body.trim().to_string()
+                            } else {
+                                response.status.to_string()
+                            };
+                            
                             self.pb.println(format!(
                                 "{} Failed to fetch {} after {} retries ({})",
                                 WARNING.yellow(),
                                 task.url.bold(),
                                 self.config.retries.yellow(),
-                                response.status.dimmed()
+                                fail_msg.dimmed()
                             ));
                             // This is a definitive failure: increase progress bar by 1
                             self.pb.inc(1);
