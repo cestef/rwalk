@@ -3,7 +3,7 @@ members = ["crates/rwalk", "crates/dyn-fields"]
 resolver = "3"
 
 [profile.dev]
-debug = false
+debug = true
 
 # The profile that 'dist' will build with
 [profile.dist]

@@ -399,13 +399,12 @@ impl WorkerPool {
                         throttler.record_response(&response).await?;
                     }
                     self.ticker.tick();
-                    self.pb.inc(1);
                     if self.config.retry_codes.iter().any(|e| e.contains(response.status as u16)) {
                         if task.retry < self.config.retries {
                             let mut task = task.clone();
                             task.retry();
                             self.global_queue.push(task);
-                            self.pb.set_length(self.pb.length().unwrap() + 1);
+                            // Do NOT increase progress bar length here, retry means task still pending
                         } else {
                             self.pb.println(format!(
                                 "{} Failed to fetch {} after {} retries ({})",
@@ -414,9 +413,13 @@ impl WorkerPool {
                                 self.config.retries.yellow(),
                                 response.status.dimmed()
                             ));
+                            // This is a definitive failure: increase progress bar by 1
+                            self.pb.inc(1);
                         }
 
                         return Ok::<(), crate::error::RwalkError>(());
+                    } else {
+                        self.pb.inc(1);
                     }
                     if self.worker_config.filterer.filter(&response)? {
                         self.worker_config.handler.handle(response.clone(), self)?;
@@ -494,7 +497,6 @@ impl WorkerPool {
                     let mut task = task.clone();
                     task.retry();
                     self.global_queue.push(task);
-                    self.pb.set_length(self.pb.length().unwrap() + 1);
                 } else {
                     self.pb.println(format!(
                         "{} Failed to fetch {} after {} retries ({})",
