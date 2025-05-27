@@ -399,11 +399,12 @@ impl WorkerPool {
                         throttler.record_response(&response).await?;
                     }
                     self.ticker.tick();
-                    if self.config.retry_codes.iter().any(|e| e.contains(response.status as u16)) {
+                    // 0 is a special case, it means the request failed
+                    if response.status == 0 || self.config.retry_codes.iter().any(|e| e.contains(response.status as u16)) {
                         if task.retry < self.config.retries {
-                            let mut task = task.clone();
-                            task.retry();
-                            self.global_queue.push(task);
+                            let mut retry_task = task.clone();
+                            retry_task.retry();
+                            self.global_queue.push(retry_task);
                             // Do NOT increase progress bar length here, retry means task still pending
                         } else {
                             self.pb.println(format!(
@@ -493,20 +494,8 @@ impl WorkerPool {
                     .await
             }
             Err(e) => {
-                if task.retry < self.config.retries {
-                    let mut task = task.clone();
-                    task.retry();
-                    self.global_queue.push(task);
-                } else {
-                    self.pb.println(format!(
-                        "{} Failed to fetch {} after {} retries ({})",
-                        WARNING.yellow(),
-                        task.url.bold(),
-                        self.config.retries.yellow(),
-                        e
-                    ));
-                }
-
+                // Since retry logic is now handled upstream based on status codes (including 0),
+                // we no longer need to check for retry count here.
                 let res = RwalkResponse::from_error(e, task.url.clone().parse()?, task.depth);
                 Ok(res)
             }
