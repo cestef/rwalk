@@ -413,7 +413,7 @@ impl WorkerPool {
                             } else {
                                 response.status.to_string()
                             };
-                            
+
                             self.pb.println(format!(
                                 "{} Failed to fetch {} after {} retries ({})",
                                 WARNING.yellow(),
