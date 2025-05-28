@@ -29,6 +29,6 @@ install-updater = false
 
 [dist.github-custom-runners]
 global = "ubuntu-latest"
-x86_64-unknown-linux-gnu = "ubuntu-latest"
+x86_64-unknown-linux-gnu = "ubuntu-22.04"
 x86_64-unknown-linux-musl = "ubuntu-latest"
-aarch64-unknown-linux-gnu = "ubuntu-latest"
+aarch64-unknown-linux-gnu = "ubuntu-22.04"
