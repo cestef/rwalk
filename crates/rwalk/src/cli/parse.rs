@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::{
     Result,
     error::{SyntaxError, syntax_error},
@@ -160,6 +162,23 @@ pub fn parse_filter(s: &str) -> Result<String> {
     } else {
         Ok(s.to_string())
     }
+}
+
+// key[:path]
+pub fn parse_save_wordlist(s: &str) -> Result<(String, Option<PathBuf>)> {
+    let parts: Vec<&str> = s.split(':').collect();
+    if parts.len() > 2 {
+        return Err(syntax_error!((0, s.len()), s, "Expected at most one ':'"));
+    }
+
+    let key = parts[0].to_string();
+    let path = if parts.len() == 2 {
+        Some(PathBuf::from(parts[1]))
+    } else {
+        None
+    };
+
+    Ok((key, path))
 }
 
 #[cfg(test)]

@@ -12,7 +12,7 @@ use dyn_fields::DynamicFields;
 use merge::Merge;
 use parse::{
     parse_filter, parse_keyed_key_or_keyval, parse_keyed_keyval, parse_multikey_val,
-    parse_throttle, parse_url, parse_wordlist,
+    parse_save_wordlist, parse_throttle, parse_url, parse_wordlist,
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -160,6 +160,18 @@ pub struct Opts {
     #[clap(long, visible_alias = "mw", help_heading = "Scan Configuration", value_parser = parse_multikey_val, value_name = "SRC:DEST")]
     #[merge(strategy = merge::vec::append)]
     pub merge: Vec<(HashSet<String>, String)>,
+
+    /// Save processed wordlists to a file
+    #[clap(
+        long,
+        visible_alias = "sw",
+        value_name = "KEY:PATH",
+        value_parser = parse_save_wordlist,
+        value_delimiter = ';',
+        help_heading = "Scan Configuration"
+    )]
+    #[merge(strategy = merge::vec::append)]
+    pub save_wordlists: Vec<(String, Option<PathBuf>)>,
 
     //
     // ------------------------------------------------------------------------

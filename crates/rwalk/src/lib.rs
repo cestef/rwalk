@@ -146,6 +146,27 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
         }
     }
 
+    if !opts.save_wordlists.is_empty() {
+        for (key, path) in &opts.save_wordlists {
+            if let Some(wordlist) = wordlists.iter().find(|wl| &*wl.key == *key) {
+                let out = wordlist.to_string();
+                let path = if let Some(p) = path {
+                    p.to_owned()
+                } else {
+                    std::path::PathBuf::from(format!("{}.txt", key))
+                };
+                std::fs::write(&path, out)
+                    .map_err(|e| error!("Failed to save wordlist {}: {}", key.bold(), e))?;
+                info!("Wordlist {} saved to {}", key.bold(), path.display().bold());
+            } else {
+                error!(
+                    "Wordlist {} not found in the processed wordlists",
+                    key.bold()
+                );
+            }
+        }
+    }
+
     // Check if the URL is valid
     let url = url_string
         .parse::<url::Url>()

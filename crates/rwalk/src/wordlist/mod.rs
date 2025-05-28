@@ -69,4 +69,8 @@ impl Wordlist {
         self.words.sort();
         self.words.dedup();
     }
+
+    pub fn to_string(&self) -> String {
+        self.words.join("\n")
+    }
 }
