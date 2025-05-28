@@ -1,1 +1,2 @@
-- run: echo RUSTFLAGS="$RUSTFLAGS --cfg reqwest_unstable" >> "$GITHUB_ENV"
+- name: Set RUSTFLAGS for reqwest unstable features
+  run: echo RUSTFLAGS="$RUSTFLAGS --cfg reqwest_unstable" >> "$GITHUB_ENV"
