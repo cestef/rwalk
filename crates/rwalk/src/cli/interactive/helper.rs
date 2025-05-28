@@ -67,6 +67,10 @@ impl Highlighter for RwalkHelper {
             let prompt = format!("{} {}{} ", name.blue(), "(eval)".dimmed(), ">".blue());
             return prompt.into();
         }
+        if prompt.starts_with("...") {
+            // Continuation prompt
+            return prompt.dimmed().to_string().into();
+        }
         self.in_eval.store(false, Ordering::Relaxed);
         return prompt.blue().to_string().into();
     }

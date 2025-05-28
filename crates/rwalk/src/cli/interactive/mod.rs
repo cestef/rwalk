@@ -1,7 +1,7 @@
 use std::sync::{Arc, atomic::AtomicBool};
 
 use super::Opts;
-use crate::{Result, print_error, utils::config_dir};
+use crate::{Result, print_error, utils::config_dir, worker::utils::RwalkResponse};
 use commands::{CommandContext, CommandRegistry};
 use helper::RwalkHelper;
 use owo_colors::OwoColorize;
@@ -24,11 +24,13 @@ pub async fn run(opts: Opts) -> Result<()> {
     }
 
     let editor = Arc::new(Mutex::new(editor));
+    let mut engine = Engine::new();
+    engine.build_type::<RwalkResponse>();
     let mut ctx = CommandContext {
         exit: false,
         opts,
         editor: editor.clone(),
-        engine: Arc::new(Engine::new()),
+        engine: Arc::new(engine),
         scope: Arc::new(Mutex::new(rhai::Scope::new())),
     };
 

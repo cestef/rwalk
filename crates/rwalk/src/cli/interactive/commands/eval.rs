@@ -38,9 +38,32 @@ impl<'a> Command<CommandContext<'a>> for EvalCommand {
         if args.is_empty() {
             // Interactive eval mode
             let mut editor = ctx.editor.lock().await;
+            // Define a state struct to track buffer and delimiters
+            struct EvalState {
+                buffer: String,
+                braces: usize,
+                parens: usize,
+                brackets: usize,
+            }
+
+            let mut state = EvalState {
+                buffer: String::new(),
+                braces: 0,
+                parens: 0,
+                brackets: 0,
+            };
 
             loop {
-                let line = match editor.readline("rwalk (eval)> ") {
+                // Determine prompt based on buffer state
+                let prompt = if state.buffer.is_empty() {
+                    "rwalk (eval)> "
+                } else if state.braces > 0 || state.parens > 0 || state.brackets > 0 {
+                    "... "
+                } else {
+                    "... "
+                };
+
+                let line = match editor.readline(prompt) {
                     Ok(line) => line,
                     Err(
                         rustyline::error::ReadlineError::Interrupted
@@ -50,15 +73,41 @@ impl<'a> Command<CommandContext<'a>> for EvalCommand {
                 };
 
                 let line = line.trim();
-                if line.is_empty() {
+
+                // Empty line executes the current buffer if not in a block
+                let in_block = state.braces > 0 || state.parens > 0 || state.brackets > 0;
+                if line.is_empty() && !state.buffer.is_empty() && !in_block {
+                    let mut scope = ctx.scope.lock().await;
+                    match ctx
+                        .engine
+                        .eval_with_scope::<Dynamic>(&mut scope, &state.buffer)
+                    {
+                        Ok(res) => println!("{}", res),
+                        Err(e) => print_error!("Error: {}", e),
+                    }
+
+                    state.buffer.clear();
                     continue;
                 }
 
-                let mut scope = ctx.scope.lock().await;
-                match ctx.engine.eval_with_scope::<Dynamic>(&mut scope, line) {
-                    Ok(res) => println!("{}", res),
-                    Err(e) => print_error!("Error: {}", e),
+                // Update block state by counting delimiters
+                for c in line.chars() {
+                    match c {
+                        '{' => state.braces += 1,
+                        '}' => state.braces = state.braces.saturating_sub(1),
+                        '(' => state.parens += 1,
+                        ')' => state.parens = state.parens.saturating_sub(1),
+                        '[' => state.brackets += 1,
+                        ']' => state.brackets = state.brackets.saturating_sub(1),
+                        _ => {}
+                    }
                 }
+
+                // Add line to buffer
+                if !state.buffer.is_empty() {
+                    state.buffer.push('\n');
+                }
+                state.buffer.push_str(line);
             }
         } else {
             // Single expression evaluation
