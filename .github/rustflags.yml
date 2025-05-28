@@ -1,0 +1,1 @@
+- run: echo RUSTFLAGS="$RUSTFLAGS --cfg reqwest_unstable" >> "$GITHUB_ENV"
