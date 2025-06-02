@@ -103,7 +103,9 @@ pub fn parse_key_or_keyval(s: &str) -> Result<(String, Option<String>)> {
     if parts.len() > 2 {
         return Err(syntax_error!((0, s.len()), s, "Expected at most one ':'"));
     }
-    Ok((parts[0].to_lowercase(), parts.get(1).map(|s| s.to_string())))
+    let key = parts[0].to_string(); // ← no lowercase here
+    let value = parts.get(1).map(|s| s.to_string());
+    Ok((key, value))
 }
 
 pub fn parse_wordlist(s: &str) -> Result<(String, String)> {
