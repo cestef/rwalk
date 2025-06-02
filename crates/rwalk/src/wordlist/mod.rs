@@ -45,13 +45,14 @@ impl Wordlist {
     }
 
     pub fn inject_into(&self, injector: &Injector<Task>, url: &Url, depth: usize) -> Result<()> {
-        let base_prefix = url[..Position::BeforePath]
-            .to_string()
-            .trim_end_matches('/')
-            .to_string(); // cache prefix once
+        let base_prefix = url[..Position::BeforePath].to_string();
 
         self.words.par_iter().try_for_each(|word| {
-            let full_url = format!("{}/{}", base_prefix, word);
+            let full_url = if base_prefix.ends_with('/') || word.starts_with('/') {
+                format!("{}{}", base_prefix.trim_end_matches('/'), word)
+            } else {
+                format!("{}/{}", base_prefix, word)
+            };
             injector.push(Task::new_recursive(full_url, depth));
             Ok(())
         })
