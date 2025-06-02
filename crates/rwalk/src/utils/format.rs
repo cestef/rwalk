@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt::Display};
+use std::fmt::Display;
 
 use owo_colors::OwoColorize;
 
@@ -8,7 +8,7 @@ pub fn response(response: &RwalkResponse, show: &[String]) -> String {
     format!(
         "{} {} {} {}",
         display_status_code(response.status as u16),
-        display_url(response.url.as_str()),
+        response.url.as_str(),
         display_time(response.time),
         {
             let showed = response.display_show(show);
@@ -19,10 +19,6 @@ pub fn response(response: &RwalkResponse, show: &[String]) -> String {
             }
         }
     )
-}
-
-fn display_url(url: &str) -> Cow<'_, str> {
-    urlencoding::decode(url).unwrap_or(url.into())
 }
 
 pub fn display_time(t: i64) -> String {
@@ -143,7 +139,7 @@ pub fn skip(response: &RwalkResponse, reason: SkipReason, show: &[String]) -> St
         "{} {} {} {} {} {}",
         "↷".blue(),
         response.status.dimmed(),
-        display_url(response.url.as_str()),
+        response.url.as_str(),
         display_time(response.time),
         format!("({})", reason).dimmed(),
         {

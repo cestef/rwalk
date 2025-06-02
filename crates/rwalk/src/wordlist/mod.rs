@@ -5,6 +5,7 @@ use crossbeam::deque::Injector;
 use rayon::iter::{IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
 use transformation::Transformer;
 use url::Url;
+use url::Position;
 
 pub mod filters;
 pub mod processor;
@@ -44,11 +45,14 @@ impl Wordlist {
     }
 
     pub fn inject_into(&self, injector: &Injector<Task>, url: &Url, depth: usize) -> Result<()> {
-        let base_url = url.clone();
+        let base_prefix = url[..Position::BeforePath]
+            .to_string()
+            .trim_end_matches('/')
+            .to_string(); // cache prefix once
+
         self.words.par_iter().try_for_each(|word| {
-            let mut url = base_url.clone();
-            url.path_segments_mut().unwrap().pop_if_empty().push(word);
-            injector.push(Task::new_recursive(url.to_string(), depth));
+            let full_url = format!("{}/{}", base_prefix, word);
+            injector.push(Task::new_recursive(full_url, depth));
             Ok(())
         })
     }
