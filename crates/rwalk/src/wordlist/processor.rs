@@ -114,14 +114,15 @@ impl<'a> WordlistProcessor<'a> {
         include_comments: bool,
     ) -> Result<()> {
         debug!("Processing wordlist: {}", path);
-        let path = PathBuf::from(&*path)
+    
+        let canonical_path = PathBuf::from(&*path)
             .canonicalize()
             .map_err(|e| crate::error!("Failed to open wordlist file {}: {}", path.bold(), e))?;
-
-        let file = File::open(&*path).await?;
+    
+        let file = File::open(&canonical_path).await?;
         let reader = BufReader::new(file);
         let mut lines = reader.lines();
-
+    
         while let Some(line) = lines.next_line().await? {
             if !line.trim().is_empty() {
                 let processed_line = if include_comments {
@@ -129,20 +130,20 @@ impl<'a> WordlistProcessor<'a> {
                 } else {
                     Self::strip_comments(&line)
                 };
-
+    
                 if let Some(mut word) = processed_line {
                     transformer.apply(&mut word);
                     let word: CowStr = word.into();
-
+    
                     if filterer.filter(&(key.clone(), word.clone()))? {
                         shared_words.entry(key.clone()).or_default().insert(word);
                     }
                 }
             }
         }
-
+    
         Ok(())
-    }
+    }    
 
     fn create_transformer(&self, wordlist_key: &str) -> Result<Transformer<String>> {
         let transformers = self
