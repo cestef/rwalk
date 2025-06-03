@@ -30,7 +30,7 @@ impl Node {
             for (key, child) in &self.children {
                 if child.children.len() == 1 && !child.is_endpoint {
                     let (grandchild_key, grandchild) = child.children.iter().next().unwrap();
-                    let new_key = format!("{}/{}", key, grandchild_key);
+                    let new_key = format!("{}{}", key, grandchild_key);
 
                     keys_to_remove.push(key.clone());
                     nodes_to_add.insert(new_key, grandchild.clone());
@@ -76,7 +76,7 @@ impl TreeItem for Node {
         if !self.name.is_empty() {
             write!(
                 f,
-                "{} /{}",
+                "{} {}",
                 display_status_code(self.status),
                 style.paint(&self.name)
             )
@@ -96,23 +96,14 @@ pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
         let url = entry.key();
         if let Ok(parsed_url) = Url::parse(url) {
             let path = parsed_url.path();
-            
-            // Collect into owned strings
-            let mut components: Vec<String> = path
+
+            let components = path
                 .split('/')
                 .filter(|s| !s.is_empty())
-                .map(|s| s.to_string())
-                .collect();
-    
-            if path.ends_with('/') && !components.is_empty() {
-                let last = components.len() - 1;
-                components[last].push('/');
-            }
-    
-            // Convert back to &str slices for insert_path
-            let components_ref: Vec<&str> = components.iter().map(|s| s.as_str()).collect();
-    
-            insert_path(&mut root, &components_ref, entry.value());
+                .map(|comp| format!("/{}", comp))
+                .collect::<Vec<String>>();
+
+            insert_path(&mut root, &components, entry.value());
         }
     }
 
@@ -125,19 +116,19 @@ pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
     ptree::print_tree(&root).unwrap();
 }
 
-fn insert_path(node: &mut Node, components: &[&str], response: &RwalkResponse) {
+fn insert_path(node: &mut Node, components: &[String], response: &RwalkResponse) {
     if components.is_empty() {
         node.is_endpoint = true;
         node.status = response.status as u16;
         return;
     }
 
-    let component = components[0];
+    let component = components[0].clone();
     let child = node
         .children
-        .entry(component.to_string())
+        .entry(component.clone())
         .or_insert_with(|| Node {
-            name: String::new(),
+            name: component,
             status: response.status as u16,
             ..Default::default()
         });
