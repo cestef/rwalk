@@ -96,9 +96,23 @@ pub fn display_url_tree(base: &Url, urls: &DashMap<String, RwalkResponse>) {
         let url = entry.key();
         if let Ok(parsed_url) = Url::parse(url) {
             let path = parsed_url.path();
-            let components: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-
-            insert_path(&mut root, &components, entry.value());
+            
+            // Collect into owned strings
+            let mut components: Vec<String> = path
+                .split('/')
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+                .collect();
+    
+            if path.ends_with('/') && !components.is_empty() {
+                let last = components.len() - 1;
+                components[last].push('/');
+            }
+    
+            // Convert back to &str slices for insert_path
+            let components_ref: Vec<&str> = components.iter().map(|s| s.as_str()).collect();
+    
+            insert_path(&mut root, &components_ref, entry.value());
         }
     }
 
