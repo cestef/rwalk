@@ -49,7 +49,7 @@ impl Wordlist {
         self.words.par_iter().try_for_each(|word| {
             // Trim slashes to ensure exactly one slash between
             let base_trimmed = base_url.trim_end_matches('/');
-            let word_trimmed = word.trim_start_matches('/');
+            let word_trimmed = word.strip_prefix('/').unwrap_or(word);
     
             let full_url = format!("{}/{}", base_trimmed, word_trimmed);
     
