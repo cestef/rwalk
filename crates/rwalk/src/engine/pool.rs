@@ -429,12 +429,14 @@ impl WorkerPool {
                     } else {
                         self.pb.inc(1);
                     }
-                    if self.worker_config.filterer.filter(&response)? {
-                        self.worker_config.handler.handle(response.clone(), self)?;
-                        if self.config.bell {
-                            bell();
+                    if !results.contains_key(&response.url.to_string()) {
+                        if self.worker_config.filterer.filter(&response)? {
+                            results.insert(response.url.to_string(), response.clone());
+                            self.worker_config.handler.handle(response.clone(), self)?;
+                            if self.config.bell {
+                                bell();
+                            }
                         }
-                        results.insert(response.url.to_string(), response);
                     }
 
                     Ok::<(), crate::error::RwalkError>(())
