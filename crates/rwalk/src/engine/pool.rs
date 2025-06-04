@@ -35,7 +35,6 @@ use std::{
     collections::HashMap,
     fs::File,
     io::{BufReader, Write},
-    path::Path,
     sync::Arc,
 };
 use tokio::sync::broadcast;
@@ -96,8 +95,7 @@ pub struct WorkerState {
 }
 
 impl WorkerPool {
-    pub fn save_state<P: AsRef<Path>>(
-        path: P,
+    pub fn save_state(
         global_queue: Arc<Injector<Task>>,
         results: Arc<DashMap<String, RwalkResponse>>,
         base_url: Url,
@@ -119,14 +117,14 @@ impl WorkerPool {
             base_url,
         };
 
-        let mut writer = std::io::BufWriter::new(std::fs::File::create(path)?);
+        let mut writer = std::io::BufWriter::new(std::fs::File::create(STATE_FILE)?);
         writer.write(&rmp_serde::to_vec(&state)?)?;
         Ok(())
     }
 
-    pub fn load_state<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let file =
-            File::open(path).map_err(|e| crate::error!(source = e, "Failed to open state file"))?;
+    pub fn load_state(&self) -> Result<()> {
+        let file = File::open(STATE_FILE)
+            .map_err(|e| crate::error!(source = e, "Failed to open state file"))?;
         let reader = BufReader::new(file);
         let state: WorkerState = rmp_serde::from_read(reader)
             .map_err(|e| crate::error!(source = e, "Failed to deserialize state file"))?;
@@ -342,7 +340,7 @@ impl WorkerPool {
             e = shutdown_rx.recv() => {
                 if matches!(e, Ok(true)) {
                     // Save state before returning
-                    Self::save_state(STATE_FILE, global_.clone(), results.clone(), base_url)?;
+                    Self::save_state(global_.clone(), results.clone(), base_url)?;
                 }
                 pb.finish_and_clear();
                 Ok((results, ticker.get_rate()))

@@ -8,9 +8,9 @@ use indicatif::HumanDuration;
 use itertools::Itertools;
 use owo_colors::OwoColorize;
 use rhai::{Dynamic, Scope};
-use tracing::debug;
+use tracing::{debug, trace};
 use utils::{
-    constants::{self, DEFAULT_WORDLIST_KEY, STATE_FILE},
+    constants::{self, DEFAULT_WORDLIST_KEY},
     error,
     template::find_keys,
     tree,
@@ -30,6 +30,7 @@ pub(crate) use error::error;
 pub use error::*;
 
 pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
+    trace!("run: enter");
     let start = std::time::Instant::now();
 
     // Check if the website is reachable
@@ -58,6 +59,7 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     let mut url_keys = find_keys(&url_string, &wordlists);
     let mut data_keys = vec![];
     if let Some(data) = &opts.data {
+        trace!("run: find_keys(opts.data)");
         data_keys = find_keys(data, &wordlists);
     }
     let header_keys = opts
@@ -148,6 +150,7 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
 
     if !opts.save_wordlists.is_empty() {
         for (key, path) in &opts.save_wordlists {
+            debug!("run: save_wordlists: key={}, path={:?}", key, path);
             if let Some(wordlist) = wordlists.iter().find(|wl| &*wl.key == *key) {
                 let out = wordlist.to_string();
                 let path = if let Some(p) = path {
@@ -177,8 +180,10 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     let (pool, shutdown_tx) = WorkerPool::from_opts(&opts, wordlists)?;
 
     if opts.resume {
-        pool.load_state(STATE_FILE)?;
+        trace!("run: pool.load_state()");
+        pool.load_state()?;
     } else {
+        trace!("run: pool.worker_config.handler.init()");
         pool.worker_config.handler.init(&pool)?;
     }
 
@@ -210,6 +215,9 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     let rx = shutdown_tx.subscribe();
 
     let (results, rate) = pool.run(rx).await?;
+
+    debug!("Done processing tasks, results: {:#?}", results);
+
     match opts.output.as_deref() {
         Some(e) => {
             let out = match e.extension().and_then(|e| e.to_str()) {
@@ -230,6 +238,7 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
     }
 
     if let Some(scope) = scope {
+        trace!("run: scope.set_or_push(constants::RESULTS_VAR_RHAI)");
         let results: rhai::Map = results
             .iter()
             .map(|e| (e.key().clone().into(), Dynamic::from(e.value().clone())))
@@ -242,6 +251,8 @@ pub async fn run(mut opts: Opts, scope: Option<&mut Scope<'_>>) -> Result<()> {
         format!("{:#}", HumanDuration(start.elapsed())).bold(),
         rate.round().bold()
     );
+
+    trace!("run: exit");
 
     Ok(())
 }

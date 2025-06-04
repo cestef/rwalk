@@ -7,24 +7,16 @@ pub fn init() -> miette::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
         .with(indicatif_layer)
-        .with(
-            EnvFilter::from_env("RWALK_LOG")
-                .add_directive(
-                    "hyper_util=off"
-                        .parse()
-                        .map_err(|e| miette::miette!("Failed to parse directive: {}", e))?,
-                )
-                .add_directive(
-                    "reqwest=off"
-                        .parse()
-                        .map_err(|e| miette::miette!("Failed to parse directive: {}", e))?,
-                )
-                .add_directive(
-                    "rustyline=off"
-                        .parse()
-                        .map_err(|e| miette::miette!("Failed to parse directive: {}", e))?,
-                ),
-        )
+        .with({
+            let mut filter = EnvFilter::from_env("RWALK_LOG");
+            for directive in ["hyper_util", "reqwest", "rustyline", "mio"] {
+                let directive = format!("{}=off", directive)
+                    .parse()
+                    .map_err(|e| miette::miette!("Failed to parse directive: {}", e))?;
+                filter = filter.add_directive(directive);
+            }
+            filter
+        })
         .init();
     Ok(())
 }
