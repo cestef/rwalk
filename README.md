@@ -19,7 +19,7 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 ### [Installer script](install.sh) 
 
 ```bash
-curl -sL https://dev.rwalk.cstef.dev/install.sh | PRERELEASE=true bash
+curl -sL https://dev.rwalk.cstef.dev/install.sh | sh -- -p
 ```
 
 ### From Source

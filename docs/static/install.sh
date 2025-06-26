@@ -1,15 +1,87 @@
 #!/bin/bash
 
-GITHUB_REPO=${GITHUB_REPO:-"cestef/rwalk"}
-SKIP_VERSION_CHECK=${SKIP_VERSION_CHECK:-false}
+# Default
+REPO="cestef/rwalk"
+SKIP_CHECK=false
+VERSION=""
+NO_COLOR=false
+PRERELEASE=false
+
+usage() {
+    cat << EOF
+Usage: $0 [OPTIONS]
+
+Options:
+    -r, --repo REPO         GitHub repository (default: $REPO)
+    -v, --version VERSION   Specific version to install
+    -s, --skip-check        Skip version check
+    -p, --prerelease        Include prereleases
+    -n, --no-color          Disable colored output
+    -h, --help              Show this help message
+
+Environment variables (overridden by command line args):
+    REPO, SKIP_CHECK, VERSION, NO_COLOR, PRERELEASE
+
+Examples:
+    $0                                     # Install latest version of default repo
+    $0 -r owner/repo -v v1.2.3             # Install specific version
+    $0 --prerelease --no-color             # Install latest prerelease without colors
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -r|--repo)
+            REPO="$2"
+            shift 2
+            ;;
+        -v|--version)
+            VERSION="$2"
+            shift 2
+            ;;
+        -s|--skip-check)
+            SKIP_CHECK=true
+            shift
+            ;;
+        -p|--prerelease)
+            PRERELEASE=true
+            shift
+            ;;
+        -n|--no-color)
+            NO_COLOR=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+REPO=${REPO:-"$REPO"}
+SKIP_CHECK=${SKIP_CHECK:-false}
 VERSION=${VERSION:-""}
-NO_COLORS=${NO_COLORS:-false}
+NO_COLOR=${NO_COLOR:-false}
 PRERELEASE=${PRERELEASE:-false}
 
-PROJECT_NAME=$(basename "$GITHUB_REPO")
+# if debug, print all variables
+if [ "$DEBUG" = true ]; then
+    echo "DEBUG: REPO=$REPO"
+    echo "DEBUG: SKIP_CHECK=$SKIP_CHECK"
+    echo "DEBUG: VERSION=$VERSION"
+    echo "DEBUG: NO_COLOR=$NO_COLOR"
+    echo "DEBUG: PRERELEASE=$PRERELEASE"
+fi
+
+PROJECT_NAME=$(basename "$REPO")
 INSTALLER_NAME="${PROJECT_NAME}-installer.sh"
 
-if [ "$NO_COLORS" = true ]; then
+if [ "$NO_COLOR" = true ]; then
     C_BOLD="" C_DIM="" C_GREEN="" C_RED="" C_YELLOW="" C_BLUE="" C_RESET=""
 else
     C_BOLD="\033[1m"
@@ -35,12 +107,12 @@ msg() {
 
 echo -e "${C_BOLD}Installing $PROJECT_NAME...${C_RESET}"
 
-if [ -z "$VERSION" ] && [ "$SKIP_VERSION_CHECK" != "true" ]; then
+if [ -z "$VERSION" ] && [ "$SKIP_CHECK" != "true" ]; then
     echo -e "${C_DIM}Fetching latest version information...${C_RESET}"
     if [ "$PRERELEASE" = true ]; then
-        GITHUB_API_URL="https://api.github.com/repos/$GITHUB_REPO/releases?per_page=1"
+        GITHUB_API_URL="https://api.github.com/repos/$REPO/releases?per_page=1"
     else
-        GITHUB_API_URL="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
+        GITHUB_API_URL="https://api.github.com/repos/$REPO/releases/latest"
     fi
     LATEST_VERSION=$(curl -s $GITHUB_API_URL | 
                     grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
@@ -62,7 +134,7 @@ else
 fi
 
 echo -e "${C_BLUE}Downloading installer...${C_RESET}"
-INSTALLER_URL="https://github.com/$GITHUB_REPO/releases/download/${VERSION_TO_INSTALL}/$INSTALLER_NAME"
+INSTALLER_URL="https://github.com/$REPO/releases/download/${VERSION_TO_INSTALL}/$INSTALLER_NAME"
 echo -e "${C_DIM}From: $INSTALLER_URL${C_RESET}"
 
 TEMP_INSTALLER=$(mktemp)
