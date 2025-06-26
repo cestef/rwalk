@@ -16,9 +16,19 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 
 ## Testing Locally
 
+### Installer script
+
+```bash
+curl -sL https://dev.rwalk.cstef.dev/install.sh | PRERELEASE=true bash
+```
+
+### From Source
+
 ```bash
 cargo install --git https://github.com/cestef/rwalk --branch dev
 ```
+
+
 
 ## Contributing
 
