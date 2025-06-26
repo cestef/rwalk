@@ -16,7 +16,7 @@ Unlike other tools, rwalk does **<u>not</u>** provide advanced fuzzing features 
 
 ## Testing Locally
 
-### Installer script
+### [Installer script](install.sh) 
 
 ```bash
 curl -sL https://dev.rwalk.cstef.dev/install.sh | PRERELEASE=true bash
@@ -28,7 +28,9 @@ curl -sL https://dev.rwalk.cstef.dev/install.sh | PRERELEASE=true bash
 cargo install --git https://github.com/cestef/rwalk --branch dev
 ```
 
+### From Binaries
 
+You can download the latest binaries from the [releases page](https://github.com/cestef/rwalk/releases). Dev branch releases are tagged with `-dev`.
 
 ## Contributing
 
