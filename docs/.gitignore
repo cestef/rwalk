@@ -1,4 +1,6 @@
 node_modules/
 static/css/
-public/
+public/css/
+public/js/
+public/search_index.en.js
 preview/
