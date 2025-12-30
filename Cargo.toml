@@ -1,6 +1,76 @@
-[workspace]
-members = ["crates/rwalk", "crates/dyn-fields"]
+[package]
+name = "rwalk"
+version = "0.10.5-dev"
+edition = "2024"
+description = "A blazingly fast web directory scanner"
+authors = ["cstef <hi@cstef.dev>"]
+license = "MIT"
+repository = "https://github.com/cestef/rwalk"
+documentation = "https://rwalk.cstef.dev"
+homepage = "https://rwalk.cstef.dev"
+keywords = ["web", "directory", "fuzz", "bruteforce"]
 resolver = "3"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "string", "wrap_help"] }
+crossbeam = { version = "0.8", features = ["crossbeam-queue"] }
+num-traits = "0.2"
+num_cpus = "1"
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+    "rustls-tls-native-roots",
+    "http2",
+    "http3",
+] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+once_cell = "1"
+miette = { version = "7", features = ["fancy"] }
+thiserror = "2"
+url = { version = "2", features = ["serde"] }
+logos = "0.15"
+dashmap = { version = "6", features = ["serde"] }
+itertools = "0.14"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+futures = "0.3"
+rayon = "1"
+async-recursion = "1"
+atomic_float = "1"
+owo-colors = "4"
+urlencoding = "2"
+serde_json = "1"
+regex = "1"
+hex = "0.4"
+base64 = "0.22"
+indicatif = { version = "0.17", features = ["rayon"] }
+tracing-indicatif = "0.3"
+rmp-serde = "1"
+cowstr = "1"
+tabled = { version = "0.19", features = ["ansi"] }
+ptree = "0.5"
+merge = "0.2"
+toml = "0.8"
+termimad = "0.32"
+terminal-light = "1"
+terminal_size = "0.4"
+rhai = { version = "1", features = ["sync", "serde"] }
+smartstring = "1"
+clap-markdown = "0.1"
+rustyline = "15"
+async-trait = "0.1"
+lazy_static = "1"
+dirs = "6"
+strum = { version = "0.27", features = ["derive"] }
+tempfile = "3"
+chrono = "0.4"
+
+# Facet dependencies for reflection
+facet = { git = "https://github.com/facet-rs/facet.git" }
+facet-reflect = { git = "https://github.com/facet-rs/facet.git" }
+facet-value = { git = "https://github.com/facet-rs/facet.git" }
+facet-json = { git = "https://github.com/facet-rs/facet.git" }
+facet-miette = { git = "https://github.com/facet-rs/facet.git" }
 
 [profile.dev]
 debug = true
